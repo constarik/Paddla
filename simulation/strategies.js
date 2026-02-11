@@ -1,7 +1,6 @@
 /**
- * PADDLA Simulation - AI Strategies
- * Compare different bumper control strategies
- * v0.2 - Bumper in upper zone (near goals)
+ * PADDLA Simulation - AI Strategies v0.2
+ * Synced with client/index.html
  */
 
 const { JavaRandom, fpRound, dist, clamp } = require('../engine/core.js');
@@ -12,107 +11,104 @@ const BET = CONFIG.BET_PER_BALL;
 
 // ==================== AI STRATEGIES ====================
 
+// Sticky targets for strategies
+let hunterTargetId = null;
+let defenderTargetId = null;
+let sniperTargetId = null;
+
+function resetTargets() {
+  hunterTargetId = null;
+  defenderTargetId = null;
+  sniperTargetId = null;
+}
+
 // Strategy 1: Stationary (baseline)
 function strategyStationary(state) {
   return { x: BUMPER.START_X, y: BUMPER.START_Y };
 }
 
-// Strategy 2: Follow nearest ball in upper half (approaching goals)
+// Strategy 2: Hunter - follows balls, positions BELOW to deflect UP
 function strategyHunter(state) {
-  let nearest = null;
-  let minDist = Infinity;
+  // Check if current target still valid (in upper half, alive)
+  let target = state.balls.find(b => b.id === hunterTargetId && b.alive && b.y < CONFIG.FIELD / 2);
   
-  for (const ball of state.balls) {
-    if (!ball.alive) continue;
-    // Only chase balls in upper half heading toward goals
-    if (ball.y > CONFIG.FIELD / 2) continue;
-    
-    const d = dist(ball.x, ball.y, state.bumper.x, state.bumper.y);
-    // Don't get too close - maintain minimum distance to avoid sticking
-    if (d < minDist && d > BUMPER.RADIUS + CONFIG.BALL_R + 0.5) {
-      minDist = d;
-      nearest = ball;
-    }
-  }
-  
-  if (nearest) {
-    // Position to deflect, not to intercept directly
-    const targetX = clamp(nearest.x, BUMPER.MIN_X, BUMPER.MAX_X);
-    const targetY = clamp(nearest.y + 0.5, BUMPER.MIN_Y, BUMPER.MAX_Y);
-    return { x: targetX, y: targetY };
-  }
-  return { x: BUMPER.START_X, y: BUMPER.START_Y };
-}
-
-// Strategy 3: Block balls from escaping (keep them in goal zone)
-function strategyDefender(state) {
-  let target = null;
-  let bestScore = -Infinity;
-  
-  for (const ball of state.balls) {
-    if (!ball.alive) continue;
-    
-    // Find balls heading away from goals (dy > 0 means going down)
-    const headingDown = ball.dy > 0;
-    const inUpperZone = ball.y < CONFIG.FIELD / 2;
-    const value = ball.value * ball.multiplier;
-    
-    if (headingDown && inUpperZone) {
-      const score = value * 10 + (CONFIG.FIELD / 2 - ball.y);
+  // Find new target - prioritize balls heading up (toward goals)
+  if (!target) {
+    let bestScore = -Infinity;
+    for (const ball of state.balls) {
+      if (!ball.alive) continue;
+      if (ball.y > CONFIG.FIELD / 2) continue; // only upper half
+      // Score: prefer balls heading up (dy < 0) and high value
+      const headingUp = ball.dy < 0 ? 1 : 0;
+      const score = headingUp * 100 + ball.value * 10 - ball.y;
       if (score > bestScore) {
         bestScore = score;
         target = ball;
       }
     }
+    hunterTargetId = target ? target.id : null;
   }
   
   if (target) {
-    // Position below the ball to bounce it back up
-    const targetX = clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X);
+    // Position BELOW the ball to deflect it UP toward goals
     const targetY = clamp(target.y + 0.8, BUMPER.MIN_Y, BUMPER.MAX_Y);
-    return { x: targetX, y: targetY };
+    return { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: targetY };
+  }
+  // Default: patrol at bottom of zone
+  return { x: BUMPER.START_X, y: BUMPER.MAX_Y - 0.5 };
+}
+
+// Strategy 3: Defender - blocks balls heading away from goals
+function strategyDefender(state) {
+  // Check if current target is still valid (alive, in zone, heading down)
+  let target = state.balls.find(b => b.id === defenderTargetId && b.alive && b.y < CONFIG.FIELD / 2 && b.dy > 0);
+  
+  // Find new target if needed
+  if (!target) {
+    let bestScore = -Infinity;
+    for (const ball of state.balls) {
+      if (!ball.alive) continue;
+      const headingDown = ball.dy > 0;
+      const inUpperZone = ball.y < CONFIG.FIELD / 2;
+      const value = ball.value * ball.multiplier;
+      if (headingDown && inUpperZone) {
+        const score = value * 10 + (CONFIG.FIELD / 2 - ball.y);
+        if (score > bestScore) { bestScore = score; target = ball; }
+      }
+    }
+    defenderTargetId = target ? target.id : null;
   }
   
-  // Default: patrol center
+  if (target) {
+    return { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.8, BUMPER.MIN_Y, BUMPER.MAX_Y) };
+  }
   return { x: 4.5, y: 2.5 };
 }
 
-// Strategy 4: Direct balls toward nearest goal
+// Strategy 4: Sniper - directs balls toward nearest goal
 function strategySniper(state) {
-  let target = null;
-  let bestScore = -Infinity;
+  // Check if current target is still valid
+  let target = state.balls.find(b => b.id === sniperTargetId && b.alive && b.y < CONFIG.FIELD / 2);
   
-  for (const ball of state.balls) {
-    if (!ball.alive) continue;
-    
-    // Prioritize high-value balls in upper half
-    const inZone = ball.y < CONFIG.FIELD / 2;
-    const value = ball.value * ball.multiplier;
-    
-    if (inZone) {
-      // Higher value + higher position = better target
-      const score = value * 10 - ball.y;
-      if (score > bestScore) {
-        bestScore = score;
-        target = ball;
+  // Find new target if needed
+  if (!target) {
+    let bestScore = -Infinity;
+    for (const ball of state.balls) {
+      if (!ball.alive) continue;
+      const inZone = ball.y < CONFIG.FIELD / 2;
+      const value = ball.value * ball.multiplier;
+      if (inZone) {
+        const score = value * 10 - ball.y;
+        if (score > bestScore) { bestScore = score; target = ball; }
       }
     }
+    sniperTargetId = target ? target.id : null;
   }
   
   if (target) {
-    // Determine nearest goal
-    const goalX = target.x < 4.5 ? 0 : 9;
-    
-    // Position to deflect ball toward goal
-    // If ball is left of center, position to its right to push left
-    // If ball is right of center, position to its left to push right
     const offsetX = target.x < 4.5 ? 0.5 : -0.5;
-    const targetX = clamp(target.x + offsetX, BUMPER.MIN_X, BUMPER.MAX_X);
-    const targetY = clamp(target.y + 0.3, BUMPER.MIN_Y, BUMPER.MAX_Y);
-    
-    return { x: targetX, y: targetY };
+    return { x: clamp(target.x + offsetX, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.3, BUMPER.MIN_Y, BUMPER.MAX_Y) };
   }
-  
   return { x: 4.5, y: 2.0 };
 }
 
@@ -127,37 +123,26 @@ function strategyRandom(state, rng) {
   return { x: state.bumper.targetX, y: state.bumper.targetY };
 }
 
-// Strategy 6: Avoid all balls (worst case - pure chaos)
+// Strategy 6: Avoider - runs away from balls
 function strategyAvoider(state) {
   let avgX = 0, avgY = 0, count = 0;
-  
   for (const ball of state.balls) {
-    if (!ball.alive) continue;
-    if (ball.y < CONFIG.FIELD / 2) {
-      avgX += ball.x;
-      avgY += ball.y;
-      count++;
-    }
+    if (!ball.alive || ball.y >= CONFIG.FIELD / 2) continue;
+    avgX += ball.x; avgY += ball.y; count++;
   }
-  
   if (count > 0) {
-    avgX /= count;
-    avgY /= count;
-    // Move away from average ball position
+    avgX /= count; avgY /= count;
     const awayX = state.bumper.x + (state.bumper.x - avgX) * 0.5;
     const awayY = state.bumper.y + (state.bumper.y - avgY) * 0.5;
-    return {
-      x: clamp(awayX, BUMPER.MIN_X, BUMPER.MAX_X),
-      y: clamp(awayY, BUMPER.MIN_Y, BUMPER.MAX_Y)
-    };
+    return { x: clamp(awayX, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(awayY, BUMPER.MIN_Y, BUMPER.MAX_Y) };
   }
-  
   return { x: BUMPER.START_X, y: BUMPER.START_Y };
 }
 
 // ==================== SIMULATION ====================
 
 function simulateWithStrategy(seed, numBalls, strategyFn, strategyName) {
+  resetTargets();
   let state = GameEngine.createInitialState(seed, numBalls);
   const strategyRng = new JavaRandom(seed + 999999);
   let ticks = 0;
