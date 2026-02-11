@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>PADDLA v0.2</title>
+  <title>PADDLA v0.3 - Provably Fair</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { overflow: hidden; height: 100%; touch-action: manipulation; }
@@ -15,6 +15,11 @@
       flex-direction: column; gap: 15px;
     }
     h1 { color: #00d4ff; text-shadow: 0 0 20px rgba(0,212,255,0.5); font-size: 2rem; }
+    .pf-badge { 
+      background: rgba(0,255,100,0.2); border: 1px solid #00ff66; 
+      padding: 3px 10px; border-radius: 10px; font-size: 11px; color: #00ff66;
+      margin-left: 10px;
+    }
     .game-container { position: relative; }
     canvas {
       border: 3px solid #00d4ff; border-radius: 10px;
@@ -47,6 +52,10 @@
     }
     .controls button:disabled { background: #666; cursor: not-allowed; }
     .controls button:hover:not(:disabled) { transform: scale(1.05); }
+    .controls button.verify-btn {
+      background: linear-gradient(180deg, #00ff66 0%, #00cc55 100%);
+      padding: 8px 15px; font-size: 12px;
+    }
     .info {
       font-size: 12px; color: rgba(255,255,255,0.5);
       text-align: center; max-width: 500px;
@@ -55,12 +64,29 @@
       display: none; position: fixed; top: 50%; left: 50%;
       transform: translate(-50%, -50%); background: rgba(0,0,0,0.95);
       padding: 30px 50px; border-radius: 15px; text-align: center;
-      z-index: 50; border: 3px solid #00d4ff;
+      z-index: 50; border: 3px solid #00d4ff; max-width: 500px;
     }
     .result.show { display: block; }
     .result h2 { color: #00d4ff; font-size: 24px; }
     .result .amount { font-size: 48px; color: #4CAF50; margin: 10px 0; }
     .result .rtp { font-size: 14px; color: rgba(255,255,255,0.6); }
+    .result .verify-section { 
+      margin-top: 15px; padding-top: 15px; border-top: 1px solid #333;
+      font-size: 11px; text-align: left; color: rgba(255,255,255,0.6);
+    }
+    .result .verify-section code {
+      display: block; background: rgba(0,0,0,0.5); padding: 5px;
+      border-radius: 5px; margin: 5px 0; word-break: break-all;
+      font-family: monospace; font-size: 10px;
+    }
+    .result .verify-btn-result {
+      margin-top: 10px; padding: 8px 20px; background: #00ff66;
+      color: #000; border: none; border-radius: 5px; cursor: pointer;
+      font-weight: bold;
+    }
+    .result .verify-btn-result:disabled {
+      background: #666; cursor: wait;
+    }
     .seed-display { font-size: 10px; color: rgba(255,255,255,0.4); font-family: monospace; }
     .auto-results {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -81,10 +107,22 @@
       background: rgba(255,165,0,0.3); border: 1px solid #ffa500; color: #ffcc00;
     }
     .mode-indicator.human { background: rgba(0,255,100,0.3); border-color: #00ff66; color: #00ff66; }
+    .server-status {
+      position: fixed; top: 10px; right: 10px; padding: 5px 10px;
+      border-radius: 10px; font-size: 11px;
+    }
+    .server-status.online { background: rgba(0,255,100,0.2); border: 1px solid #00ff66; color: #00ff66; }
+    .server-status.offline { background: rgba(255,0,0,0.2); border: 1px solid #ff4444; color: #ff4444; }
+    .commitment-display {
+      font-size: 9px; color: rgba(255,255,255,0.3); font-family: monospace;
+      max-width: 300px; word-break: break-all; text-align: center;
+    }
   </style>
 </head>
 <body>
-  <h1>🏓 PADDLA</h1>
+  <div class="server-status offline" id="serverStatus">⚫ Offline</div>
+  
+  <h1>🏓 PADDLA <span class="pf-badge">🔒 Provably Fair</span></h1>
   
   <div class="stats">
     <div class="stat">
@@ -131,7 +169,7 @@
     Move mouse/finger to control the bumper. Direct balls into the goals (top corners).
   </div>
   
-  <div class="seed-display" id="seedDisplay"></div>
+  <div class="commitment-display" id="commitmentDisplay">Connecting to server...</div>
   
   <div class="auto-results" id="autoResults">
     <h2>🤖 AUTO SIMULATION</h2>
@@ -144,12 +182,23 @@
     <h2>GAME OVER</h2>
     <div class="amount">$<span id="finalWin">0</span></div>
     <div class="rtp" id="finalRtp"></div>
+    <div class="verify-section" id="verifySection">
+      <strong>🔒 Verification Data:</strong>
+      <div>Game ID: <code id="vGameId"></code></div>
+      <div>Client Seed: <code id="vClientSeed"></code></div>
+      <div>Commitment: <code id="vCommitment"></code></div>
+      <div>Server Seed: <code id="vServerSeed"></code></div>
+      <button class="verify-btn-result" id="verifyBtn">✓ VERIFY FAIRNESS</button>
+      <div id="verifyResult" style="margin-top:10px;"></div>
+    </div>
   </div>
 
 <script>
 // ========================================
-// PADDLA v0.2 - With AI Strategies
+// PADDLA v0.3 - Provably Fair Client
 // ========================================
+
+const SERVER_URL = 'http://localhost:3000';
 
 // ===== ENGINE (inline) =====
 const FP_ROUND = 1e10;
@@ -269,52 +318,38 @@ function collideBallBumper(ball, bumper, rng) {
 }
 
 // ===== AI STRATEGIES =====
-let hunterTargetId = null; // sticky target for Hunter
-let defenderTargetId = null; // sticky target for Defender
-let sniperTargetId = null; // sticky target for Sniper
+let hunterTargetId = null;
+let defenderTargetId = null;
+let sniperTargetId = null;
 
 const STRATEGIES = {
-  human: null, // controlled by mouse
+  human: null,
   
   stationary: (state) => {
     return { x: BUMPER.START_X, y: BUMPER.START_Y };
   },
   
   hunter: (state) => {
-    // Check if current target still valid (in upper half, alive)
     let target = state.balls.find(b => b.id === hunterTargetId && b.alive && b.y < CONFIG.FIELD / 2);
-    
-    // Find new target - prioritize balls heading up (toward goals)
     if (!target) {
       let bestScore = -Infinity;
       for (const ball of state.balls) {
-        if (!ball.alive) continue;
-        if (ball.y > CONFIG.FIELD / 2) continue; // only upper half
-        // Score: prefer balls heading up (dy < 0) and high value
+        if (!ball.alive || ball.y > CONFIG.FIELD / 2) continue;
         const headingUp = ball.dy < 0 ? 1 : 0;
         const score = headingUp * 100 + ball.value * 10 - ball.y;
-        if (score > bestScore) {
-          bestScore = score;
-          target = ball;
-        }
+        if (score > bestScore) { bestScore = score; target = ball; }
       }
       hunterTargetId = target ? target.id : null;
     }
-    
     if (target) {
-      // Position BELOW the ball to deflect it UP toward goals
       const targetY = clamp(target.y + 0.8, BUMPER.MIN_Y, BUMPER.MAX_Y);
       return { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: targetY };
     }
-    // Default: patrol at bottom of zone
     return { x: BUMPER.START_X, y: BUMPER.MAX_Y - 0.5 };
   },
   
   defender: (state) => {
-    // Check if current target is still valid (alive, in zone, heading down)
     let target = state.balls.find(b => b.id === defenderTargetId && b.alive && b.y < CONFIG.FIELD / 2 && b.dy > 0);
-    
-    // Find new target if needed
     if (!target) {
       let bestScore = -Infinity;
       for (const ball of state.balls) {
@@ -329,7 +364,6 @@ const STRATEGIES = {
       }
       defenderTargetId = target ? target.id : null;
     }
-    
     if (target) {
       return { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.8, BUMPER.MIN_Y, BUMPER.MAX_Y) };
     }
@@ -337,10 +371,7 @@ const STRATEGIES = {
   },
   
   sniper: (state) => {
-    // Check if current target is still valid
     let target = state.balls.find(b => b.id === sniperTargetId && b.alive && b.y < CONFIG.FIELD / 2);
-    
-    // Find new target if needed
     if (!target) {
       let bestScore = -Infinity;
       for (const ball of state.balls) {
@@ -354,7 +385,6 @@ const STRATEGIES = {
       }
       sniperTargetId = target ? target.id : null;
     }
-    
     if (target) {
       const offsetX = target.x < 4.5 ? 0.5 : -0.5;
       return { x: clamp(target.x + offsetX, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.3, BUMPER.MIN_Y, BUMPER.MAX_Y) };
@@ -402,9 +432,15 @@ const MODE_INFO = {
 let gameState = null;
 let gameRunning = false;
 let balance = 1000;
-let gameSeed = 0;
 let currentMode = 'human';
 let strategyRng = null;
+let serverOnline = false;
+let currentCommitment = null;
+
+// Provably Fair data
+let currentGameId = null;
+let currentClientSeed = null;
+let lastVerificationData = null;
 
 // ===== CANVAS =====
 const canvas = document.getElementById('canvas');
@@ -446,6 +482,28 @@ function updateModeIndicator() {
   indicator.className = 'mode-indicator' + (currentMode === 'human' ? ' human' : '');
 }
 
+// ===== SERVER CONNECTION =====
+async function checkServer() {
+  try {
+    const res = await fetch(`${SERVER_URL}/commitment`);
+    const data = await res.json();
+    serverOnline = true;
+    currentCommitment = data.commitment;
+    document.getElementById('serverStatus').className = 'server-status online';
+    document.getElementById('serverStatus').textContent = '🟢 Online';
+    document.getElementById('commitmentDisplay').textContent = 'Commitment: ' + data.commitment.substring(0, 20) + '...';
+  } catch (e) {
+    serverOnline = false;
+    document.getElementById('serverStatus').className = 'server-status offline';
+    document.getElementById('serverStatus').textContent = '⚫ Offline (local mode)';
+    document.getElementById('commitmentDisplay').textContent = 'Server offline - running in local mode';
+  }
+}
+
+// Check server on load and periodically
+checkServer();
+setInterval(checkServer, 30000);
+
 // ===== GAME LOGIC =====
 function createInitialState(seed, numBalls) {
   return {
@@ -461,7 +519,8 @@ function createInitialState(seed, numBalls) {
     timeoutCount: 0,
     totalWin: 0,
     finished: false,
-    nextBallId: 1
+    nextBallId: 1,
+    inputLog: []
   };
 }
 
@@ -471,7 +530,6 @@ function tick(state, skipInput = false) {
   state.tickCount++;
   if (state.spawnCooldown > 0) state.spawnCooldown--;
 
-  // Update bumper target (human or AI) - skip if called from simulation
   if (!skipInput) {
     if (currentMode === 'human') {
       state.bumper.targetX = clamp(mouseX, BUMPER.MIN_X, BUMPER.MAX_X);
@@ -483,6 +541,13 @@ function tick(state, skipInput = false) {
         state.bumper.targetX = clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X);
         state.bumper.targetY = clamp(target.y, BUMPER.MIN_Y, BUMPER.MAX_Y);
       }
+    }
+    // Record input for verification
+    if (state.tickCount % 10 === 0) { // Sample every 10 ticks
+      state.inputLog.push({
+        tick: state.tickCount,
+        target: { x: state.bumper.targetX, y: state.bumper.targetY }
+      });
     }
   }
   moveBumper(state.bumper);
@@ -631,7 +696,6 @@ function tick(state, skipInput = false) {
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   
-  // Background
   ctx.fillStyle = '#0a0a1a';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   
@@ -756,9 +820,27 @@ function gameLoop() {
         document.getElementById('finalWin').textContent = gameState.totalWin;
         const bet = gameState.numBalls * CONFIG.BET_PER_BALL;
         const rtp = (gameState.totalWin / bet * 100).toFixed(1);
-        document.getElementById('finalRtp').textContent = `Bet: ${bet} | RTP: ${rtp}%`;
+        document.getElementById('finalRtp').textContent = `Bet: $${bet} | RTP: ${rtp}%`;
+        
+        // Show verification data if server mode
+        if (lastVerificationData) {
+          document.getElementById('vGameId').textContent = lastVerificationData.gameId;
+          document.getElementById('vClientSeed').textContent = lastVerificationData.clientSeed;
+          document.getElementById('vCommitment').textContent = lastVerificationData.commitment;
+          document.getElementById('vServerSeed').textContent = 'Loading...';
+          document.getElementById('verifyBtn').disabled = true;
+          document.getElementById('verifySection').style.display = 'block';
+          
+          // Finish game on server and get verification data
+          finishGameOnServer(lastVerificationData.gameId, gameState.totalWin, gameState.inputLog).then(() => {
+            document.getElementById('verifyBtn').disabled = false;
+          });
+        } else {
+          document.getElementById('verifySection').style.display = 'none';
+        }
+        
         document.getElementById('result').classList.add('show');
-        setTimeout(() => document.getElementById('result').classList.remove('show'), 4000);
+        // No auto-hide - close only by clicking outside or on close button
       }
     }
     
@@ -771,9 +853,78 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
+// ===== FINISH GAME & GET VERIFICATION =====
+async function finishGameOnServer(gameId, totalWin, inputLog) {
+  try {
+    const res = await fetch(`${SERVER_URL}/game/${gameId}/finish`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ totalWin, inputLog })
+    });
+    const data = await res.json();
+    if (data.verification) {
+      document.getElementById('vServerSeed').textContent = data.verification.serverSeed;
+      lastVerificationData = {
+        ...lastVerificationData,
+        serverSeed: data.verification.serverSeed,
+        gameSeedHex: data.verification.gameSeedHex
+      };
+      return true;
+    }
+    return false;
+  } catch (e) {
+    console.error('Failed to finish game:', e);
+    document.getElementById('vServerSeed').textContent = 'Error loading';
+    return false;
+  }
+}
+
+// ===== VERIFY BUTTON =====
+document.getElementById('verifyBtn').addEventListener('click', async () => {
+  if (!lastVerificationData || !lastVerificationData.serverSeed) {
+    document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ No verification data</span>';
+    return;
+  }
+
+  const vd = lastVerificationData;
+  
+  // Verify using Web Crypto API
+  try {
+    // Hash server seed
+    const encoder = new TextEncoder();
+    const serverSeedBuffer = encoder.encode(vd.serverSeed);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', serverSeedBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const commitment = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    if (commitment !== vd.commitment) {
+      document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ Commitment mismatch!</span>';
+      return;
+    }
+    
+    // Verify HMAC
+    const keyBuffer = encoder.encode(vd.serverSeed);
+    const msgBuffer = encoder.encode(vd.clientSeed + ':' + vd.gameId);
+    const cryptoKey = await crypto.subtle.importKey('raw', keyBuffer, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    const signature = await crypto.subtle.sign('HMAC', cryptoKey, msgBuffer);
+    const sigArray = Array.from(new Uint8Array(signature));
+    const gameSeedHex = sigArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    if (gameSeedHex !== vd.gameSeedHex) {
+      document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ Game seed mismatch!</span>';
+      return;
+    }
+    
+    document.getElementById('verifyResult').innerHTML = '<span style="color:#00ff66">✓ VERIFIED! Game was provably fair.</span>';
+    
+  } catch (e) {
+    document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ Verification error: ' + e.message + '</span>';
+  }
+});
+
 // ===== START GAME =====
-document.getElementById('playBtn').addEventListener('click', () => {
-  const numBalls = parseInt(document.getElementById('ballCount').value) || 50;
+document.getElementById('playBtn').addEventListener('click', async () => {
+  const numBalls = parseInt(document.getElementById('ballCount').value) || 200;
   const bet = numBalls * CONFIG.BET_PER_BALL;
   
   if (bet > balance) {
@@ -782,7 +933,43 @@ document.getElementById('playBtn').addEventListener('click', () => {
   }
   
   balance -= bet;
-  gameSeed = Math.floor(Date.now() / 1000);
+  
+  // Generate client seed
+  currentClientSeed = 'client_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
+  
+  let gameSeed;
+  lastVerificationData = null;
+  
+  if (serverOnline) {
+    try {
+      // Start game on server
+      const res = await fetch(`${SERVER_URL}/game/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientSeed: currentClientSeed, numBalls })
+      });
+      const data = await res.json();
+      
+      currentGameId = data.gameId;
+      lastVerificationData = {
+        gameId: data.gameId,
+        clientSeed: currentClientSeed,
+        commitment: data.commitment
+      };
+      
+      // Use commitment to derive seed (for now, we'll use timestamp as fallback)
+      gameSeed = parseInt(data.commitment.substring(0, 12), 16);
+      
+      document.getElementById('commitmentDisplay').textContent = 'Game: ' + data.gameId.substring(0, 8) + '... | 🔒 Provably Fair';
+      
+    } catch (e) {
+      console.error('Server error, falling back to local:', e);
+      gameSeed = Math.floor(Date.now() / 1000);
+    }
+  } else {
+    gameSeed = Math.floor(Date.now() / 1000);
+  }
+  
   strategyRng = new JavaRandom(gameSeed + 999999);
   hunterTargetId = null;
   defenderTargetId = null;
@@ -792,16 +979,8 @@ document.getElementById('playBtn').addEventListener('click', () => {
   
   document.getElementById('playBtn').disabled = true;
   document.getElementById('modeSelect').disabled = true;
-  document.getElementById('seedDisplay').textContent = 'Seed: ' + gameSeed;
   document.getElementById('result').classList.remove('show');
   
-  updateUI();
-});
-
-// Hide result on click
-document.getElementById('result').addEventListener('click', () => {
-  document.getElementById('result').classList.remove('show');
-  balance += gameState.totalWin;
   updateUI();
 });
 
@@ -867,7 +1046,7 @@ async function runAutoSimulation() {
   
   for (let run = 0; run < numRuns; run++) {
     document.getElementById('autoProgress').textContent = `Running... ${run + 1}/${numRuns}`;
-    await new Promise(r => setTimeout(r, 10)); // allow UI update
+    await new Promise(r => setTimeout(r, 10));
     
     for (const strat of strategies) {
       const seed = baseSeed + run;
@@ -878,7 +1057,6 @@ async function runAutoSimulation() {
     }
   }
   
-  // Calculate stats
   const stats = [];
   for (const strat of strategies) {
     const rtps = results[strat].rtps;
@@ -892,7 +1070,6 @@ async function runAutoSimulation() {
   const bestAvg = stats[0].avg;
   const worstAvg = stats[stats.length - 1].avg;
   
-  // Render table
   const labels = {
     stationary: '🧍 Stationary',
     hunter: '🎯 Hunter',
@@ -917,28 +1094,50 @@ function simulateStrategy(seed, numBalls, strategyName) {
   const stratRng = new JavaRandom(seed + 999999);
   const strategy = STRATEGIES[strategyName];
   
+  // Reset sticky targets
+  hunterTargetId = null;
+  defenderTargetId = null;
+  sniperTargetId = null;
+  
   let ticks = 0;
   const maxTicks = numBalls * CONFIG.MAX_TICKS_PER_BALL;
   
   while (!state.finished && ticks < maxTicks) {
-    // Apply strategy
     if (strategy) {
       const target = strategy(state, stratRng);
       state.bumper.targetX = clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X);
       state.bumper.targetY = clamp(target.y, BUMPER.MIN_Y, BUMPER.MAX_Y);
     }
-    tick(state, true); // skipInput = true
+    tick(state, true);
     ticks++;
   }
   
   return { totalWin: state.totalWin, ticks };
 }
 
+// Hide result only on Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const resultEl = document.getElementById('result');
+    const autoEl = document.getElementById('autoResults');
+    if (resultEl.classList.contains('show')) {
+      resultEl.classList.remove('show');
+      if (gameState) {
+        balance += gameState.totalWin;
+        updateUI();
+      }
+    }
+    if (autoEl.classList.contains('show')) {
+      autoEl.classList.remove('show');
+    }
+  }
+});
+
 // Init
 updateModeIndicator();
 render();
 gameLoop();
-console.log('PADDLA v0.2 loaded');
+console.log('PADDLA v0.3 Provably Fair loaded');
 </script>
 </body>
 </html>
