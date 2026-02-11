@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>PADDLA v0.3 - Provably Fair</title>
+  <title>PADDLA v0.5 - Provably Fair</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { overflow: hidden; height: 100%; touch-action: manipulation; }
@@ -12,9 +12,9 @@
       min-height: 100vh;
       display: flex; justify-content: center; align-items: center;
       font-family: Arial, sans-serif; color: white;
-      flex-direction: column; gap: 15px;
+      flex-direction: column; gap: 8px;
     }
-    h1 { color: #00d4ff; text-shadow: 0 0 20px rgba(0,212,255,0.5); font-size: 2rem; }
+    h1 { color: #00d4ff; text-shadow: 0 0 20px rgba(0,212,255,0.5); font-size: 1.8rem; }
     .pf-badge { 
       background: rgba(0,255,100,0.2); border: 1px solid #00ff66; 
       padding: 3px 10px; border-radius: 10px; font-size: 11px; color: #00ff66;
@@ -26,15 +26,49 @@
       box-shadow: 0 0 30px rgba(0,212,255,0.3);
       cursor: none;
     }
+    
+    /* Timeout dots row */
+    .timeout-row {
+      display: flex; justify-content: center; gap: 15px; padding: 6px 0;
+    }
+    .timeout-dot {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #222; border: 2px solid #444;
+      transition: all 0.3s;
+    }
+    .timeout-dot.active {
+      background: radial-gradient(circle at 30% 30%, #ff6666, #ff0000);
+      border-color: #ff4444;
+      box-shadow: 0 0 12px #ff0000, 0 0 25px rgba(255,0,0,0.5);
+      animation: pulse 0.3s ease-out;
+    }
+    
     .stats {
-      display: flex; gap: 30px; font-size: 14px;
+      display: flex; gap: 20px; font-size: 14px;
       background: rgba(0,0,0,0.3); padding: 10px 20px; border-radius: 10px;
     }
     .stat { text-align: center; }
     .stat-value { font-size: 24px; font-weight: bold; color: #00d4ff; }
     .stat-label { font-size: 11px; color: rgba(255,255,255,0.7); }
+    
+    .progressive-lamps { display: flex; gap: 6px; align-items: center; }
+    .lamp {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: #333; border: 2px solid #555;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: bold; color: #666;
+      transition: all 0.3s;
+    }
+    .lamp.active {
+      background: radial-gradient(circle at 30% 30%, #ffff00, #ff8800);
+      border-color: #ffcc00; color: #000;
+      box-shadow: 0 0 15px #ffcc00, 0 0 30px rgba(255,200,0,0.5);
+      animation: pulse 0.5s ease-in-out;
+    }
+    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+    
     .controls {
-      display: flex; gap: 15px; align-items: center; flex-wrap: wrap; justify-content: center;
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center;
     }
     .controls input, .controls select {
       padding: 8px; border-radius: 8px;
@@ -45,49 +79,40 @@
     .controls select { min-width: 120px; cursor: pointer; }
     .controls select option { background: #1a1a2e; }
     .controls button {
-      padding: 12px 30px; font-size: 16px; font-weight: bold;
+      padding: 10px 25px; font-size: 14px; font-weight: bold;
       background: linear-gradient(180deg, #00d4ff 0%, #0099cc 100%);
       color: #000; border: none; border-radius: 25px; cursor: pointer;
-      text-transform: uppercase;
     }
     .controls button:disabled { background: #666; cursor: not-allowed; }
     .controls button:hover:not(:disabled) { transform: scale(1.05); }
-    .controls button.verify-btn {
-      background: linear-gradient(180deg, #00ff66 0%, #00cc55 100%);
-      padding: 8px 15px; font-size: 12px;
-    }
-    .info {
-      font-size: 12px; color: rgba(255,255,255,0.5);
-      text-align: center; max-width: 500px;
-    }
+    
+    .info { font-size: 11px; color: rgba(255,255,255,0.4); text-align: center; }
+    
     .result {
       display: none; position: fixed; top: 50%; left: 50%;
       transform: translate(-50%, -50%); background: rgba(0,0,0,0.95);
-      padding: 30px 50px; border-radius: 15px; text-align: center;
-      z-index: 50; border: 3px solid #00d4ff; max-width: 500px;
+      padding: 25px 40px; border-radius: 15px; text-align: center;
+      z-index: 50; border: 3px solid #00d4ff; max-width: 450px;
     }
     .result.show { display: block; }
-    .result h2 { color: #00d4ff; font-size: 24px; }
-    .result .amount { font-size: 48px; color: #4CAF50; margin: 10px 0; }
-    .result .rtp { font-size: 14px; color: rgba(255,255,255,0.6); }
+    .result h2 { color: #00d4ff; font-size: 22px; }
+    .result .amount { font-size: 42px; color: #4CAF50; margin: 8px 0; }
+    .result .rtp { font-size: 13px; color: rgba(255,255,255,0.6); }
     .result .verify-section { 
-      margin-top: 15px; padding-top: 15px; border-top: 1px solid #333;
-      font-size: 11px; text-align: left; color: rgba(255,255,255,0.6);
+      margin-top: 12px; padding-top: 12px; border-top: 1px solid #333;
+      font-size: 10px; text-align: left; color: rgba(255,255,255,0.6);
     }
     .result .verify-section code {
-      display: block; background: rgba(0,0,0,0.5); padding: 5px;
-      border-radius: 5px; margin: 5px 0; word-break: break-all;
-      font-family: monospace; font-size: 10px;
+      display: block; background: rgba(0,0,0,0.5); padding: 4px;
+      border-radius: 5px; margin: 4px 0; word-break: break-all;
+      font-family: monospace; font-size: 9px;
     }
     .result .verify-btn-result {
-      margin-top: 10px; padding: 8px 20px; background: #00ff66;
-      color: #000; border: none; border-radius: 5px; cursor: pointer;
-      font-weight: bold;
+      margin-top: 8px; padding: 8px 20px; background: #00ff66;
+      color: #000; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;
     }
-    .result .verify-btn-result:disabled {
-      background: #666; cursor: wait;
-    }
-    .seed-display { font-size: 10px; color: rgba(255,255,255,0.4); font-family: monospace; }
+    .result .verify-btn-result:disabled { background: #666; cursor: wait; }
+    
     .auto-results {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
       background: rgba(0,0,0,0.95); padding: 20px 30px; border-radius: 15px;
@@ -101,41 +126,62 @@
     .auto-results .best { color: #00ff66; font-weight: bold; }
     .auto-results .worst { color: #ff4444; }
     .auto-results .close-btn { margin-top: 15px; padding: 8px 20px; background: #00d4ff; color: #000; border: none; border-radius: 5px; cursor: pointer; width: 100%; }
+    
     .mode-indicator {
       position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
       padding: 5px 15px; border-radius: 15px; font-size: 12px; font-weight: bold;
       background: rgba(255,165,0,0.3); border: 1px solid #ffa500; color: #ffcc00;
     }
     .mode-indicator.human { background: rgba(0,255,100,0.3); border-color: #00ff66; color: #00ff66; }
+    
     .server-status {
       position: fixed; top: 10px; right: 10px; padding: 5px 10px;
       border-radius: 10px; font-size: 11px;
     }
     .server-status.online { background: rgba(0,255,100,0.2); border: 1px solid #00ff66; color: #00ff66; }
     .server-status.offline { background: rgba(255,0,0,0.2); border: 1px solid #ff4444; color: #ff4444; }
-    .commitment-display {
-      font-size: 9px; color: rgba(255,255,255,0.3); font-family: monospace;
-      max-width: 300px; word-break: break-all; text-align: center;
+    
+    .sound-btn {
+      position: fixed; top: 10px; left: 10px; width: 40px; height: 40px;
+      border-radius: 50%; border: 2px solid #00d4ff; background: rgba(0,0,0,0.5);
+      font-size: 20px; cursor: pointer;
     }
+    .sound-btn:hover { transform: scale(1.1); }
+    .sound-btn.on { background: rgba(0,212,255,0.3); }
   </style>
 </head>
 <body>
   <div class="server-status offline" id="serverStatus">⚫ Offline</div>
+  <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔇</button>
   
   <h1>🏓 PADDLA <span class="pf-badge">🔒 Provably Fair</span></h1>
+  
+  <div class="timeout-row" id="timeoutDots">
+    <div class="timeout-dot"></div>
+    <div class="timeout-dot"></div>
+    <div class="timeout-dot"></div>
+    <div class="timeout-dot"></div>
+    <div class="timeout-dot"></div>
+  </div>
   
   <div class="stats">
     <div class="stat">
       <div class="stat-value" id="ballsLeft">0</div>
-      <div class="stat-label">BALLS LEFT</div>
+      <div class="stat-label">BALLS</div>
     </div>
     <div class="stat">
       <div class="stat-value" id="winDisplay">$0</div>
       <div class="stat-label">WIN</div>
     </div>
     <div class="stat">
-      <div class="stat-value" id="progressive">×1</div>
-      <div class="stat-label">PROGRESSIVE</div>
+      <div class="progressive-lamps" id="progressiveLamps">
+        <div class="lamp">×1</div>
+        <div class="lamp">×2</div>
+        <div class="lamp">×3</div>
+        <div class="lamp">×4</div>
+        <div class="lamp">×5</div>
+      </div>
+      <div class="stat-label">MULTI</div>
     </div>
     <div class="stat">
       <div class="stat-value" id="balance">$1000</div>
@@ -149,9 +195,7 @@
   </div>
   
   <div class="controls">
-    <label style="color: #aaa;">Balls:</label>
-    <input type="number" id="ballCount" value="200" min="1" max="1000" step="50">
-    <label style="color: #aaa;">Mode:</label>
+    <input type="number" id="ballCount" value="100" min="1" max="1000" step="50">
     <select id="modeSelect">
       <option value="human">👆 Human</option>
       <option value="stationary">🧍 Stationary</option>
@@ -161,15 +205,11 @@
       <option value="random">🎲 Random</option>
       <option value="avoider">🏃 Avoider</option>
     </select>
-    <button id="playBtn">PLAY</button>
+    <button id="playBtn">▶ PLAY</button>
     <button id="autoBtn">AUTO ×10</button>
   </div>
   
-  <div class="info" id="infoText">
-    Move mouse/finger to control the bumper. Direct balls into the goals (top corners).
-  </div>
-  
-  <div class="commitment-display" id="commitmentDisplay">Connecting to server...</div>
+  <div class="info">Move bumper to direct balls into goals (top corners)</div>
   
   <div class="auto-results" id="autoResults">
     <h2>🤖 AUTO SIMULATION</h2>
@@ -194,69 +234,70 @@
   </div>
 
 <script>
-// ========================================
-// PADDLA v0.3 - Provably Fair Client
-// ========================================
-
 const SERVER_URL = 'http://localhost:3000';
 
-// ===== ENGINE (inline) =====
+// ===== AUDIO =====
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null, soundEnabled = false;
+
+function initAudio() { if (!audioCtx) audioCtx = new AudioCtx(); }
+function toggleSound() {
+  initAudio(); soundEnabled = !soundEnabled;
+  document.getElementById('soundBtn').textContent = soundEnabled ? '🔊' : '🔇';
+  document.getElementById('soundBtn').classList.toggle('on', soundEnabled);
+  if (soundEnabled) playTone(440, 0.1, 'sine', 0.2);
+}
+function playTone(freq, dur, type = 'sine', vol = 0.3) {
+  if (!audioCtx || !soundEnabled) return;
+  const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+  osc.type = type; osc.frequency.value = freq;
+  gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.start(); osc.stop(audioCtx.currentTime + dur);
+}
+function playGoal(prog) {
+  const f = 400 + prog * 100;
+  playTone(f, 0.1, 'square', 0.2);
+  setTimeout(() => playTone(f * 1.5, 0.15, 'square', 0.2), 50);
+  setTimeout(() => playTone(f * 2, 0.2, 'square', 0.25), 100);
+}
+function playExplosion() { for (let i = 0; i < 5; i++) setTimeout(() => playTone(100 + Math.random() * 200, 0.1, 'sawtooth', 0.15), i * 30); }
+function playBounce() { playTone(300 + Math.random() * 200, 0.05, 'triangle', 0.1); }
+function playRecharge() { playTone(600, 0.1, 'sine', 0.15); setTimeout(() => playTone(800, 0.1, 'sine', 0.15), 50); }
+function playDouble() { playTone(500, 0.1, 'square', 0.2); setTimeout(() => playTone(700, 0.15, 'square', 0.25), 80); }
+function playSpawn() { playTone(200, 0.08, 'sine', 0.1); }
+function playTimeout() { playTone(150, 0.2, 'sawtooth', 0.15); setTimeout(() => playTone(100, 0.3, 'sawtooth', 0.1), 100); }
+function playProgressiveReset() {
+  [400, 300, 200, 100].forEach((f, i) => setTimeout(() => playTone(f, i === 3 ? 0.3 : 0.1, 'square', 0.2), i * 80));
+}
+function playGameOver(win) {
+  if (win) [523, 659, 784, 1047].forEach((n, i) => setTimeout(() => playTone(n, 0.2, 'square', 0.2), i * 150));
+  else { playTone(200, 0.3, 'sawtooth', 0.15); setTimeout(() => playTone(180, 0.3, 'sawtooth', 0.15), 300); setTimeout(() => playTone(160, 0.4, 'sawtooth', 0.12), 600); }
+}
+
+// ===== ENGINE =====
 const FP_ROUND = 1e10;
 function fpRound(v) { return Math.round(v * FP_ROUND) / FP_ROUND; }
 
 class JavaRandom {
-  constructor(seed) {
-    this.seed = BigInt(seed) ^ 0x5DEECE66Dn;
-    this.seed = this.seed & 0xFFFFFFFFFFFFn;
-  }
-  next(bits) {
-    this.seed = (this.seed * 0x5DEECE66Dn + 0xBn) & 0xFFFFFFFFFFFFn;
-    return Number(this.seed >> BigInt(48 - bits));
-  }
-  nextDouble() {
-    return (this.next(26) * 0x8000000 + this.next(27)) / 0x20000000000000;
-  }
+  constructor(seed) { this.seed = (BigInt(seed) ^ 0x5DEECE66Dn) & 0xFFFFFFFFFFFFn; }
+  next(bits) { this.seed = (this.seed * 0x5DEECE66Dn + 0xBn) & 0xFFFFFFFFFFFFn; return Number(this.seed >> BigInt(48 - bits)); }
+  nextDouble() { return (this.next(26) * 0x8000000 + this.next(27)) / 0x20000000000000; }
 }
 
-function dist(ax, ay, bx, by) {
-  const dx = bx - ax, dy = by - ay;
-  return Math.sqrt(dx * dx + dy * dy);
-}
-
-function clamp(val, min, max) {
-  return Math.max(min, Math.min(max, val));
-}
+function dist(ax, ay, bx, by) { return Math.sqrt((bx-ax)**2 + (by-ay)**2); }
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
 
 const CONFIG = {
-  FIELD: 9,
-  BALL_R: 0.2,
-  SPEED: 0.05,
-  GOAL_R: 1.02,
-  CENTER_R: 0.225,
-  CENTER_X: 4.5,
-  CENTER_Y: 4.5,
-  COUNTDOWN: 45,
-  GOLDEN_CHANCE: 0.01,
-  EXPLOSIVE_CHANCE: 1/75,
-  SPAWN_COOLDOWN: 60,
-  SPAWN_INTERVAL: 60,
-  MAX_ON_FIELD: 10,
-  TIMEOUT_LIMIT: 5,
-  PROGRESSIVE_CAP: 5,
-  BET_PER_BALL: 5,
-  MAX_TICKS_PER_BALL: 600
+  FIELD: 9, BALL_R: 0.2, SPEED: 0.05, GOAL_R: 1.02,
+  CENTER_R: 0.225, CENTER_X: 4.5, CENTER_Y: 4.5, COUNTDOWN: 45,
+  GOLDEN_CHANCE: 0.01, EXPLOSIVE_CHANCE: 1/75,
+  SPAWN_COOLDOWN: 60, SPAWN_INTERVAL: 60, MAX_ON_FIELD: 10,
+  TIMEOUT_LIMIT: 5, PROGRESSIVE_CAP: 5, BET_PER_BALL: 5, MAX_TICKS_PER_BALL: 600
 };
-
-const BUMPER = {
-  RADIUS: 0.4,
-  MIN_Y: 0.4,
-  MAX_Y: 3.5,
-  MIN_X: 1.5,
-  MAX_X: 7.5,
-  MAX_SPEED: 0.15,
-  START_X: 4.5,
-  START_Y: 2.0
-};
+const BUMPER = { RADIUS: 0.4, MIN_Y: 0.4, MAX_Y: 3.5, MIN_X: 1.5, MAX_X: 7.5, MAX_SPEED: 0.15, START_X: 4.5, START_Y: 2.0 };
+const VALUE_COLORS = { 9:'#00ff00', 8:'#33ff00', 7:'#66ff00', 6:'#99ff00', 5:'#ccff00', 4:'#ffff00', 3:'#ffcc00', 2:'#ff9900', 1:'#ff6600', 0:'#ff0000' };
 
 function isInLeftGoal(b) { return dist(b.x, b.y, 0, 0) < CONFIG.GOAL_R; }
 function isInRightGoal(b) { return dist(b.x, b.y, CONFIG.FIELD, 0) < CONFIG.GOAL_R; }
@@ -265,52 +306,41 @@ function isInCenter(b) { return dist(b.x, b.y, CONFIG.CENTER_X, CONFIG.CENTER_Y)
 function isInUpperHalf(b) { return b.y < CONFIG.FIELD / 2; }
 
 function createBall(rng, id) {
-  const x = 0.5 + rng.nextDouble() * 8;
-  const y = CONFIG.FIELD - 0.3;
+  const x = 0.5 + rng.nextDouble() * 8, y = CONFIG.FIELD - 0.3;
   const angle = (220 + rng.nextDouble() * 100) * Math.PI / 180;
   const typeRoll = rng.nextDouble();
   let type = 'normal', multiplier = 1;
   if (typeRoll < CONFIG.GOLDEN_CHANCE) { type = 'golden'; multiplier = 3; }
-  else if (typeRoll < CONFIG.GOLDEN_CHANCE + CONFIG.EXPLOSIVE_CHANCE) { type = 'explosive'; multiplier = 1; }
+  else if (typeRoll < CONFIG.GOLDEN_CHANCE + CONFIG.EXPLOSIVE_CHANCE) { type = 'explosive'; }
   return { id, x, y, dx: Math.cos(angle) * CONFIG.SPEED, dy: Math.sin(angle) * CONFIG.SPEED, value: 9, ticksSinceCountdown: 0, alive: true, type, multiplier };
 }
 
 function randomizeBounce(ball, rng) {
   const angle = Math.atan2(ball.dy, ball.dx) + (rng.nextDouble() - 0.5) * 0.1 * Math.PI;
-  const speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+  const speed = Math.sqrt(ball.dx**2 + ball.dy**2);
   ball.dx = fpRound(Math.cos(angle) * speed);
   ball.dy = fpRound(Math.sin(angle) * speed);
 }
 
-function createBumper() {
-  return { x: BUMPER.START_X, y: BUMPER.START_Y, targetX: BUMPER.START_X, targetY: BUMPER.START_Y };
-}
+function createBumper() { return { x: BUMPER.START_X, y: BUMPER.START_Y, targetX: BUMPER.START_X, targetY: BUMPER.START_Y }; }
 
 function moveBumper(bumper) {
-  const dx = bumper.targetX - bumper.x;
-  const dy = bumper.targetY - bumper.y;
-  const d = Math.sqrt(dx * dx + dy * dy);
+  const dx = bumper.targetX - bumper.x, dy = bumper.targetY - bumper.y;
+  const d = Math.sqrt(dx*dx + dy*dy);
   if (d > BUMPER.MAX_SPEED) {
-    bumper.x = fpRound(bumper.x + (dx / d) * BUMPER.MAX_SPEED);
-    bumper.y = fpRound(bumper.y + (dy / d) * BUMPER.MAX_SPEED);
-  } else {
-    bumper.x = bumper.targetX;
-    bumper.y = bumper.targetY;
-  }
+    bumper.x = fpRound(bumper.x + (dx/d) * BUMPER.MAX_SPEED);
+    bumper.y = fpRound(bumper.y + (dy/d) * BUMPER.MAX_SPEED);
+  } else { bumper.x = bumper.targetX; bumper.y = bumper.targetY; }
 }
 
 function collideBallBumper(ball, bumper, rng) {
-  const dx = ball.x - bumper.x;
-  const dy = ball.y - bumper.y;
   const d = dist(ball.x, ball.y, bumper.x, bumper.y);
   const minDist = CONFIG.BALL_R + BUMPER.RADIUS;
   if (d < minDist && d > 0) {
-    const nx = dx / d, ny = dy / d;
-    const dot = ball.dx * nx + ball.dy * ny;
-    ball.dx = fpRound(ball.dx - 2 * dot * nx);
-    ball.dy = fpRound(ball.dy - 2 * dot * ny);
-    ball.x = fpRound(bumper.x + nx * minDist);
-    ball.y = fpRound(bumper.y + ny * minDist);
+    const nx = (ball.x - bumper.x)/d, ny = (ball.y - bumper.y)/d;
+    const dot = ball.dx*nx + ball.dy*ny;
+    ball.dx = fpRound(ball.dx - 2*dot*nx); ball.dy = fpRound(ball.dy - 2*dot*ny);
+    ball.x = fpRound(bumper.x + nx*minDist); ball.y = fpRound(bumper.y + ny*minDist);
     randomizeBounce(ball, rng);
     return true;
   }
@@ -318,72 +348,50 @@ function collideBallBumper(ball, bumper, rng) {
 }
 
 // ===== AI STRATEGIES =====
-let hunterTargetId = null;
-let defenderTargetId = null;
-let sniperTargetId = null;
+let hunterTargetId = null, defenderTargetId = null, sniperTargetId = null;
 
 const STRATEGIES = {
   human: null,
-  
-  stationary: (state) => {
-    return { x: BUMPER.START_X, y: BUMPER.START_Y };
-  },
-  
+  stationary: () => ({ x: BUMPER.START_X, y: BUMPER.START_Y }),
   hunter: (state) => {
-    let target = state.balls.find(b => b.id === hunterTargetId && b.alive && b.y < CONFIG.FIELD / 2);
+    let target = state.balls.find(b => b.id === hunterTargetId && b.alive && b.y < CONFIG.FIELD/2);
     if (!target) {
-      let bestScore = -Infinity;
-      for (const ball of state.balls) {
-        if (!ball.alive || ball.y > CONFIG.FIELD / 2) continue;
-        const headingUp = ball.dy < 0 ? 1 : 0;
-        const score = headingUp * 100 + ball.value * 10 - ball.y;
-        if (score > bestScore) { bestScore = score; target = ball; }
+      let best = -Infinity;
+      for (const b of state.balls) {
+        if (!b.alive || b.y > CONFIG.FIELD/2) continue;
+        const score = (b.dy < 0 ? 100 : 0) + b.value*10 - b.y;
+        if (score > best) { best = score; target = b; }
       }
-      hunterTargetId = target ? target.id : null;
+      hunterTargetId = target?.id || null;
     }
-    if (target) {
-      const targetY = clamp(target.y + 0.8, BUMPER.MIN_Y, BUMPER.MAX_Y);
-      return { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: targetY };
-    }
-    return { x: BUMPER.START_X, y: BUMPER.MAX_Y - 0.5 };
+    return target ? { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.8, BUMPER.MIN_Y, BUMPER.MAX_Y) }
+                  : { x: BUMPER.START_X, y: BUMPER.MAX_Y - 0.5 };
   },
-  
   defender: (state) => {
-    let target = state.balls.find(b => b.id === defenderTargetId && b.alive && b.y < CONFIG.FIELD / 2 && b.dy > 0);
+    let target = state.balls.find(b => b.id === defenderTargetId && b.alive && b.y < CONFIG.FIELD/2);
     if (!target) {
-      let bestScore = -Infinity;
-      for (const ball of state.balls) {
-        if (!ball.alive) continue;
-        const headingDown = ball.dy > 0;
-        const inUpperZone = ball.y < CONFIG.FIELD / 2;
-        const value = ball.value * ball.multiplier;
-        if (headingDown && inUpperZone) {
-          const score = value * 10 + (CONFIG.FIELD / 2 - ball.y);
-          if (score > bestScore) { bestScore = score; target = ball; }
-        }
+      let best = -Infinity;
+      for (const b of state.balls) {
+        if (!b.alive || b.y >= CONFIG.FIELD/2) continue;
+        const score = (b.dy > 0 ? 100 : 0) + b.value*b.multiplier*10 + (CONFIG.FIELD/2 - b.y);
+        if (score > best) { best = score; target = b; }
       }
-      defenderTargetId = target ? target.id : null;
+      defenderTargetId = target?.id || null;
     }
-    if (target) {
-      return { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.8, BUMPER.MIN_Y, BUMPER.MAX_Y) };
-    }
-    return { x: 4.5, y: 2.5 };
+    if (!target) target = state.balls.find(b => b.alive);
+    return target ? { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.5, BUMPER.MIN_Y, BUMPER.MAX_Y) }
+                  : { x: 4.5, y: 2.5 };
   },
-  
   sniper: (state) => {
-    let target = state.balls.find(b => b.id === sniperTargetId && b.alive && b.y < CONFIG.FIELD / 2);
+    let target = state.balls.find(b => b.id === sniperTargetId && b.alive && b.y < CONFIG.FIELD/2);
     if (!target) {
-      let bestScore = -Infinity;
-      for (const ball of state.balls) {
-        if (!ball.alive) continue;
-        const inZone = ball.y < CONFIG.FIELD / 2;
-        const value = ball.value * ball.multiplier;
-        if (inZone) {
-          const score = value * 10 - ball.y;
-          if (score > bestScore) { bestScore = score; target = ball; }
-        }
+      let best = -Infinity;
+      for (const b of state.balls) {
+        if (!b.alive || b.y >= CONFIG.FIELD/2) continue;
+        const score = b.value*b.multiplier*10 - b.y;
+        if (score > best) { best = score; target = b; }
       }
-      sniperTargetId = target ? target.id : null;
+      sniperTargetId = target?.id || null;
     }
     if (target) {
       const offsetX = target.x < 4.5 ? 0.5 : -0.5;
@@ -391,137 +399,65 @@ const STRATEGIES = {
     }
     return { x: 4.5, y: 2.0 };
   },
-  
   random: (state, rng) => {
-    if (state.tickCount % 30 === 0) {
-      return {
-        x: BUMPER.MIN_X + rng.nextDouble() * (BUMPER.MAX_X - BUMPER.MIN_X),
-        y: BUMPER.MIN_Y + rng.nextDouble() * (BUMPER.MAX_Y - BUMPER.MIN_Y)
-      };
-    }
+    if (state.tickCount % 30 === 0) return { x: BUMPER.MIN_X + rng.nextDouble()*(BUMPER.MAX_X-BUMPER.MIN_X), y: BUMPER.MIN_Y + rng.nextDouble()*(BUMPER.MAX_Y-BUMPER.MIN_Y) };
     return { x: state.bumper.targetX, y: state.bumper.targetY };
   },
-  
   avoider: (state) => {
-    let avgX = 0, avgY = 0, count = 0;
-    for (const ball of state.balls) {
-      if (!ball.alive || ball.y >= CONFIG.FIELD / 2) continue;
-      avgX += ball.x; avgY += ball.y; count++;
-    }
-    if (count > 0) {
-      avgX /= count; avgY /= count;
-      const awayX = state.bumper.x + (state.bumper.x - avgX) * 0.5;
-      const awayY = state.bumper.y + (state.bumper.y - avgY) * 0.5;
-      return { x: clamp(awayX, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(awayY, BUMPER.MIN_Y, BUMPER.MAX_Y) };
-    }
+    let avgX = 0, avgY = 0, cnt = 0;
+    for (const b of state.balls) { if (b.alive && b.y < CONFIG.FIELD/2) { avgX += b.x; avgY += b.y; cnt++; } }
+    if (cnt) return { x: clamp(state.bumper.x + (state.bumper.x - avgX/cnt)*0.5, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(state.bumper.y + (state.bumper.y - avgY/cnt)*0.5, BUMPER.MIN_Y, BUMPER.MAX_Y) };
     return { x: BUMPER.START_X, y: BUMPER.START_Y };
   }
 };
 
-const MODE_INFO = {
-  human: '👆 Move mouse/finger to control the bumper',
-  stationary: '🧍 Bumper stays in center (baseline)',
-  hunter: '🎯 Chases nearest ball',
-  defender: '🛡️ Blocks balls heading away from goals',
-  sniper: '🔫 Directs balls toward nearest goal (best strategy)',
-  random: '🎲 Random movement',
-  avoider: '🏃 Runs away from balls (worst strategy)'
-};
-
 // ===== GAME STATE =====
-let gameState = null;
-let gameRunning = false;
-let balance = 1000;
-let currentMode = 'human';
-let strategyRng = null;
-let serverOnline = false;
-let currentCommitment = null;
+let gameState = null, gameRunning = false, balance = 1000;
+let currentMode = 'human', strategyRng = null, serverOnline = false;
+let currentGameId = null, currentClientSeed = null, lastVerificationData = null;
+let currentChunk = 0, lastChunkBalls = 0, chunkInputLog = [];
+const CHUNK_SIZE = 50; // Send chunk every 50 balls
+const floatingTexts = [], explosionParticles = [];
+let goalFlashLeft = 0, goalFlashRight = 0;
 
-// Provably Fair data
-let currentGameId = null;
-let currentClientSeed = null;
-let lastVerificationData = null;
-
-// ===== CANVAS =====
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const SCALE = canvas.width / CONFIG.FIELD;
 
-// ===== MOUSE/TOUCH =====
-let mouseX = BUMPER.START_X;
-let mouseY = BUMPER.START_Y;
+let mouseX = BUMPER.START_X, mouseY = BUMPER.START_Y;
+canvas.addEventListener('mousemove', (e) => { const r = canvas.getBoundingClientRect(); mouseX = (e.clientX-r.left)/SCALE; mouseY = (e.clientY-r.top)/SCALE; });
+canvas.addEventListener('touchmove', (e) => { e.preventDefault(); const r = canvas.getBoundingClientRect(); mouseX = (e.touches[0].clientX-r.left)/SCALE; mouseY = (e.touches[0].clientY-r.top)/SCALE; }, { passive: false });
 
-canvas.addEventListener('mousemove', (e) => {
-  const rect = canvas.getBoundingClientRect();
-  mouseX = (e.clientX - rect.left) / SCALE;
-  mouseY = (e.clientY - rect.top) / SCALE;
-});
-
-canvas.addEventListener('touchmove', (e) => {
-  e.preventDefault();
-  const rect = canvas.getBoundingClientRect();
-  const touch = e.touches[0];
-  mouseX = (touch.clientX - rect.left) / SCALE;
-  mouseY = (touch.clientY - rect.top) / SCALE;
-}, { passive: false });
-
-// ===== MODE SELECT =====
-document.getElementById('modeSelect').addEventListener('change', (e) => {
-  currentMode = e.target.value;
-  document.getElementById('infoText').textContent = MODE_INFO[currentMode];
-  updateModeIndicator();
-});
+document.getElementById('modeSelect').addEventListener('change', (e) => { currentMode = e.target.value; updateModeIndicator(); });
 
 function updateModeIndicator() {
-  const indicator = document.getElementById('modeIndicator');
-  const labels = {
-    human: '👆 HUMAN', stationary: '🧍 STATIONARY', hunter: '🎯 HUNTER',
-    defender: '🛡️ DEFENDER', sniper: '🔫 SNIPER', random: '🎲 RANDOM', avoider: '🏃 AVOIDER'
-  };
-  indicator.textContent = labels[currentMode];
-  indicator.className = 'mode-indicator' + (currentMode === 'human' ? ' human' : '');
+  const ind = document.getElementById('modeIndicator');
+  const labels = { human:'👆 HUMAN', stationary:'🧍 STATIONARY', hunter:'🎯 HUNTER', defender:'🛡️ DEFENDER', sniper:'🔫 SNIPER', random:'🎲 RANDOM', avoider:'🏃 AVOIDER' };
+  ind.textContent = labels[currentMode];
+  ind.className = 'mode-indicator' + (currentMode === 'human' ? ' human' : '');
 }
 
-// ===== SERVER CONNECTION =====
+function updateProgressiveLamps(level) {
+  document.querySelectorAll('.lamp').forEach((l, i) => l.classList.toggle('active', i < level));
+}
+
+function updateTimeoutDots(count) {
+  document.querySelectorAll('.timeout-dot').forEach((d, i) => d.classList.toggle('active', i < count));
+}
+
 async function checkServer() {
   try {
     const res = await fetch(`${SERVER_URL}/commitment`);
-    const data = await res.json();
+    await res.json();
     serverOnline = true;
-    currentCommitment = data.commitment;
     document.getElementById('serverStatus').className = 'server-status online';
     document.getElementById('serverStatus').textContent = '🟢 Online';
-    document.getElementById('commitmentDisplay').textContent = 'Commitment: ' + data.commitment.substring(0, 20) + '...';
-  } catch (e) {
-    serverOnline = false;
-    document.getElementById('serverStatus').className = 'server-status offline';
-    document.getElementById('serverStatus').textContent = '⚫ Offline (local mode)';
-    document.getElementById('commitmentDisplay').textContent = 'Server offline - running in local mode';
-  }
+  } catch { serverOnline = false; document.getElementById('serverStatus').className = 'server-status offline'; document.getElementById('serverStatus').textContent = '⚫ Offline'; }
 }
+checkServer(); setInterval(checkServer, 30000);
 
-// Check server on load and periodically
-checkServer();
-setInterval(checkServer, 30000);
-
-// ===== GAME LOGIC =====
 function createInitialState(seed, numBalls) {
-  return {
-    rng: new JavaRandom(seed),
-    seed,
-    balls: [],
-    bumper: createBumper(),
-    tickCount: 0,
-    ballsSpawned: 0,
-    numBalls,
-    spawnCooldown: 0,
-    progressive: 1,
-    timeoutCount: 0,
-    totalWin: 0,
-    finished: false,
-    nextBallId: 1,
-    inputLog: []
-  };
+  return { rng: new JavaRandom(seed), seed, balls: [], bumper: createBumper(), tickCount: 0, ballsSpawned: 0, numBalls, spawnCooldown: 0, progressive: 1, timeoutCount: 0, totalWin: 0, finished: false, nextBallId: 1, inputLog: [] };
 }
 
 function tick(state, skipInput = false) {
@@ -535,74 +471,48 @@ function tick(state, skipInput = false) {
       state.bumper.targetX = clamp(mouseX, BUMPER.MIN_X, BUMPER.MAX_X);
       state.bumper.targetY = clamp(mouseY, BUMPER.MIN_Y, BUMPER.MAX_Y);
     } else {
-      const strategy = STRATEGIES[currentMode];
-      if (strategy) {
-        const target = strategy(state, strategyRng);
-        state.bumper.targetX = clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X);
-        state.bumper.targetY = clamp(target.y, BUMPER.MIN_Y, BUMPER.MAX_Y);
-      }
+      const strat = STRATEGIES[currentMode];
+      if (strat) { const t = strat(state, strategyRng); state.bumper.targetX = clamp(t.x, BUMPER.MIN_X, BUMPER.MAX_X); state.bumper.targetY = clamp(t.y, BUMPER.MIN_Y, BUMPER.MAX_Y); }
     }
-    // Record input for verification
-    if (state.tickCount % 10 === 0) { // Sample every 10 ticks
-      state.inputLog.push({
-        tick: state.tickCount,
-        target: { x: state.bumper.targetX, y: state.bumper.targetY }
-      });
-    }
+    // Record every tick for deterministic replay
+    const input = { tick: state.tickCount, target: { x: state.bumper.targetX, y: state.bumper.targetY } };
+    state.inputLog.push(input);
+    chunkInputLog.push(input);
   }
   moveBumper(state.bumper);
 
-  // Spawn
   if (state.tickCount % CONFIG.SPAWN_INTERVAL === 0 && state.balls.length < CONFIG.MAX_ON_FIELD && state.spawnCooldown <= 0 && state.ballsSpawned < state.numBalls) {
-    const newBall = createBall(state.rng, state.nextBallId++);
-    state.balls.push(newBall);
-    state.ballsSpawned++;
-    state.spawnCooldown = CONFIG.SPAWN_COOLDOWN;
-    events.push({ type: 'spawn', ball: newBall });
+    const ball = createBall(state.rng, state.nextBallId++);
+    state.balls.push(ball); state.ballsSpawned++; state.spawnCooldown = CONFIG.SPAWN_COOLDOWN;
+    events.push({ type: 'spawn', ball });
   }
 
-  // Update balls
   for (const b of state.balls) {
     if (!b.alive) continue;
     b.ticksSinceCountdown++;
-    b.x = fpRound(b.x + b.dx);
-    b.y = fpRound(b.y + b.dy);
+    b.x = fpRound(b.x + b.dx); b.y = fpRound(b.y + b.dy);
     const R = CONFIG.BALL_R, F = CONFIG.FIELD;
     if (b.x - R < 0) { b.x = R; b.dx = -b.dx; }
     if (b.x + R > F) { b.x = F - R; b.dx = -b.dx; }
     if (b.y - R < 0) { b.y = R; b.dy = -b.dy; }
     if (b.y + R > F) { b.y = F - R; b.dy = -b.dy; }
-    if (b.type !== 'golden' && b.type !== 'explosive' && b.ticksSinceCountdown >= CONFIG.COUNTDOWN && b.value > 0) {
-      b.value--;
-      b.ticksSinceCountdown = 0;
+    if (b.type === 'normal' && b.ticksSinceCountdown >= CONFIG.COUNTDOWN && b.value > 0) {
+      b.value--; b.ticksSinceCountdown = 0;
       if (b.value <= 0) { b.alive = false; b.diedFromTimeout = true; }
     }
-    if (b.alive && (b.x - R < 0.01 || b.x + R > F - 0.01 || b.y - R < 0.01 || b.y + R > F - 0.01)) {
-      randomizeBounce(b, state.rng);
-    }
+    if (b.alive && (b.x - R < 0.01 || b.x + R > F - 0.01 || b.y - R < 0.01 || b.y + R > F - 0.01)) randomizeBounce(b, state.rng);
   }
 
-  // Bumper collision
-  for (const b of state.balls) {
-    if (b.alive && collideBallBumper(b, state.bumper, state.rng)) {
-      events.push({ type: 'bumperHit', ball: b });
-    }
-  }
+  for (const b of state.balls) if (b.alive && collideBallBumper(b, state.bumper, state.rng)) events.push({ type: 'bumperHit', ball: b });
 
-  // Center recharge
   for (const b of state.balls) {
     if (b.alive && isInCenter(b)) {
-      const dx = b.x - CONFIG.CENTER_X, dy = b.y - CONFIG.CENTER_Y;
-      const d = Math.sqrt(dx * dx + dy * dy);
-      if (d > 0) { b.dx = (dx / d) * CONFIG.SPEED; b.dy = (dy / d) * CONFIG.SPEED; randomizeBounce(b, state.rng); }
-      if (b.type !== 'golden' && b.type !== 'explosive' && b.value < 9) {
-        b.value = 9; b.ticksSinceCountdown = 0;
-        events.push({ type: 'recharge', ball: b });
-      }
+      const dx = b.x - CONFIG.CENTER_X, dy = b.y - CONFIG.CENTER_Y, d = Math.sqrt(dx*dx + dy*dy);
+      if (d > 0) { b.dx = (dx/d)*CONFIG.SPEED; b.dy = (dy/d)*CONFIG.SPEED; randomizeBounce(b, state.rng); }
+      if (b.type === 'normal' && b.value < 9) { b.value = 9; b.ticksSinceCountdown = 0; events.push({ type: 'recharge', ball: b }); }
     }
   }
 
-  // Goals
   for (const ball of state.balls) {
     if (!ball.alive) continue;
     if (isGoal(ball)) {
@@ -610,25 +520,24 @@ function tick(state, skipInput = false) {
       state.totalWin += prize;
       if (ball.type === 'golden') state.timeoutCount = 0;
       if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++;
-      events.push({ type: 'goal', ball: ball, prize, side: isInLeftGoal(ball) ? 'left' : 'right' });
+      events.push({ type: 'goal', ball, prize, side: isInLeftGoal(ball) ? 'left' : 'right' });
       ball.alive = false;
       if (ball.type === 'explosive') {
         state.timeoutCount = 0;
-        for (const other of state.balls) {
-          if (other.alive && other.id !== ball.id && isInUpperHalf(other)) {
-            const ePrize = other.value * other.multiplier * state.progressive;
-            state.totalWin += ePrize;
+        events.push({ type: 'explosion', ball, x: ball.x, y: ball.y });
+        for (const o of state.balls) {
+          if (o.alive && o.id !== ball.id && isInUpperHalf(o)) {
+            const ep = o.value * o.multiplier * state.progressive;
+            state.totalWin += ep;
             if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++;
-            other.alive = false;
-            events.push({ type: 'exploded', ball: other, prize: ePrize });
+            events.push({ type: 'exploded', ball: o, prize: ep });
+            o.alive = false;
           }
         }
-        events.push({ type: 'explosion', ball: ball });
       }
     }
   }
 
-  // Ball-ball collisions
   for (let i = 0; i < state.balls.length; i++) {
     for (let j = i + 1; j < state.balls.length; j++) {
       const b1 = state.balls[i], b2 = state.balls[j];
@@ -636,14 +545,12 @@ function tick(state, skipInput = false) {
       if (dist(b1.x, b1.y, b2.x, b2.y) < CONFIG.BALL_R * 2) {
         const s1 = b1.type !== 'normal', s2 = b2.type !== 'normal';
         if (s1 && s2) {
-          const dx = b2.x - b1.x, dy = b2.y - b1.y, d = Math.sqrt(dx*dx + dy*dy);
-          if (d > 0) {
-            const nx = dx/d, ny = dy/d, ov = CONFIG.BALL_R*2 - d;
-            if (ov > 0) { b1.x -= nx*ov*0.5; b1.y -= ny*ov*0.5; b2.x += nx*ov*0.5; b2.y += ny*ov*0.5; }
-            b1.dx = -nx*CONFIG.SPEED; b1.dy = -ny*CONFIG.SPEED;
-            b2.dx = nx*CONFIG.SPEED; b2.dy = ny*CONFIG.SPEED;
-            randomizeBounce(b1, state.rng); randomizeBounce(b2, state.rng);
-          }
+          const dx = b2.x - b1.x, dy = b2.y - b1.y, d = Math.sqrt(dx*dx + dy*dy) || 1;
+          const nx = dx/d, ny = dy/d, ov = CONFIG.BALL_R*2 - d;
+          if (ov > 0) { b1.x -= nx*ov*0.5; b1.y -= ny*ov*0.5; b2.x += nx*ov*0.5; b2.y += ny*ov*0.5; }
+          b1.dx = -nx*CONFIG.SPEED; b1.dy = -ny*CONFIG.SPEED;
+          b2.dx = nx*CONFIG.SPEED; b2.dy = ny*CONFIG.SPEED;
+          randomizeBounce(b1, state.rng); randomizeBounce(b2, state.rng);
           continue;
         }
         if (s1) { b2.alive = false; state.totalWin += 1; events.push({ type: 'collision', winner: b1, loser: b2, prize: 1 }); continue; }
@@ -651,39 +558,48 @@ function tick(state, skipInput = false) {
         if (b1.value === b2.value) {
           const prize = b1.value * 2;
           state.totalWin += prize;
-          if (state.rng.nextDouble() < 0.5) { b2.alive = false; events.push({ type: 'collision', winner: b1, loser: b2, prize }); }
-          else { b1.alive = false; events.push({ type: 'collision', winner: b2, loser: b1, prize }); }
+          events.push({ type: 'double', b1, b2, prize });
+          if (state.rng.nextDouble() < 0.5) b2.alive = false; else b1.alive = false;
         } else {
           state.totalWin += 1;
-          const loser = b1.value < b2.value ? b1 : b2;
-          const winner = b1.value < b2.value ? b2 : b1;
+          const loser = b1.value < b2.value ? b1 : b2, winner = b1.value < b2.value ? b2 : b1;
           loser.alive = false;
-          const dx = winner.x - loser.x, dy = winner.y - loser.y, d = Math.sqrt(dx*dx + dy*dy);
-          if (d > 0) { winner.dx = (dx/d)*CONFIG.SPEED; winner.dy = (dy/d)*CONFIG.SPEED; randomizeBounce(winner, state.rng); }
+          const dx = winner.x - loser.x, dy = winner.y - loser.y, d = Math.sqrt(dx*dx + dy*dy) || 1;
+          winner.dx = (dx/d)*CONFIG.SPEED; winner.dy = (dy/d)*CONFIG.SPEED;
+          randomizeBounce(winner, state.rng);
           events.push({ type: 'collision', winner, loser, prize: 1 });
         }
       }
     }
   }
 
-  // Timeouts
   for (const b of state.balls) {
     if (!b.alive && b.diedFromTimeout) {
       state.timeoutCount++;
       events.push({ type: 'timeout', ball: b });
       if (state.timeoutCount >= CONFIG.TIMEOUT_LIMIT) {
-        state.progressive = 1;
-        state.timeoutCount = 0;
+        state.progressive = 1; state.timeoutCount = 0;
         events.push({ type: 'progressiveReset' });
       }
       b.diedFromTimeout = false;
     }
   }
 
-  // Cleanup
   state.balls = state.balls.filter(b => b.alive);
 
-  // Check finish
+  if (state.balls.length > 0 && !state.balls.some(b => b.type === 'normal')) {
+    for (const b of state.balls) {
+      if (b.alive) {
+        const prize = b.value * b.multiplier * state.progressive;
+        state.totalWin += prize;
+        if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++;
+        events.push({ type: 'autoCollect', ball: b, prize });
+        b.alive = false;
+      }
+    }
+    state.balls = [];
+  }
+
   if (state.ballsSpawned >= state.numBalls && state.balls.length === 0) {
     state.finished = true;
     events.push({ type: 'gameEnd', totalWin: state.totalWin });
@@ -695,449 +611,279 @@ function tick(state, skipInput = false) {
 // ===== RENDERING =====
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#0a0a1a'; ctx.fillRect(0, 0, canvas.width, canvas.height);
   
-  ctx.fillStyle = '#0a0a1a';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const la = 0.3 + goalFlashLeft * 0.5, ra = 0.3 + goalFlashRight * 0.5;
+  ctx.fillStyle = `rgba(0,255,100,${la})`; ctx.beginPath(); ctx.arc(0, 0, CONFIG.GOAL_R * SCALE, 0, Math.PI/2); ctx.lineTo(0, 0); ctx.fill();
+  ctx.fillStyle = `rgba(0,255,100,${ra})`; ctx.beginPath(); ctx.arc(canvas.width, 0, CONFIG.GOAL_R * SCALE, Math.PI/2, Math.PI); ctx.lineTo(canvas.width, 0); ctx.fill();
+  ctx.strokeStyle = '#00ff66'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(0, 0, CONFIG.GOAL_R * SCALE, 0, Math.PI/2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(canvas.width, 0, CONFIG.GOAL_R * SCALE, Math.PI/2, Math.PI); ctx.stroke();
   
-  // Goals
-  ctx.fillStyle = 'rgba(0, 255, 100, 0.3)';
-  ctx.beginPath();
-  ctx.arc(0, 0, CONFIG.GOAL_R * SCALE, 0, Math.PI / 2);
-  ctx.lineTo(0, 0);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(canvas.width, 0, CONFIG.GOAL_R * SCALE, Math.PI / 2, Math.PI);
-  ctx.lineTo(canvas.width, 0);
-  ctx.fill();
+  ctx.fillStyle = 'rgba(0,200,255,0.2)'; ctx.beginPath(); ctx.arc(CONFIG.CENTER_X * SCALE, CONFIG.CENTER_Y * SCALE, CONFIG.CENTER_R * SCALE, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#00d4ff'; ctx.stroke();
   
-  ctx.strokeStyle = '#00ff66';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(0, 0, CONFIG.GOAL_R * SCALE, 0, Math.PI / 2);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(canvas.width, 0, CONFIG.GOAL_R * SCALE, Math.PI / 2, Math.PI);
-  ctx.stroke();
-  
-  // Center
-  ctx.fillStyle = 'rgba(0, 200, 255, 0.2)';
-  ctx.beginPath();
-  ctx.arc(CONFIG.CENTER_X * SCALE, CONFIG.CENTER_Y * SCALE, CONFIG.CENTER_R * SCALE, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = '#00d4ff';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  
-  // Bumper zone
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+  ctx.fillStyle = 'rgba(255,255,255,0.03)';
   ctx.fillRect(BUMPER.MIN_X * SCALE, BUMPER.MIN_Y * SCALE, (BUMPER.MAX_X - BUMPER.MIN_X) * SCALE, (BUMPER.MAX_Y - BUMPER.MIN_Y) * SCALE);
   
+  for (const p of explosionParticles) {
+    ctx.fillStyle = `rgba(255,${150+Math.random()*100|0},0,${p.life})`;
+    ctx.beginPath(); ctx.arc(p.x * SCALE, p.y * SCALE, p.size * SCALE, 0, Math.PI*2); ctx.fill();
+  }
+  
   if (gameState) {
-    // Bumper
-    ctx.fillStyle = '#00d4ff';
-    ctx.shadowColor = '#00d4ff';
-    ctx.shadowBlur = 15;
-    ctx.beginPath();
-    ctx.arc(gameState.bumper.x * SCALE, gameState.bumper.y * SCALE, BUMPER.RADIUS * SCALE, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#00d4ff'; ctx.shadowColor = '#00d4ff'; ctx.shadowBlur = 15;
+    ctx.beginPath(); ctx.arc(gameState.bumper.x * SCALE, gameState.bumper.y * SCALE, BUMPER.RADIUS * SCALE, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0; ctx.fillStyle = '#004466';
+    ctx.beginPath(); ctx.arc(gameState.bumper.x * SCALE, gameState.bumper.y * SCALE, BUMPER.RADIUS * SCALE * 0.6, 0, Math.PI*2); ctx.fill();
     
-    ctx.fillStyle = '#004466';
-    ctx.beginPath();
-    ctx.arc(gameState.bumper.x * SCALE, gameState.bumper.y * SCALE, BUMPER.RADIUS * SCALE * 0.6, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Balls
-    for (const ball of gameState.balls) {
-      if (!ball.alive) continue;
-      
-      let color = '#ffffff', glow = '#ffffff';
-      if (ball.type === 'golden') { color = '#ffa500'; glow = '#ff8c00'; }
-      else if (ball.type === 'explosive') { color = '#ff4444'; glow = '#ff0000'; }
-      
-      ctx.shadowColor = glow;
-      ctx.shadowBlur = 10;
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.arc(ball.x * SCALE, ball.y * SCALE, CONFIG.BALL_R * SCALE, 0, Math.PI * 2);
-      ctx.fill();
+    for (const b of gameState.balls) {
+      if (!b.alive) continue;
+      let color, glow;
+      if (b.type === 'golden') { color = '#ffa500'; glow = '#ff8c00'; }
+      else if (b.type === 'explosive') { color = '#ff4444'; glow = '#ff0000'; }
+      else { color = VALUE_COLORS[b.value] || '#fff'; glow = color; }
+      ctx.shadowColor = glow; ctx.shadowBlur = 12; ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(b.x * SCALE, b.y * SCALE, CONFIG.BALL_R * SCALE, 0, Math.PI*2); ctx.fill();
       ctx.shadowBlur = 0;
-      
-      ctx.fillStyle = ball.type === 'explosive' ? '#fff' : '#000';
-      ctx.font = 'bold ' + (ball.type === 'normal' ? '10' : '9') + 'px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      if (ball.type === 'normal') ctx.fillText(ball.value, ball.x * SCALE, ball.y * SCALE);
-      else if (ball.type === 'golden') ctx.fillText('G' + ball.value, ball.x * SCALE, ball.y * SCALE);
-      else ctx.fillText('💥', ball.x * SCALE, ball.y * SCALE);
+      ctx.fillStyle = b.type === 'explosive' ? '#fff' : '#000';
+      ctx.font = 'bold 10px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      if (b.type === 'normal') ctx.fillText(b.value, b.x * SCALE, b.y * SCALE);
+      else if (b.type === 'golden') ctx.fillText('G', b.x * SCALE, b.y * SCALE);
+      else ctx.fillText('💥', b.x * SCALE, b.y * SCALE);
     }
   }
   
-  // Cursor (human mode only)
   if (gameRunning && currentMode === 'human') {
-    ctx.strokeStyle = 'rgba(0, 212, 255, 0.5)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([5, 5]);
-    ctx.beginPath();
-    ctx.arc(clamp(mouseX, BUMPER.MIN_X, BUMPER.MAX_X) * SCALE, clamp(mouseY, BUMPER.MIN_Y, BUMPER.MAX_Y) * SCALE, BUMPER.RADIUS * SCALE, 0, Math.PI * 2);
-    ctx.stroke();
+    ctx.strokeStyle = 'rgba(0,212,255,0.4)'; ctx.lineWidth = 1; ctx.setLineDash([5, 5]);
+    ctx.beginPath(); ctx.arc(clamp(mouseX, BUMPER.MIN_X, BUMPER.MAX_X) * SCALE, clamp(mouseY, BUMPER.MIN_Y, BUMPER.MAX_Y) * SCALE, BUMPER.RADIUS * SCALE, 0, Math.PI*2); ctx.stroke();
     ctx.setLineDash([]);
+  }
+  
+  for (const ft of floatingTexts) {
+    ctx.save(); ctx.globalAlpha = ft.opacity; ctx.fillStyle = ft.color;
+    ctx.font = `bold ${ft.size||16}px Arial`; ctx.textAlign = 'center';
+    ctx.shadowColor = ft.color; ctx.shadowBlur = 10;
+    ctx.fillText(ft.text, ft.x, ft.y); ctx.restore();
   }
 }
 
-// ===== UPDATE UI =====
+function showFloatingText(x, y, text, color, size = 16) { floatingTexts.push({ x: x * SCALE, y: y * SCALE, text, color, opacity: 1, dy: -2, size }); }
+function createExplosion(x, y) { for (let i = 0; i < 20; i++) { const a = Math.random() * Math.PI * 2, s = 0.05 + Math.random() * 0.1; explosionParticles.push({ x, y, dx: Math.cos(a)*s, dy: Math.sin(a)*s, life: 1, size: 0.1 + Math.random()*0.15 }); } }
+
+function updateEffects() {
+  for (let i = floatingTexts.length - 1; i >= 0; i--) { floatingTexts[i].y += floatingTexts[i].dy; floatingTexts[i].opacity -= 0.025; if (floatingTexts[i].opacity <= 0) floatingTexts.splice(i, 1); }
+  for (let i = explosionParticles.length - 1; i >= 0; i--) { explosionParticles[i].x += explosionParticles[i].dx; explosionParticles[i].y += explosionParticles[i].dy; explosionParticles[i].life -= 0.03; if (explosionParticles[i].life <= 0) explosionParticles.splice(i, 1); }
+  goalFlashLeft *= 0.9; goalFlashRight *= 0.9;
+}
+
 function updateUI() {
   if (gameState) {
     document.getElementById('ballsLeft').textContent = gameState.numBalls - gameState.ballsSpawned + gameState.balls.length;
     document.getElementById('winDisplay').textContent = '$' + gameState.totalWin;
-    document.getElementById('progressive').textContent = '×' + gameState.progressive;
+    updateProgressiveLamps(gameState.progressive);
+    updateTimeoutDots(gameState.timeoutCount);
   }
   document.getElementById('balance').textContent = '$' + balance;
 }
 
-// ===== GAME LOOP =====
 function gameLoop() {
   if (gameRunning && gameState && !gameState.finished) {
     const events = tick(gameState);
-    
     for (const e of events) {
-      if (e.type === 'goal') {
-        showFloatingText(e.ball.x, e.ball.y, '+' + e.prize, '#00ff66');
+      if (e.type === 'goal') { showFloatingText(e.ball.x, e.ball.y, '+' + e.prize, '#00ff66', 20); if (e.side === 'left') goalFlashLeft = 1; else goalFlashRight = 1; playGoal(gameState.progressive); }
+      if (e.type === 'explosion') { createExplosion(e.x, e.y); playExplosion(); }
+      if (e.type === 'exploded') { showFloatingText(e.ball.x, e.ball.y, '+' + e.prize, '#ff6600', 18); }
+      if (e.type === 'double') { showFloatingText((e.b1.x + e.b2.x)/2, (e.b1.y + e.b2.y)/2, 'DOUBLE +' + e.prize, '#ffd700', 22); playDouble(); }
+      if (e.type === 'timeout') { showFloatingText(e.ball.x, e.ball.y, '✗', '#ff4444'); playTimeout(); }
+      if (e.type === 'progressiveReset') { showFloatingText(4.5, 2, 'RESET ×1', '#ff4444', 24); playProgressiveReset(); updateTimeoutDots(5); setTimeout(() => updateTimeoutDots(0), 500); }
+      if (e.type === 'spawn') { 
+        playSpawn();
+        // Check if time to send chunk
+        const ballsPlayed = gameState.ballsSpawned;
+        if (ballsPlayed - lastChunkBalls >= CHUNK_SIZE && serverOnline && currentGameId) {
+          sendChunk(currentGameId, currentChunk, chunkInputLog, ballsPlayed);
+          currentChunk++;
+          lastChunkBalls = ballsPlayed;
+          chunkInputLog = [];
+        }
       }
-      if (e.type === 'exploded') {
-        showFloatingText(e.ball.x, e.ball.y, '+' + e.prize, '#ff6600');
-      }
-      if (e.type === 'timeout') {
-        showFloatingText(e.ball.x, e.ball.y, '✗', '#ff4444');
-      }
-      if (e.type === 'collision') {
-        showFloatingText(e.loser.x, e.loser.y, '+' + e.prize, '#ffff00');
-      }
+      if (e.type === 'autoCollect') { showFloatingText(e.ball.x, e.ball.y, '💫 +' + e.prize, '#ffaa00', 20); createExplosion(e.ball.x, e.ball.y); playGoal(gameState.progressive); }
+      if (e.type === 'collision' && e.prize > 1) { showFloatingText(e.loser.x, e.loser.y, '+' + e.prize, '#ffff00'); }
+      if (e.type === 'recharge') { playRecharge(); }
+      if (e.type === 'bumperHit') { playBounce(); }
       if (e.type === 'gameEnd') {
         gameRunning = false;
         document.getElementById('playBtn').disabled = false;
         document.getElementById('modeSelect').disabled = false;
         document.getElementById('finalWin').textContent = gameState.totalWin;
-        const bet = gameState.numBalls * CONFIG.BET_PER_BALL;
-        const rtp = (gameState.totalWin / bet * 100).toFixed(1);
-        document.getElementById('finalRtp').textContent = `Bet: $${bet} | RTP: ${rtp}%`;
-        
-        // Show verification data if server mode
-        if (lastVerificationData) {
+        const bet = gameState.numBalls * CONFIG.BET_PER_BALL, rtp = gameState.totalWin / bet;
+        document.getElementById('finalRtp').textContent = `Bet: ${bet} | RTP: ${(rtp * 100).toFixed(1)}%`;
+        playGameOver(rtp >= 1);
+        if (lastVerificationData && serverOnline) {
           document.getElementById('vGameId').textContent = lastVerificationData.gameId;
           document.getElementById('vClientSeed').textContent = lastVerificationData.clientSeed;
           document.getElementById('vCommitment').textContent = lastVerificationData.commitment;
-          document.getElementById('vServerSeed').textContent = 'Loading...';
+          document.getElementById('vServerSeed').textContent = 'Verifying...';
           document.getElementById('verifyBtn').disabled = true;
           document.getElementById('verifySection').style.display = 'block';
-          
-          // Finish game on server and get verification data
-          finishGameOnServer(lastVerificationData.gameId, gameState.totalWin, gameState.inputLog).then(() => {
-            document.getElementById('verifyBtn').disabled = false;
-          });
-        } else {
-          document.getElementById('verifySection').style.display = 'none';
-        }
-        
+          // Send final chunk then finish
+          (async () => {
+            try {
+              if (chunkInputLog.length > 0) {
+                await sendChunk(currentGameId, currentChunk, chunkInputLog, gameState.ballsSpawned);
+              }
+              const result = await finishGameOnServer(lastVerificationData.gameId, gameState.totalWin);
+              if (result.verified) {
+                document.getElementById('vServerSeed').textContent = result.serverSeed;
+                lastVerificationData.serverSeed = result.serverSeed;
+                lastVerificationData.gameSeedHex = result.gameSeedHex;
+                document.getElementById('verifyBtn').disabled = false;
+              } else {
+                document.getElementById('vServerSeed').textContent = 'VERIFICATION FAILED!';
+                document.getElementById('vServerSeed').style.color = '#ff4444';
+              }
+            } catch (err) {
+              console.error('Verification error:', err);
+              document.getElementById('vServerSeed').textContent = 'Error: ' + err.message;
+            }
+          })();
+        } else document.getElementById('verifySection').style.display = 'none';
         document.getElementById('result').classList.add('show');
-        // No auto-hide - close only by clicking outside or on close button
       }
     }
-    
     updateUI();
   }
-  
-  updateFloatingTexts();
-  render();
-  renderFloatingTexts();
-  requestAnimationFrame(gameLoop);
+  updateEffects(); render(); requestAnimationFrame(gameLoop);
 }
 
-// ===== FINISH GAME & GET VERIFICATION =====
-async function finishGameOnServer(gameId, totalWin, inputLog) {
+// Send chunk asynchronously
+async function sendChunk(gameId, chunkNum, inputLog, ballsPlayed) {
   try {
-    const res = await fetch(`${SERVER_URL}/game/${gameId}/finish`, {
+    await fetch(`${SERVER_URL}/game/${gameId}/chunk`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ totalWin, inputLog })
+      body: JSON.stringify({ chunkNum, inputLog, ballsPlayed })
     });
-    const data = await res.json();
-    if (data.verification) {
-      document.getElementById('vServerSeed').textContent = data.verification.serverSeed;
-      lastVerificationData = {
-        ...lastVerificationData,
-        serverSeed: data.verification.serverSeed,
-        gameSeedHex: data.verification.gameSeedHex
-      };
-      return true;
-    }
-    return false;
-  } catch (e) {
-    console.error('Failed to finish game:', e);
-    document.getElementById('vServerSeed').textContent = 'Error loading';
-    return false;
+  } catch (err) {
+    console.error('Chunk send failed:', err);
   }
 }
 
-// ===== VERIFY BUTTON =====
-document.getElementById('verifyBtn').addEventListener('click', async () => {
-  if (!lastVerificationData || !lastVerificationData.serverSeed) {
-    document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ No verification data</span>';
-    return;
-  }
-
-  const vd = lastVerificationData;
-  
-  // Verify using Web Crypto API
+async function finishGameOnServer(gameId, clientTotalWin) {
   try {
-    // Hash server seed
-    const encoder = new TextEncoder();
-    const serverSeedBuffer = encoder.encode(vd.serverSeed);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', serverSeedBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const commitment = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    
-    if (commitment !== vd.commitment) {
-      document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ Commitment mismatch!</span>';
-      return;
+    const res = await fetch(`${SERVER_URL}/game/${gameId}/finish`, { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify({ clientTotalWin }) 
+    });
+    const data = await res.json();
+    if (data.verified) {
+      return { verified: true, serverSeed: data.verification.serverSeed, gameSeedHex: data.verification.gameSeedHex };
+    } else {
+      return { verified: false };
     }
-    
-    // Verify HMAC
-    const keyBuffer = encoder.encode(vd.serverSeed);
-    const msgBuffer = encoder.encode(vd.clientSeed + ':' + vd.gameId);
-    const cryptoKey = await crypto.subtle.importKey('raw', keyBuffer, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-    const signature = await crypto.subtle.sign('HMAC', cryptoKey, msgBuffer);
-    const sigArray = Array.from(new Uint8Array(signature));
-    const gameSeedHex = sigArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    
-    if (gameSeedHex !== vd.gameSeedHex) {
-      document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ Game seed mismatch!</span>';
-      return;
-    }
-    
-    document.getElementById('verifyResult').innerHTML = '<span style="color:#00ff66">✓ VERIFIED! Game was provably fair.</span>';
-    
-  } catch (e) {
-    document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ Verification error: ' + e.message + '</span>';
+  } catch (err) {
+    console.error('Finish failed:', err);
+    return { verified: false };
   }
+}
+
+document.getElementById('verifyBtn').addEventListener('click', async () => {
+  if (!lastVerificationData?.serverSeed) { document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ No data</span>'; return; }
+  const vd = lastVerificationData;
+  try {
+    const enc = new TextEncoder();
+    const hash = await crypto.subtle.digest('SHA-256', enc.encode(vd.serverSeed));
+    const commitment = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    if (commitment !== vd.commitment) { document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ Commitment mismatch!</span>'; return; }
+    const key = await crypto.subtle.importKey('raw', enc.encode(vd.serverSeed), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    const sig = await crypto.subtle.sign('HMAC', key, enc.encode(vd.clientSeed + ':' + vd.gameId));
+    const gameSeedHex = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+    if (gameSeedHex !== vd.gameSeedHex) { document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ Seed mismatch!</span>'; return; }
+    document.getElementById('verifyResult').innerHTML = '<span style="color:#00ff66">✓ VERIFIED!</span>';
+  } catch { document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ Error</span>'; }
 });
 
-// ===== START GAME =====
 document.getElementById('playBtn').addEventListener('click', async () => {
-  const numBalls = parseInt(document.getElementById('ballCount').value) || 200;
+  initAudio();
+  const numBalls = parseInt(document.getElementById('ballCount').value) || 100;
   const bet = numBalls * CONFIG.BET_PER_BALL;
-  
-  if (bet > balance) {
-    alert('Insufficient balance!');
-    return;
-  }
-  
+  if (bet > balance) { alert('Insufficient balance!'); return; }
   balance -= bet;
-  
-  // Generate client seed
   currentClientSeed = 'client_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
-  
-  let gameSeed;
   lastVerificationData = null;
-  
+  let gameSeed;
   if (serverOnline) {
     try {
-      // Start game on server
-      const res = await fetch(`${SERVER_URL}/game/start`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientSeed: currentClientSeed, numBalls })
-      });
+      const res = await fetch(`${SERVER_URL}/game/start`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientSeed: currentClientSeed, numBalls }) });
       const data = await res.json();
-      
       currentGameId = data.gameId;
-      lastVerificationData = {
-        gameId: data.gameId,
-        clientSeed: currentClientSeed,
-        commitment: data.commitment
-      };
-      
-      // Use commitment to derive seed (for now, we'll use timestamp as fallback)
-      gameSeed = parseInt(data.commitment.substring(0, 12), 16);
-      
-      document.getElementById('commitmentDisplay').textContent = 'Game: ' + data.gameId.substring(0, 8) + '... | 🔒 Provably Fair';
-      
-    } catch (e) {
-      console.error('Server error, falling back to local:', e);
-      gameSeed = Math.floor(Date.now() / 1000);
-    }
-  } else {
-    gameSeed = Math.floor(Date.now() / 1000);
-  }
-  
+      lastVerificationData = { gameId: data.gameId, clientSeed: currentClientSeed, commitment: data.commitment };
+      gameSeed = parseInt(data.gameSeedHex, 16);
+    } catch { gameSeed = Math.floor(Date.now() / 1000); }
+  } else gameSeed = Math.floor(Date.now() / 1000);
   strategyRng = new JavaRandom(gameSeed + 999999);
-  hunterTargetId = null;
-  defenderTargetId = null;
-  sniperTargetId = null;
+  hunterTargetId = defenderTargetId = sniperTargetId = null;
   gameState = createInitialState(gameSeed, numBalls);
   gameRunning = true;
-  
+  currentChunk = 0;
+  lastChunkBalls = 0;
+  chunkInputLog = [];
+  updateTimeoutDots(0);
   document.getElementById('playBtn').disabled = true;
   document.getElementById('modeSelect').disabled = true;
   document.getElementById('result').classList.remove('show');
-  
   updateUI();
 });
 
-// ===== FLOATING TEXT =====
-const floatingTexts = [];
-
-function showFloatingText(x, y, text, color) {
-  floatingTexts.push({
-    x: x * SCALE,
-    y: y * SCALE,
-    text,
-    color,
-    opacity: 1,
-    dy: -2
-  });
-}
-
-function updateFloatingTexts() {
-  for (let i = floatingTexts.length - 1; i >= 0; i--) {
-    const ft = floatingTexts[i];
-    ft.y += ft.dy;
-    ft.opacity -= 0.02;
-    if (ft.opacity <= 0) {
-      floatingTexts.splice(i, 1);
-    }
-  }
-}
-
-function renderFloatingTexts() {
-  for (const ft of floatingTexts) {
-    ctx.save();
-    ctx.globalAlpha = ft.opacity;
-    ctx.fillStyle = ft.color;
-    ctx.font = 'bold 16px Arial';
-    ctx.textAlign = 'center';
-    ctx.shadowColor = ft.color;
-    ctx.shadowBlur = 10;
-    ctx.fillText(ft.text, ft.x, ft.y);
-    ctx.restore();
-  }
-}
-
-// ===== AUTO SIMULATION =====
-document.getElementById('autoBtn').addEventListener('click', runAutoSimulation);
-document.getElementById('autoClose').addEventListener('click', () => {
-  document.getElementById('autoResults').classList.remove('show');
-});
-
-async function runAutoSimulation() {
-  const numBalls = parseInt(document.getElementById('ballCount').value) || 200;
-  const numRuns = 10;
+document.getElementById('autoBtn').addEventListener('click', async () => {
+  const numBalls = parseInt(document.getElementById('ballCount').value) || 100;
   const strategies = ['stationary', 'hunter', 'defender', 'sniper', 'random', 'avoider'];
-  const results = {};
-  
+  const results = {}; strategies.forEach(s => results[s] = { rtps: [] });
   document.getElementById('autoResults').classList.add('show');
   document.getElementById('autoTable').innerHTML = '';
-  
-  for (const strat of strategies) {
-    results[strat] = { wins: [], rtps: [] };
-  }
-  
-  let baseSeed = Math.floor(Date.now() / 1000);
-  
-  for (let run = 0; run < numRuns; run++) {
-    document.getElementById('autoProgress').textContent = `Running... ${run + 1}/${numRuns}`;
+  const baseSeed = Math.floor(Date.now() / 1000);
+  for (let run = 0; run < 10; run++) {
+    document.getElementById('autoProgress').textContent = `Running... ${run + 1}/10`;
     await new Promise(r => setTimeout(r, 10));
-    
     for (const strat of strategies) {
-      const seed = baseSeed + run;
-      const result = simulateStrategy(seed, numBalls, strat);
-      results[strat].wins.push(result.totalWin);
-      const bet = numBalls * CONFIG.BET_PER_BALL;
-      results[strat].rtps.push(result.totalWin / bet * 100);
+      const result = simulateStrategy(baseSeed + run, numBalls, strat);
+      results[strat].rtps.push(result.totalWin / (numBalls * CONFIG.BET_PER_BALL) * 100);
     }
   }
-  
-  const stats = [];
-  for (const strat of strategies) {
-    const rtps = results[strat].rtps;
-    const avg = rtps.reduce((a, b) => a + b, 0) / rtps.length;
-    const min = Math.min(...rtps);
-    const max = Math.max(...rtps);
-    stats.push({ strat, avg, min, max });
-  }
-  
-  stats.sort((a, b) => b.avg - a.avg);
-  const bestAvg = stats[0].avg;
-  const worstAvg = stats[stats.length - 1].avg;
-  
-  const labels = {
-    stationary: '🧍 Stationary',
-    hunter: '🎯 Hunter',
-    defender: '🛡️ Defender',
-    sniper: '🔫 Sniper',
-    random: '🎲 Random',
-    avoider: '🏃 Avoider'
-  };
-  
-  let html = '<tr><th>Strategy</th><th>Avg RTP</th><th>Min</th><th>Max</th></tr>';
-  for (const s of stats) {
-    const cls = s.avg === bestAvg ? 'best' : (s.avg === worstAvg ? 'worst' : '');
-    html += `<tr class="${cls}"><td>${labels[s.strat]}</td><td>${s.avg.toFixed(1)}%</td><td>${s.min.toFixed(0)}%</td><td>${s.max.toFixed(0)}%</td></tr>`;
-  }
-  
-  document.getElementById('autoProgress').textContent = `${numRuns} runs × ${numBalls} balls each`;
+  const stats = strategies.map(s => { const rtps = results[s].rtps; return { strat: s, avg: rtps.reduce((a,b)=>a+b,0)/rtps.length, min: Math.min(...rtps), max: Math.max(...rtps) }; }).sort((a,b) => b.avg - a.avg);
+  const labels = { stationary: '🧍', hunter: '🎯', defender: '🛡️', sniper: '🔫', random: '🎲', avoider: '🏃' };
+  let html = '<tr><th></th><th>Avg</th><th>Min</th><th>Max</th></tr>';
+  stats.forEach((s, i) => { html += `<tr class="${i === 0 ? 'best' : i === stats.length - 1 ? 'worst' : ''}"><td>${labels[s.strat]} ${s.strat}</td><td>${s.avg.toFixed(1)}%</td><td>${s.min.toFixed(0)}%</td><td>${s.max.toFixed(0)}%</td></tr>`; });
+  document.getElementById('autoProgress').textContent = `10 runs × ${numBalls} balls`;
   document.getElementById('autoTable').innerHTML = html;
-}
+});
+
+document.getElementById('autoClose').addEventListener('click', () => document.getElementById('autoResults').classList.remove('show'));
 
 function simulateStrategy(seed, numBalls, strategyName) {
   const state = createInitialState(seed, numBalls);
   const stratRng = new JavaRandom(seed + 999999);
   const strategy = STRATEGIES[strategyName];
-  
-  // Reset sticky targets
-  hunterTargetId = null;
-  defenderTargetId = null;
-  sniperTargetId = null;
-  
+  hunterTargetId = defenderTargetId = sniperTargetId = null;
   let ticks = 0;
-  const maxTicks = numBalls * CONFIG.MAX_TICKS_PER_BALL;
-  
-  while (!state.finished && ticks < maxTicks) {
-    if (strategy) {
-      const target = strategy(state, stratRng);
-      state.bumper.targetX = clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X);
-      state.bumper.targetY = clamp(target.y, BUMPER.MIN_Y, BUMPER.MAX_Y);
-    }
-    tick(state, true);
-    ticks++;
+  while (!state.finished && ticks < numBalls * CONFIG.MAX_TICKS_PER_BALL) {
+    if (strategy) { const t = strategy(state, stratRng); state.bumper.targetX = clamp(t.x, BUMPER.MIN_X, BUMPER.MAX_X); state.bumper.targetY = clamp(t.y, BUMPER.MIN_Y, BUMPER.MAX_Y); }
+    tick(state, true); ticks++;
   }
-  
-  return { totalWin: state.totalWin, ticks };
+  return { totalWin: state.totalWin };
 }
 
-// Hide result only on Escape key
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
-    const resultEl = document.getElementById('result');
-    const autoEl = document.getElementById('autoResults');
-    if (resultEl.classList.contains('show')) {
-      resultEl.classList.remove('show');
-      if (gameState) {
-        balance += gameState.totalWin;
-        updateUI();
-      }
-    }
-    if (autoEl.classList.contains('show')) {
-      autoEl.classList.remove('show');
-    }
+    document.getElementById('result').classList.remove('show');
+    document.getElementById('autoResults').classList.remove('show');
+    if (gameState && !gameRunning) { balance += gameState.totalWin; updateUI(); }
   }
 });
 
-// Init
-updateModeIndicator();
-render();
-gameLoop();
-console.log('PADDLA v0.3 Provably Fair loaded');
+updateModeIndicator(); updateProgressiveLamps(1); render(); gameLoop();
 </script>
 </body>
 </html>
