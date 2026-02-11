@@ -347,6 +347,17 @@ function signOut() {
   auth.signOut();
 }
 
+async function resetBalance() {
+  if (!currentUser || !userData) return;
+  if (!confirm('Reset balance to $1000?')) return;
+  
+  balance = 1000;
+  const userRef = db.collection('paddla_users').doc(currentUser.uid);
+  await userRef.update({ balance: 1000 });
+  updateAuthUI();
+  updateUI();
+}
+
 auth.onAuthStateChanged(async (user) => {
   currentUser = user;
   if (user) {
@@ -418,6 +429,7 @@ function updateAuthUI() {
         <span class="user-name">${userData.nickname}</span>
         <span style="color:#00d4ff;">${balance}</span>
       </div>
+      <button class="auth-btn" onclick="resetBalance()" style="border-color:#ff6600;color:#ff6600;">Reset $</button>
       <button class="auth-btn" onclick="signOut()">Logout</button>
     `;
   } else {
