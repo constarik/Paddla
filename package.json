@@ -1,9 +1,10 @@
 {
   "name": "paddla",
-  "version": "0.2.0",
+  "version": "0.5.0",
   "description": "Provably Fair интерактивная аркадная игра",
   "main": "server/index.js",
   "scripts": {
+    "start": "node server/index.js",
     "sim": "node simulation/run.js",
     "strategies": "node simulation/strategies.js",
     "server": "node server/index.js",
