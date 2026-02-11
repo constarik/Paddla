@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PADDLA v0.2</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { overflow: hidden; height: 100%; touch-action: manipulation; }
+    body {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      display: flex; justify-content: center; align-items: center;
+      font-family: Arial, sans-serif; color: white;
+      flex-direction: column; gap: 15px;
+    }
+    h1 { color: #00d4ff; text-shadow: 0 0 20px rgba(0,212,255,0.5); font-size: 2rem; }
+    .game-container { position: relative; }
+    canvas {
+      border: 3px solid #00d4ff; border-radius: 10px;
+      box-shadow: 0 0 30px rgba(0,212,255,0.3);
+      cursor: none;
+    }
+    .stats {
+      display: flex; gap: 30px; font-size: 14px;
+      background: rgba(0,0,0,0.3); padding: 10px 20px; border-radius: 10px;
+    }
+    .stat { text-align: center; }
+    .stat-value { font-size: 24px; font-weight: bold; color: #00d4ff; }
+    .stat-label { font-size: 11px; color: rgba(255,255,255,0.7); }
+    .controls {
+      display: flex; gap: 15px; align-items: center; flex-wrap: wrap; justify-content: center;
+    }
+    .controls input, .controls select {
+      padding: 8px; border-radius: 8px;
+      border: 2px solid #00d4ff; background: rgba(0,0,0,0.5);
+      color: #00d4ff; font-size: 14px; font-weight: bold; text-align: center;
+    }
+    .controls input { width: 70px; }
+    .controls select { min-width: 120px; cursor: pointer; }
+    .controls select option { background: #1a1a2e; }
+    .controls button {
+      padding: 12px 30px; font-size: 16px; font-weight: bold;
+      background: linear-gradient(180deg, #00d4ff 0%, #0099cc 100%);
+      color: #000; border: none; border-radius: 25px; cursor: pointer;
+      text-transform: uppercase;
+    }
+    .controls button:disabled { background: #666; cursor: not-allowed; }
+    .controls button:hover:not(:disabled) { transform: scale(1.05); }
+    .info {
+      font-size: 12px; color: rgba(255,255,255,0.5);
+      text-align: center; max-width: 500px;
+    }
+    .result {
+      display: none; position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%); background: rgba(0,0,0,0.95);
+      padding: 30px 50px; border-radius: 15px; text-align: center;
+      z-index: 50; border: 3px solid #00d4ff;
+    }
+    .result.show { display: block; }
+    .result h2 { color: #00d4ff; font-size: 24px; }
+    .result .amount { font-size: 48px; color: #4CAF50; margin: 10px 0; }
+    .result .rtp { font-size: 14px; color: rgba(255,255,255,0.6); }
+    .seed-display { font-size: 10px; color: rgba(255,255,255,0.4); font-family: monospace; }
+    .auto-results {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.95); padding: 20px 30px; border-radius: 15px;
+      border: 3px solid #00d4ff; z-index: 100; display: none; min-width: 300px;
+    }
+    .auto-results.show { display: block; }
+    .auto-results h2 { color: #00d4ff; margin-bottom: 15px; text-align: center; }
+    .auto-results table { width: 100%; border-collapse: collapse; }
+    .auto-results th, .auto-results td { padding: 8px; text-align: center; border-bottom: 1px solid #333; }
+    .auto-results th { color: #00d4ff; }
+    .auto-results .best { color: #00ff66; font-weight: bold; }
+    .auto-results .worst { color: #ff4444; }
+    .auto-results .close-btn { margin-top: 15px; padding: 8px 20px; background: #00d4ff; color: #000; border: none; border-radius: 5px; cursor: pointer; width: 100%; }
+    .mode-indicator {
+      position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+      padding: 5px 15px; border-radius: 15px; font-size: 12px; font-weight: bold;
+      background: rgba(255,165,0,0.3); border: 1px solid #ffa500; color: #ffcc00;
+    }
+    .mode-indicator.human { background: rgba(0,255,100,0.3); border-color: #00ff66; color: #00ff66; }
+  </style>
+</head>
+<body>
+  <h1>🏓 PADDLA</h1>
+  
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-value" id="ballsLeft">0</div>
+      <div class="stat-label">BALLS LEFT</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="winDisplay">$0</div>
+      <div class="stat-label">WIN</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="progressive">×1</div>
+      <div class="stat-label">PROGRESSIVE</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="balance">$1000</div>
+      <div class="stat-label">BALANCE</div>
+    </div>
+  </div>
+  
+  <div class="game-container">
+    <canvas id="canvas" width="540" height="540"></canvas>
+    <div class="mode-indicator human" id="modeIndicator">👆 HUMAN</div>
+  </div>
+  
+  <div class="controls">
+    <label style="color: #aaa;">Balls:</label>
+    <input type="number" id="ballCount" value="200" min="1" max="1000" step="50">
+    <label style="color: #aaa;">Mode:</label>
+    <select id="modeSelect">
+      <option value="human">👆 Human</option>
+      <option value="stationary">🧍 Stationary</option>
+      <option value="hunter">🎯 Hunter</option>
+      <option value="defender">🛡️ Defender</option>
+      <option value="sniper">🔫 Sniper</option>
+      <option value="random">🎲 Random</option>
+      <option value="avoider">🏃 Avoider</option>
+    </select>
+    <button id="playBtn">PLAY</button>
+    <button id="autoBtn">AUTO ×10</button>
+  </div>
+  
+  <div class="info" id="infoText">
+    Move mouse/finger to control the bumper. Direct balls into the goals (top corners).
+  </div>
+  
+  <div class="seed-display" id="seedDisplay"></div>
+  
+  <div class="auto-results" id="autoResults">
+    <h2>🤖 AUTO SIMULATION</h2>
+    <div id="autoProgress"></div>
+    <table id="autoTable"></table>
+    <button class="close-btn" id="autoClose">CLOSE</button>
+  </div>
+
+  <div class="result" id="result">
+    <h2>GAME OVER</h2>
+    <div class="amount">$<span id="finalWin">0</span></div>
+    <div class="rtp" id="finalRtp"></div>
+  </div>
+
+<script>
+// ========================================
+// PADDLA v0.2 - With AI Strategies
+// ========================================
+
+// ===== ENGINE (inline) =====
+const FP_ROUND = 1e10;
+function fpRound(v) { return Math.round(v * FP_ROUND) / FP_ROUND; }
+
+class JavaRandom {
+  constructor(seed) {
+    this.seed = BigInt(seed) ^ 0x5DEECE66Dn;
+    this.seed = this.seed & 0xFFFFFFFFFFFFn;
+  }
+  next(bits) {
+    this.seed = (this.seed * 0x5DEECE66Dn + 0xBn) & 0xFFFFFFFFFFFFn;
+    return Number(this.seed >> BigInt(48 - bits));
+  }
+  nextDouble() {
+    return (this.next(26) * 0x8000000 + this.next(27)) / 0x20000000000000;
+  }
+}
+
+function dist(ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function clamp(val, min, max) {
+  return Math.max(min, Math.min(max, val));
+}
+
+const CONFIG = {
+  FIELD: 9,
+  BALL_R: 0.2,
+  SPEED: 0.05,
+  GOAL_R: 1.02,
+  CENTER_R: 0.225,
+  CENTER_X: 4.5,
+  CENTER_Y: 4.5,
+  COUNTDOWN: 45,
+  GOLDEN_CHANCE: 0.01,
+  EXPLOSIVE_CHANCE: 1/75,
+  SPAWN_COOLDOWN: 60,
+  SPAWN_INTERVAL: 60,
+  MAX_ON_FIELD: 10,
+  TIMEOUT_LIMIT: 5,
+  PROGRESSIVE_CAP: 5,
+  BET_PER_BALL: 5,
+  MAX_TICKS_PER_BALL: 600
+};
+
+const BUMPER = {
+  RADIUS: 0.4,
+  MIN_Y: 0.4,
+  MAX_Y: 3.5,
+  MIN_X: 1.5,
+  MAX_X: 7.5,
+  MAX_SPEED: 0.15,
+  START_X: 4.5,
+  START_Y: 2.0
+};
+
+function isInLeftGoal(b) { return dist(b.x, b.y, 0, 0) < CONFIG.GOAL_R; }
+function isInRightGoal(b) { return dist(b.x, b.y, CONFIG.FIELD, 0) < CONFIG.GOAL_R; }
+function isGoal(b) { return isInLeftGoal(b) || isInRightGoal(b); }
+function isInCenter(b) { return dist(b.x, b.y, CONFIG.CENTER_X, CONFIG.CENTER_Y) < CONFIG.CENTER_R + CONFIG.BALL_R; }
+function isInUpperHalf(b) { return b.y < CONFIG.FIELD / 2; }
+
+function createBall(rng, id) {
+  const x = 0.5 + rng.nextDouble() * 8;
+  const y = CONFIG.FIELD - 0.3;
+  const angle = (220 + rng.nextDouble() * 100) * Math.PI / 180;
+  const typeRoll = rng.nextDouble();
+  let type = 'normal', multiplier = 1;
+  if (typeRoll < CONFIG.GOLDEN_CHANCE) { type = 'golden'; multiplier = 3; }
+  else if (typeRoll < CONFIG.GOLDEN_CHANCE + CONFIG.EXPLOSIVE_CHANCE) { type = 'explosive'; multiplier = 1; }
+  return { id, x, y, dx: Math.cos(angle) * CONFIG.SPEED, dy: Math.sin(angle) * CONFIG.SPEED, value: 9, ticksSinceCountdown: 0, alive: true, type, multiplier };
+}
+
+function randomizeBounce(ball, rng) {
+  const angle = Math.atan2(ball.dy, ball.dx) + (rng.nextDouble() - 0.5) * 0.1 * Math.PI;
+  const speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+  ball.dx = fpRound(Math.cos(angle) * speed);
+  ball.dy = fpRound(Math.sin(angle) * speed);
+}
+
+function createBumper() {
+  return { x: BUMPER.START_X, y: BUMPER.START_Y, targetX: BUMPER.START_X, targetY: BUMPER.START_Y };
+}
+
+function moveBumper(bumper) {
+  const dx = bumper.targetX - bumper.x;
+  const dy = bumper.targetY - bumper.y;
+  const d = Math.sqrt(dx * dx + dy * dy);
+  if (d > BUMPER.MAX_SPEED) {
+    bumper.x = fpRound(bumper.x + (dx / d) * BUMPER.MAX_SPEED);
+    bumper.y = fpRound(bumper.y + (dy / d) * BUMPER.MAX_SPEED);
+  } else {
+    bumper.x = bumper.targetX;
+    bumper.y = bumper.targetY;
+  }
+}
+
+function collideBallBumper(ball, bumper, rng) {
+  const dx = ball.x - bumper.x;
+  const dy = ball.y - bumper.y;
+  const d = dist(ball.x, ball.y, bumper.x, bumper.y);
+  const minDist = CONFIG.BALL_R + BUMPER.RADIUS;
+  if (d < minDist && d > 0) {
+    const nx = dx / d, ny = dy / d;
+    const dot = ball.dx * nx + ball.dy * ny;
+    ball.dx = fpRound(ball.dx - 2 * dot * nx);
+    ball.dy = fpRound(ball.dy - 2 * dot * ny);
+    ball.x = fpRound(bumper.x + nx * minDist);
+    ball.y = fpRound(bumper.y + ny * minDist);
+    randomizeBounce(ball, rng);
+    return true;
+  }
+  return false;
+}
+
+// ===== AI STRATEGIES =====
+let hunterTargetId = null; // sticky target for Hunter
+let defenderTargetId = null; // sticky target for Defender
+let sniperTargetId = null; // sticky target for Sniper
+
+const STRATEGIES = {
+  human: null, // controlled by mouse
+  
+  stationary: (state) => {
+    return { x: BUMPER.START_X, y: BUMPER.START_Y };
+  },
+  
+  hunter: (state) => {
+    // Check if current target still valid (in upper half, alive)
+    let target = state.balls.find(b => b.id === hunterTargetId && b.alive && b.y < CONFIG.FIELD / 2);
+    
+    // Find new target - prioritize balls heading up (toward goals)
+    if (!target) {
+      let bestScore = -Infinity;
+      for (const ball of state.balls) {
+        if (!ball.alive) continue;
+        if (ball.y > CONFIG.FIELD / 2) continue; // only upper half
+        // Score: prefer balls heading up (dy < 0) and high value
+        const headingUp = ball.dy < 0 ? 1 : 0;
+        const score = headingUp * 100 + ball.value * 10 - ball.y;
+        if (score > bestScore) {
+          bestScore = score;
+          target = ball;
+        }
+      }
+      hunterTargetId = target ? target.id : null;
+    }
+    
+    if (target) {
+      // Position BELOW the ball to deflect it UP toward goals
+      const targetY = clamp(target.y + 0.8, BUMPER.MIN_Y, BUMPER.MAX_Y);
+      return { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: targetY };
+    }
+    // Default: patrol at bottom of zone
+    return { x: BUMPER.START_X, y: BUMPER.MAX_Y - 0.5 };
+  },
+  
+  defender: (state) => {
+    // Check if current target is still valid (alive, in zone, heading down)
+    let target = state.balls.find(b => b.id === defenderTargetId && b.alive && b.y < CONFIG.FIELD / 2 && b.dy > 0);
+    
+    // Find new target if needed
+    if (!target) {
+      let bestScore = -Infinity;
+      for (const ball of state.balls) {
+        if (!ball.alive) continue;
+        const headingDown = ball.dy > 0;
+        const inUpperZone = ball.y < CONFIG.FIELD / 2;
+        const value = ball.value * ball.multiplier;
+        if (headingDown && inUpperZone) {
+          const score = value * 10 + (CONFIG.FIELD / 2 - ball.y);
+          if (score > bestScore) { bestScore = score; target = ball; }
+        }
+      }
+      defenderTargetId = target ? target.id : null;
+    }
+    
+    if (target) {
+      return { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.8, BUMPER.MIN_Y, BUMPER.MAX_Y) };
+    }
+    return { x: 4.5, y: 2.5 };
+  },
+  
+  sniper: (state) => {
+    // Check if current target is still valid
+    let target = state.balls.find(b => b.id === sniperTargetId && b.alive && b.y < CONFIG.FIELD / 2);
+    
+    // Find new target if needed
+    if (!target) {
+      let bestScore = -Infinity;
+      for (const ball of state.balls) {
+        if (!ball.alive) continue;
+        const inZone = ball.y < CONFIG.FIELD / 2;
+        const value = ball.value * ball.multiplier;
+        if (inZone) {
+          const score = value * 10 - ball.y;
+          if (score > bestScore) { bestScore = score; target = ball; }
+        }
+      }
+      sniperTargetId = target ? target.id : null;
+    }
+    
+    if (target) {
+      const offsetX = target.x < 4.5 ? 0.5 : -0.5;
+      return { x: clamp(target.x + offsetX, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.3, BUMPER.MIN_Y, BUMPER.MAX_Y) };
+    }
+    return { x: 4.5, y: 2.0 };
+  },
+  
+  random: (state, rng) => {
+    if (state.tickCount % 30 === 0) {
+      return {
+        x: BUMPER.MIN_X + rng.nextDouble() * (BUMPER.MAX_X - BUMPER.MIN_X),
+        y: BUMPER.MIN_Y + rng.nextDouble() * (BUMPER.MAX_Y - BUMPER.MIN_Y)
+      };
+    }
+    return { x: state.bumper.targetX, y: state.bumper.targetY };
+  },
+  
+  avoider: (state) => {
+    let avgX = 0, avgY = 0, count = 0;
+    for (const ball of state.balls) {
+      if (!ball.alive || ball.y >= CONFIG.FIELD / 2) continue;
+      avgX += ball.x; avgY += ball.y; count++;
+    }
+    if (count > 0) {
+      avgX /= count; avgY /= count;
+      const awayX = state.bumper.x + (state.bumper.x - avgX) * 0.5;
+      const awayY = state.bumper.y + (state.bumper.y - avgY) * 0.5;
+      return { x: clamp(awayX, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(awayY, BUMPER.MIN_Y, BUMPER.MAX_Y) };
+    }
+    return { x: BUMPER.START_X, y: BUMPER.START_Y };
+  }
+};
+
+const MODE_INFO = {
+  human: '👆 Move mouse/finger to control the bumper',
+  stationary: '🧍 Bumper stays in center (baseline)',
+  hunter: '🎯 Chases nearest ball',
+  defender: '🛡️ Blocks balls heading away from goals',
+  sniper: '🔫 Directs balls toward nearest goal (best strategy)',
+  random: '🎲 Random movement',
+  avoider: '🏃 Runs away from balls (worst strategy)'
+};
+
+// ===== GAME STATE =====
+let gameState = null;
+let gameRunning = false;
+let balance = 1000;
+let gameSeed = 0;
+let currentMode = 'human';
+let strategyRng = null;
+
+// ===== CANVAS =====
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const SCALE = canvas.width / CONFIG.FIELD;
+
+// ===== MOUSE/TOUCH =====
+let mouseX = BUMPER.START_X;
+let mouseY = BUMPER.START_Y;
+
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  mouseX = (e.clientX - rect.left) / SCALE;
+  mouseY = (e.clientY - rect.top) / SCALE;
+});
+
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const touch = e.touches[0];
+  mouseX = (touch.clientX - rect.left) / SCALE;
+  mouseY = (touch.clientY - rect.top) / SCALE;
+}, { passive: false });
+
+// ===== MODE SELECT =====
+document.getElementById('modeSelect').addEventListener('change', (e) => {
+  currentMode = e.target.value;
+  document.getElementById('infoText').textContent = MODE_INFO[currentMode];
+  updateModeIndicator();
+});
+
+function updateModeIndicator() {
+  const indicator = document.getElementById('modeIndicator');
+  const labels = {
+    human: '👆 HUMAN', stationary: '🧍 STATIONARY', hunter: '🎯 HUNTER',
+    defender: '🛡️ DEFENDER', sniper: '🔫 SNIPER', random: '🎲 RANDOM', avoider: '🏃 AVOIDER'
+  };
+  indicator.textContent = labels[currentMode];
+  indicator.className = 'mode-indicator' + (currentMode === 'human' ? ' human' : '');
+}
+
+// ===== GAME LOGIC =====
+function createInitialState(seed, numBalls) {
+  return {
+    rng: new JavaRandom(seed),
+    seed,
+    balls: [],
+    bumper: createBumper(),
+    tickCount: 0,
+    ballsSpawned: 0,
+    numBalls,
+    spawnCooldown: 0,
+    progressive: 1,
+    timeoutCount: 0,
+    totalWin: 0,
+    finished: false,
+    nextBallId: 1
+  };
+}
+
+function tick(state, skipInput = false) {
+  if (state.finished) return [];
+  const events = [];
+  state.tickCount++;
+  if (state.spawnCooldown > 0) state.spawnCooldown--;
+
+  // Update bumper target (human or AI) - skip if called from simulation
+  if (!skipInput) {
+    if (currentMode === 'human') {
+      state.bumper.targetX = clamp(mouseX, BUMPER.MIN_X, BUMPER.MAX_X);
+      state.bumper.targetY = clamp(mouseY, BUMPER.MIN_Y, BUMPER.MAX_Y);
+    } else {
+      const strategy = STRATEGIES[currentMode];
+      if (strategy) {
+        const target = strategy(state, strategyRng);
+        state.bumper.targetX = clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X);
+        state.bumper.targetY = clamp(target.y, BUMPER.MIN_Y, BUMPER.MAX_Y);
+      }
+    }
+  }
+  moveBumper(state.bumper);
+
+  // Spawn
+  if (state.tickCount % CONFIG.SPAWN_INTERVAL === 0 && state.balls.length < CONFIG.MAX_ON_FIELD && state.spawnCooldown <= 0 && state.ballsSpawned < state.numBalls) {
+    const newBall = createBall(state.rng, state.nextBallId++);
+    state.balls.push(newBall);
+    state.ballsSpawned++;
+    state.spawnCooldown = CONFIG.SPAWN_COOLDOWN;
+    events.push({ type: 'spawn', ball: newBall });
+  }
+
+  // Update balls
+  for (const b of state.balls) {
+    if (!b.alive) continue;
+    b.ticksSinceCountdown++;
+    b.x = fpRound(b.x + b.dx);
+    b.y = fpRound(b.y + b.dy);
+    const R = CONFIG.BALL_R, F = CONFIG.FIELD;
+    if (b.x - R < 0) { b.x = R; b.dx = -b.dx; }
+    if (b.x + R > F) { b.x = F - R; b.dx = -b.dx; }
+    if (b.y - R < 0) { b.y = R; b.dy = -b.dy; }
+    if (b.y + R > F) { b.y = F - R; b.dy = -b.dy; }
+    if (b.type !== 'golden' && b.type !== 'explosive' && b.ticksSinceCountdown >= CONFIG.COUNTDOWN && b.value > 0) {
+      b.value--;
+      b.ticksSinceCountdown = 0;
+      if (b.value <= 0) { b.alive = false; b.diedFromTimeout = true; }
+    }
+    if (b.alive && (b.x - R < 0.01 || b.x + R > F - 0.01 || b.y - R < 0.01 || b.y + R > F - 0.01)) {
+      randomizeBounce(b, state.rng);
+    }
+  }
+
+  // Bumper collision
+  for (const b of state.balls) {
+    if (b.alive && collideBallBumper(b, state.bumper, state.rng)) {
+      events.push({ type: 'bumperHit', ball: b });
+    }
+  }
+
+  // Center recharge
+  for (const b of state.balls) {
+    if (b.alive && isInCenter(b)) {
+      const dx = b.x - CONFIG.CENTER_X, dy = b.y - CONFIG.CENTER_Y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d > 0) { b.dx = (dx / d) * CONFIG.SPEED; b.dy = (dy / d) * CONFIG.SPEED; randomizeBounce(b, state.rng); }
+      if (b.type !== 'golden' && b.type !== 'explosive' && b.value < 9) {
+        b.value = 9; b.ticksSinceCountdown = 0;
+        events.push({ type: 'recharge', ball: b });
+      }
+    }
+  }
+
+  // Goals
+  for (const ball of state.balls) {
+    if (!ball.alive) continue;
+    if (isGoal(ball)) {
+      const prize = ball.value * ball.multiplier * state.progressive;
+      state.totalWin += prize;
+      if (ball.type === 'golden') state.timeoutCount = 0;
+      if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++;
+      events.push({ type: 'goal', ball: ball, prize, side: isInLeftGoal(ball) ? 'left' : 'right' });
+      ball.alive = false;
+      if (ball.type === 'explosive') {
+        state.timeoutCount = 0;
+        for (const other of state.balls) {
+          if (other.alive && other.id !== ball.id && isInUpperHalf(other)) {
+            const ePrize = other.value * other.multiplier * state.progressive;
+            state.totalWin += ePrize;
+            if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++;
+            other.alive = false;
+            events.push({ type: 'exploded', ball: other, prize: ePrize });
+          }
+        }
+        events.push({ type: 'explosion', ball: ball });
+      }
+    }
+  }
+
+  // Ball-ball collisions
+  for (let i = 0; i < state.balls.length; i++) {
+    for (let j = i + 1; j < state.balls.length; j++) {
+      const b1 = state.balls[i], b2 = state.balls[j];
+      if (!b1.alive || !b2.alive) continue;
+      if (dist(b1.x, b1.y, b2.x, b2.y) < CONFIG.BALL_R * 2) {
+        const s1 = b1.type !== 'normal', s2 = b2.type !== 'normal';
+        if (s1 && s2) {
+          const dx = b2.x - b1.x, dy = b2.y - b1.y, d = Math.sqrt(dx*dx + dy*dy);
+          if (d > 0) {
+            const nx = dx/d, ny = dy/d, ov = CONFIG.BALL_R*2 - d;
+            if (ov > 0) { b1.x -= nx*ov*0.5; b1.y -= ny*ov*0.5; b2.x += nx*ov*0.5; b2.y += ny*ov*0.5; }
+            b1.dx = -nx*CONFIG.SPEED; b1.dy = -ny*CONFIG.SPEED;
+            b2.dx = nx*CONFIG.SPEED; b2.dy = ny*CONFIG.SPEED;
+            randomizeBounce(b1, state.rng); randomizeBounce(b2, state.rng);
+          }
+          continue;
+        }
+        if (s1) { b2.alive = false; state.totalWin += 1; events.push({ type: 'collision', winner: b1, loser: b2, prize: 1 }); continue; }
+        if (s2) { b1.alive = false; state.totalWin += 1; events.push({ type: 'collision', winner: b2, loser: b1, prize: 1 }); continue; }
+        if (b1.value === b2.value) {
+          const prize = b1.value * 2;
+          state.totalWin += prize;
+          if (state.rng.nextDouble() < 0.5) { b2.alive = false; events.push({ type: 'collision', winner: b1, loser: b2, prize }); }
+          else { b1.alive = false; events.push({ type: 'collision', winner: b2, loser: b1, prize }); }
+        } else {
+          state.totalWin += 1;
+          const loser = b1.value < b2.value ? b1 : b2;
+          const winner = b1.value < b2.value ? b2 : b1;
+          loser.alive = false;
+          const dx = winner.x - loser.x, dy = winner.y - loser.y, d = Math.sqrt(dx*dx + dy*dy);
+          if (d > 0) { winner.dx = (dx/d)*CONFIG.SPEED; winner.dy = (dy/d)*CONFIG.SPEED; randomizeBounce(winner, state.rng); }
+          events.push({ type: 'collision', winner, loser, prize: 1 });
+        }
+      }
+    }
+  }
+
+  // Timeouts
+  for (const b of state.balls) {
+    if (!b.alive && b.diedFromTimeout) {
+      state.timeoutCount++;
+      events.push({ type: 'timeout', ball: b });
+      if (state.timeoutCount >= CONFIG.TIMEOUT_LIMIT) {
+        state.progressive = 1;
+        state.timeoutCount = 0;
+        events.push({ type: 'progressiveReset' });
+      }
+      b.diedFromTimeout = false;
+    }
+  }
+
+  // Cleanup
+  state.balls = state.balls.filter(b => b.alive);
+
+  // Check finish
+  if (state.ballsSpawned >= state.numBalls && state.balls.length === 0) {
+    state.finished = true;
+    events.push({ type: 'gameEnd', totalWin: state.totalWin });
+  }
+
+  return events;
+}
+
+// ===== RENDERING =====
+function render() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  // Background
+  ctx.fillStyle = '#0a0a1a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // Goals
+  ctx.fillStyle = 'rgba(0, 255, 100, 0.3)';
+  ctx.beginPath();
+  ctx.arc(0, 0, CONFIG.GOAL_R * SCALE, 0, Math.PI / 2);
+  ctx.lineTo(0, 0);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(canvas.width, 0, CONFIG.GOAL_R * SCALE, Math.PI / 2, Math.PI);
+  ctx.lineTo(canvas.width, 0);
+  ctx.fill();
+  
+  ctx.strokeStyle = '#00ff66';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(0, 0, CONFIG.GOAL_R * SCALE, 0, Math.PI / 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(canvas.width, 0, CONFIG.GOAL_R * SCALE, Math.PI / 2, Math.PI);
+  ctx.stroke();
+  
+  // Center
+  ctx.fillStyle = 'rgba(0, 200, 255, 0.2)';
+  ctx.beginPath();
+  ctx.arc(CONFIG.CENTER_X * SCALE, CONFIG.CENTER_Y * SCALE, CONFIG.CENTER_R * SCALE, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#00d4ff';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  
+  // Bumper zone
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+  ctx.fillRect(BUMPER.MIN_X * SCALE, BUMPER.MIN_Y * SCALE, (BUMPER.MAX_X - BUMPER.MIN_X) * SCALE, (BUMPER.MAX_Y - BUMPER.MIN_Y) * SCALE);
+  
+  if (gameState) {
+    // Bumper
+    ctx.fillStyle = '#00d4ff';
+    ctx.shadowColor = '#00d4ff';
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.arc(gameState.bumper.x * SCALE, gameState.bumper.y * SCALE, BUMPER.RADIUS * SCALE, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    
+    ctx.fillStyle = '#004466';
+    ctx.beginPath();
+    ctx.arc(gameState.bumper.x * SCALE, gameState.bumper.y * SCALE, BUMPER.RADIUS * SCALE * 0.6, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Balls
+    for (const ball of gameState.balls) {
+      if (!ball.alive) continue;
+      
+      let color = '#ffffff', glow = '#ffffff';
+      if (ball.type === 'golden') { color = '#ffa500'; glow = '#ff8c00'; }
+      else if (ball.type === 'explosive') { color = '#ff4444'; glow = '#ff0000'; }
+      
+      ctx.shadowColor = glow;
+      ctx.shadowBlur = 10;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(ball.x * SCALE, ball.y * SCALE, CONFIG.BALL_R * SCALE, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      
+      ctx.fillStyle = ball.type === 'explosive' ? '#fff' : '#000';
+      ctx.font = 'bold ' + (ball.type === 'normal' ? '10' : '9') + 'px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      if (ball.type === 'normal') ctx.fillText(ball.value, ball.x * SCALE, ball.y * SCALE);
+      else if (ball.type === 'golden') ctx.fillText('G' + ball.value, ball.x * SCALE, ball.y * SCALE);
+      else ctx.fillText('💥', ball.x * SCALE, ball.y * SCALE);
+    }
+  }
+  
+  // Cursor (human mode only)
+  if (gameRunning && currentMode === 'human') {
+    ctx.strokeStyle = 'rgba(0, 212, 255, 0.5)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    ctx.arc(clamp(mouseX, BUMPER.MIN_X, BUMPER.MAX_X) * SCALE, clamp(mouseY, BUMPER.MIN_Y, BUMPER.MAX_Y) * SCALE, BUMPER.RADIUS * SCALE, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+// ===== UPDATE UI =====
+function updateUI() {
+  if (gameState) {
+    document.getElementById('ballsLeft').textContent = gameState.numBalls - gameState.ballsSpawned + gameState.balls.length;
+    document.getElementById('winDisplay').textContent = '$' + gameState.totalWin;
+    document.getElementById('progressive').textContent = '×' + gameState.progressive;
+  }
+  document.getElementById('balance').textContent = '$' + balance;
+}
+
+// ===== GAME LOOP =====
+function gameLoop() {
+  if (gameRunning && gameState && !gameState.finished) {
+    const events = tick(gameState);
+    
+    for (const e of events) {
+      if (e.type === 'goal') {
+        showFloatingText(e.ball.x, e.ball.y, '+' + e.prize, '#00ff66');
+      }
+      if (e.type === 'exploded') {
+        showFloatingText(e.ball.x, e.ball.y, '+' + e.prize, '#ff6600');
+      }
+      if (e.type === 'timeout') {
+        showFloatingText(e.ball.x, e.ball.y, '✗', '#ff4444');
+      }
+      if (e.type === 'collision') {
+        showFloatingText(e.loser.x, e.loser.y, '+' + e.prize, '#ffff00');
+      }
+      if (e.type === 'gameEnd') {
+        gameRunning = false;
+        document.getElementById('playBtn').disabled = false;
+        document.getElementById('modeSelect').disabled = false;
+        document.getElementById('finalWin').textContent = gameState.totalWin;
+        const bet = gameState.numBalls * CONFIG.BET_PER_BALL;
+        const rtp = (gameState.totalWin / bet * 100).toFixed(1);
+        document.getElementById('finalRtp').textContent = `Bet: ${bet} | RTP: ${rtp}%`;
+        document.getElementById('result').classList.add('show');
+        setTimeout(() => document.getElementById('result').classList.remove('show'), 4000);
+      }
+    }
+    
+    updateUI();
+  }
+  
+  updateFloatingTexts();
+  render();
+  renderFloatingTexts();
+  requestAnimationFrame(gameLoop);
+}
+
+// ===== START GAME =====
+document.getElementById('playBtn').addEventListener('click', () => {
+  const numBalls = parseInt(document.getElementById('ballCount').value) || 50;
+  const bet = numBalls * CONFIG.BET_PER_BALL;
+  
+  if (bet > balance) {
+    alert('Insufficient balance!');
+    return;
+  }
+  
+  balance -= bet;
+  gameSeed = Math.floor(Date.now() / 1000);
+  strategyRng = new JavaRandom(gameSeed + 999999);
+  hunterTargetId = null;
+  defenderTargetId = null;
+  sniperTargetId = null;
+  gameState = createInitialState(gameSeed, numBalls);
+  gameRunning = true;
+  
+  document.getElementById('playBtn').disabled = true;
+  document.getElementById('modeSelect').disabled = true;
+  document.getElementById('seedDisplay').textContent = 'Seed: ' + gameSeed;
+  document.getElementById('result').classList.remove('show');
+  
+  updateUI();
+});
+
+// Hide result on click
+document.getElementById('result').addEventListener('click', () => {
+  document.getElementById('result').classList.remove('show');
+  balance += gameState.totalWin;
+  updateUI();
+});
+
+// ===== FLOATING TEXT =====
+const floatingTexts = [];
+
+function showFloatingText(x, y, text, color) {
+  floatingTexts.push({
+    x: x * SCALE,
+    y: y * SCALE,
+    text,
+    color,
+    opacity: 1,
+    dy: -2
+  });
+}
+
+function updateFloatingTexts() {
+  for (let i = floatingTexts.length - 1; i >= 0; i--) {
+    const ft = floatingTexts[i];
+    ft.y += ft.dy;
+    ft.opacity -= 0.02;
+    if (ft.opacity <= 0) {
+      floatingTexts.splice(i, 1);
+    }
+  }
+}
+
+function renderFloatingTexts() {
+  for (const ft of floatingTexts) {
+    ctx.save();
+    ctx.globalAlpha = ft.opacity;
+    ctx.fillStyle = ft.color;
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = ft.color;
+    ctx.shadowBlur = 10;
+    ctx.fillText(ft.text, ft.x, ft.y);
+    ctx.restore();
+  }
+}
+
+// ===== AUTO SIMULATION =====
+document.getElementById('autoBtn').addEventListener('click', runAutoSimulation);
+document.getElementById('autoClose').addEventListener('click', () => {
+  document.getElementById('autoResults').classList.remove('show');
+});
+
+async function runAutoSimulation() {
+  const numBalls = parseInt(document.getElementById('ballCount').value) || 200;
+  const numRuns = 10;
+  const strategies = ['stationary', 'hunter', 'defender', 'sniper', 'random', 'avoider'];
+  const results = {};
+  
+  document.getElementById('autoResults').classList.add('show');
+  document.getElementById('autoTable').innerHTML = '';
+  
+  for (const strat of strategies) {
+    results[strat] = { wins: [], rtps: [] };
+  }
+  
+  let baseSeed = Math.floor(Date.now() / 1000);
+  
+  for (let run = 0; run < numRuns; run++) {
+    document.getElementById('autoProgress').textContent = `Running... ${run + 1}/${numRuns}`;
+    await new Promise(r => setTimeout(r, 10)); // allow UI update
+    
+    for (const strat of strategies) {
+      const seed = baseSeed + run;
+      const result = simulateStrategy(seed, numBalls, strat);
+      results[strat].wins.push(result.totalWin);
+      const bet = numBalls * CONFIG.BET_PER_BALL;
+      results[strat].rtps.push(result.totalWin / bet * 100);
+    }
+  }
+  
+  // Calculate stats
+  const stats = [];
+  for (const strat of strategies) {
+    const rtps = results[strat].rtps;
+    const avg = rtps.reduce((a, b) => a + b, 0) / rtps.length;
+    const min = Math.min(...rtps);
+    const max = Math.max(...rtps);
+    stats.push({ strat, avg, min, max });
+  }
+  
+  stats.sort((a, b) => b.avg - a.avg);
+  const bestAvg = stats[0].avg;
+  const worstAvg = stats[stats.length - 1].avg;
+  
+  // Render table
+  const labels = {
+    stationary: '🧍 Stationary',
+    hunter: '🎯 Hunter',
+    defender: '🛡️ Defender',
+    sniper: '🔫 Sniper',
+    random: '🎲 Random',
+    avoider: '🏃 Avoider'
+  };
+  
+  let html = '<tr><th>Strategy</th><th>Avg RTP</th><th>Min</th><th>Max</th></tr>';
+  for (const s of stats) {
+    const cls = s.avg === bestAvg ? 'best' : (s.avg === worstAvg ? 'worst' : '');
+    html += `<tr class="${cls}"><td>${labels[s.strat]}</td><td>${s.avg.toFixed(1)}%</td><td>${s.min.toFixed(0)}%</td><td>${s.max.toFixed(0)}%</td></tr>`;
+  }
+  
+  document.getElementById('autoProgress').textContent = `${numRuns} runs × ${numBalls} balls each`;
+  document.getElementById('autoTable').innerHTML = html;
+}
+
+function simulateStrategy(seed, numBalls, strategyName) {
+  const state = createInitialState(seed, numBalls);
+  const stratRng = new JavaRandom(seed + 999999);
+  const strategy = STRATEGIES[strategyName];
+  
+  let ticks = 0;
+  const maxTicks = numBalls * CONFIG.MAX_TICKS_PER_BALL;
+  
+  while (!state.finished && ticks < maxTicks) {
+    // Apply strategy
+    if (strategy) {
+      const target = strategy(state, stratRng);
+      state.bumper.targetX = clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X);
+      state.bumper.targetY = clamp(target.y, BUMPER.MIN_Y, BUMPER.MAX_Y);
+    }
+    tick(state, true); // skipInput = true
+    ticks++;
+  }
+  
+  return { totalWin: state.totalWin, ticks };
+}
+
+// Init
+updateModeIndicator();
+render();
+gameLoop();
+console.log('PADDLA v0.2 loaded');
+</script>
+</body>
+</html>

@@ -41,13 +41,13 @@ const CONFIG = {
 
 const BUMPER = {
   RADIUS: 0.4,             // 2× ball radius
-  MIN_Y: 5.3,              // below center recharge
-  MAX_Y: 9 - 0.4,          // 8.6, above bottom wall
-  MIN_X: 0.4,              // inside left wall
-  MAX_X: 9 - 0.4,          // 8.6, inside right wall
+  MIN_Y: 0.4,              // inside top wall
+  MAX_Y: 3.5,              // above center (не касается перезарядки)
+  MIN_X: 1.5,              // avoid blocking goals directly
+  MAX_X: 9 - 1.5,          // 7.5
   MAX_SPEED: 0.15,         // 3× ball speed
-  START_X: 4.5,            // initial position
-  START_Y: 7.0
+  START_X: 4.5,            // initial position (center)
+  START_Y: 2.0             // upper area
 };
 
 // Export for Node.js and browser
