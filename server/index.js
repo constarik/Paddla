@@ -2,11 +2,15 @@
 const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
+const path = require('path');
 const { createInitialState, replayChunk, finishGame, CONFIG } = require('./engine');
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
+
+// Serve static files from client folder
+app.use(express.static(path.join(__dirname, '../client')));
 
 // Server seed rotation
 let serverSeed = crypto.randomBytes(32).toString('hex');
