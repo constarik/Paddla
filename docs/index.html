@@ -334,11 +334,9 @@ let userData = null;
 async function signInWithGoogle() {
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
-    // Try popup first
     try {
       await auth.signInWithPopup(provider);
     } catch (popupError) {
-      // If popup blocked, fall back to redirect
       if (popupError.code === 'auth/popup-blocked' || popupError.code === 'auth/popup-closed-by-user') {
         await auth.signInWithRedirect(provider);
       } else {
@@ -378,12 +376,11 @@ auth.onAuthStateChanged(async (user) => {
       updateAuthUI();
       updateUI();
     } else {
-      // New user - show nickname modal
       document.getElementById('nicknameModal').classList.add('show');
     }
   } else {
     userData = null;
-    balance = 1000; // Demo balance for non-logged users
+    balance = 1000;
     updateAuthUI();
     updateUI();
   }
@@ -402,14 +399,12 @@ async function saveNickname() {
     return;
   }
   
-  // Check if nickname taken
   const existing = await db.collection('paddla_users').where('nickname', '==', nickname).get();
   if (!existing.empty) {
     errorEl.textContent = 'Nickname already taken';
     return;
   }
   
-  // Create user document
   const userRef = db.collection('paddla_users').doc(currentUser.uid);
   userData = {
     nickname,
@@ -456,7 +451,6 @@ async function saveGameResult(bet, win) {
     totalBet: firebase.firestore.FieldValue.increment(bet)
   });
   
-  // Save game to history
   await db.collection('paddla_games').add({
     userId: currentUser.uid,
     nickname: userData.nickname,
@@ -649,7 +643,7 @@ let gameState = null, gameRunning = false, balance = 1000;
 let currentMode = 'human', strategyRng = null, serverOnline = false;
 let currentGameId = null, currentClientSeed = null, lastVerificationData = null;
 let currentChunk = 0, lastChunkBalls = 0, chunkInputLog = [];
-const CHUNK_SIZE = 50; // Send chunk every 50 balls
+const CHUNK_SIZE = 50;
 const floatingTexts = [], explosionParticles = [];
 let goalFlashLeft = 0, goalFlashRight = 0;
 
@@ -707,7 +701,6 @@ function tick(state, skipInput = false) {
       const strat = STRATEGIES[currentMode];
       if (strat) { const t = strat(state, strategyRng); state.bumper.targetX = clamp(t.x, BUMPER.MIN_X, BUMPER.MAX_X); state.bumper.targetY = clamp(t.y, BUMPER.MIN_Y, BUMPER.MAX_Y); }
     }
-    // Record every tick for deterministic replay
     const input = { tick: state.tickCount, target: { x: state.bumper.targetX, y: state.bumper.targetY } };
     state.inputLog.push(input);
     chunkInputLog.push(input);
@@ -932,7 +925,6 @@ function gameLoop() {
       if (e.type === 'progressiveReset') { showFloatingText(4.5, 2, 'RESET ×1', '#ff4444', 24); playProgressiveReset(); updateTimeoutDots(5); setTimeout(() => updateTimeoutDots(0), 500); }
       if (e.type === 'spawn') { 
         playSpawn();
-        // Check if time to send chunk
         const ballsPlayed = gameState.ballsSpawned;
         if (ballsPlayed - lastChunkBalls >= CHUNK_SIZE && serverOnline && currentGameId) {
           sendChunk(currentGameId, currentChunk, chunkInputLog, ballsPlayed);
@@ -954,7 +946,6 @@ function gameLoop() {
         document.getElementById('finalRtp').textContent = `Bet: ${bet} | RTP: ${(rtp * 100).toFixed(1)}%`;
         playGameOver(rtp >= 1);
         
-        // Add winnings to balance and save
         balance += gameState.totalWin;
         saveGameResult(bet, gameState.totalWin);
         updateAuthUI();
@@ -966,7 +957,6 @@ function gameLoop() {
           document.getElementById('vServerSeed').textContent = 'Verifying...';
           document.getElementById('verifyBtn').disabled = true;
           document.getElementById('verifySection').style.display = 'block';
-          // Send final chunk then finish
           (async () => {
             try {
               if (chunkInputLog.length > 0) {
@@ -996,7 +986,6 @@ function gameLoop() {
   updateEffects(); render(); requestAnimationFrame(gameLoop);
 }
 
-// Send chunk asynchronously
 async function sendChunk(gameId, chunkNum, inputLog, ballsPlayed) {
   try {
     await fetch(`${SERVER_URL}/game/${gameId}/chunk`, {
@@ -1118,7 +1107,6 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     document.getElementById('result').classList.remove('show');
     document.getElementById('autoResults').classList.remove('show');
-    // Balance already added in gameEnd handler
   }
 });
 
