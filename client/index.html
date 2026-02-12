@@ -158,6 +158,20 @@
       background: rgba(0,0,0,0.95); padding: 20px 30px; border-radius: 15px;
       border: 3px solid #00d4ff; z-index: 100; display: none; min-width: 300px;
     }
+    
+    .leaderboard {
+      position: fixed; bottom: 10px; right: 10px;
+      background: rgba(0,0,0,0.7); padding: 10px 15px; border-radius: 12px;
+      border: 1px solid rgba(255,215,0,0.3); min-width: 180px;
+      font-family: 'Orbitron', sans-serif;
+    }
+    .leaderboard-title { font-size: 11px; color: #ffd700; font-weight: bold; margin-bottom: 6px; }
+    .leaderboard-subtitle { font-size: 8px; color: #666; margin-bottom: 6px; }
+    .leaderboard-entry { font-size: 10px; margin: 3px 0; }
+    .leaderboard-entry.gold { color: #ffd700; }
+    .leaderboard-entry.silver { color: #c0c0c0; }
+    .leaderboard-entry.bronze { color: #cd7f32; }
+    .leaderboard-entry.normal { color: #888; }
     .auto-results.show { display: block; }
     .auto-results h2 { color: #00d4ff; margin-bottom: 15px; text-align: center; }
     .auto-results table { width: 100%; border-collapse: collapse; }
@@ -316,6 +330,12 @@
   </div>
   
   <div class="info">Move bumper to direct balls into goals (top corners)</div>
+  
+  <div class="leaderboard" id="leaderboard">
+    <div class="leaderboard-title">🏆 TOP WEEK</div>
+    <div class="leaderboard-subtitle">Last 7 days | min 100 balls</div>
+    <div id="leaderboardList">Loading...</div>
+  </div>
   
   <div class="auto-results" id="autoResults">
     <h2>🤖 AUTO SIMULATION</h2>
@@ -994,6 +1014,7 @@ function gameLoop() {
         balance += gameState.totalWin;
         saveGameResult(bet, gameState.totalWin);
         updateAuthUI();
+        setTimeout(loadLeaderboard, 2000); // Refresh leaderboard
         
         if (lastVerificationData && serverOnline) {
           document.getElementById('vGameId').textContent = lastVerificationData.gameId;
@@ -1163,7 +1184,53 @@ if (new URLSearchParams(window.location.search).get('debug') === '17') {
   document.getElementById('autoBtn').style.display = 'inline-block';
 }
 
-updateModeIndicator(); updateProgressiveLamps(1); render(); gameLoop();
+// ===== LEADERBOARD =====
+async function loadLeaderboard() {
+  try {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const snapshot = await db.collection('paddla_games')
+      .where('playedAt', '>=', sevenDaysAgo)
+      .where('bet', '>=', 500)  // min 100 balls * 5 = 500
+      .get();
+    
+    const best = {};
+    snapshot.forEach(doc => {
+      const e = doc.data();
+      if (!e.nickname || !e.rtp) return;
+      const rtp = parseFloat(e.rtp);
+      if (!best[e.nickname] || rtp > best[e.nickname].rtp || 
+          (rtp === best[e.nickname].rtp && e.bet > best[e.nickname].bet)) {
+        best[e.nickname] = { nick: e.nickname, rtp: rtp, balls: Math.floor(e.bet / 5) };
+      }
+    });
+    
+    const entries = Object.values(best);
+    entries.sort((a, b) => b.rtp - a.rtp || b.balls - a.balls);
+    renderLeaderboard(entries.slice(0, 10));
+  } catch (err) {
+    console.error('Leaderboard error:', err);
+    document.getElementById('leaderboardList').innerHTML = '<div style="color:#666">—</div>';
+  }
+}
+
+function renderLeaderboard(entries) {
+  const el = document.getElementById('leaderboardList');
+  if (!el) return;
+  const medals = ['🥇', '🥈', '🥉'];
+  if (entries.length === 0) {
+    el.innerHTML = '<div style="color:#666">No entries yet</div>';
+    return;
+  }
+  let html = '';
+  entries.forEach((e, i) => {
+    const medal = i < 3 ? medals[i] : (i + 1) + '.';
+    const cls = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : 'normal';
+    html += `<div class="leaderboard-entry ${cls}">${medal} <b>${e.nick}</b> ${e.rtp.toFixed(1)}% <span style="font-size:8px;color:#555">(${e.balls})</span></div>`;
+  });
+  el.innerHTML = html;
+}
+
+updateModeIndicator(); updateProgressiveLamps(1); render(); gameLoop(); loadLeaderboard();
 </script>
 </body>
 </html>
