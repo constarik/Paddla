@@ -1190,13 +1190,12 @@ async function loadLeaderboard() {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const snapshot = await db.collection('paddla_games')
       .where('playedAt', '>=', sevenDaysAgo)
-      .where('bet', '>=', 500)  // min 100 balls * 5 = 500
-      .get();
+      .get();  // Filter bet>=500 client-side to avoid composite index
     
     const best = {};
     snapshot.forEach(doc => {
       const e = doc.data();
-      if (!e.nickname || !e.rtp) return;
+      if (!e.nickname || !e.rtp || e.bet < 500) return;  // min 100 balls
       const rtp = parseFloat(e.rtp);
       if (!best[e.nickname] || rtp > best[e.nickname].rtp || 
           (rtp === best[e.nickname].rtp && e.bet > best[e.nickname].bet)) {
