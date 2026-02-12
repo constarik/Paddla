@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>PADDLA v0.5 - Provably Fair</title>
+  <title>PADDLA v0.7 - Provably Fair</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏓</text></svg>">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
   <!-- Google Analytics -->
@@ -46,21 +46,11 @@
       box-shadow: 0 0 40px rgba(0,212,255,0.4), inset 0 0 30px rgba(0,0,0,0.5);
       cursor: none;
     }
-    
-    /* Indicators column (timeout + progressive) */
-    .indicators-column {
-      display: flex; flex-direction: column; align-items: center; gap: 8px;
-    }
-    .indicator-row {
-      display: flex; gap: 6px; align-items: center;
-    }
-    .indicator-label {
-      font-size: 9px; color: rgba(255,255,255,0.5); width: 50px; text-align: right;
-    }
+    .indicators-column { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .indicator-row { display: flex; gap: 6px; align-items: center; }
     .timeout-dot {
       width: 16px; height: 16px; border-radius: 50%;
-      background: #222; border: 2px solid #444;
-      transition: all 0.3s;
+      background: #222; border: 2px solid #444; transition: all 0.3s;
     }
     .timeout-dot.active {
       background: radial-gradient(circle at 30% 30%, #ff6666, #ff0000);
@@ -68,7 +58,6 @@
       box-shadow: 0 0 12px #ff0000, 0 0 25px rgba(255,0,0,0.5);
       animation: pulse 0.3s ease-out;
     }
-    
     .stats {
       display: flex; gap: 20px; font-size: 14px; align-items: center;
       background: rgba(0,0,0,0.4); padding: 12px 25px; border-radius: 15px;
@@ -78,13 +67,11 @@
     .stat { text-align: center; }
     .stat-value { font-size: 24px; font-weight: bold; color: #00d4ff; text-shadow: 0 0 10px rgba(0,212,255,0.5); }
     .stat-label { font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 1px; }
-    
     .lamp {
       width: 22px; height: 22px; border-radius: 50%;
       background: #222; border: 2px solid #444;
       display: flex; align-items: center; justify-content: center;
-      font-size: 8px; font-weight: bold; color: #555;
-      transition: all 0.3s;
+      font-size: 8px; font-weight: bold; color: #555; transition: all 0.3s;
     }
     .lamp.active {
       background: radial-gradient(circle at 30% 30%, #ffff00, #ff8800);
@@ -93,20 +80,14 @@
       animation: pulse 0.5s ease-in-out;
     }
     @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
-    
-    .controls {
-      display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center;
-    }
+    .controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: center; }
     .controls input, .controls select {
       padding: 8px; border-radius: 8px;
       border: 2px solid #00d4ff; background: rgba(0,0,0,0.5);
       color: #00d4ff; font-size: 13px; font-weight: bold; text-align: center;
-      font-family: 'Orbitron', sans-serif;
-      transition: all 0.2s ease;
+      font-family: 'Orbitron', sans-serif; transition: all 0.2s ease;
     }
-    .controls input:focus, .controls select:focus {
-      outline: none; box-shadow: 0 0 15px rgba(0,212,255,0.5);
-    }
+    .controls input:focus, .controls select:focus { outline: none; box-shadow: 0 0 15px rgba(0,212,255,0.5); }
     .controls input { width: 70px; }
     .controls select { min-width: 130px; cursor: pointer; }
     .controls select option { background: #1a1a2e; }
@@ -114,28 +95,21 @@
       padding: 10px 25px; font-size: 14px; font-weight: bold;
       background: linear-gradient(180deg, #00d4ff 0%, #0099cc 100%);
       color: #000; border: none; border-radius: 25px; cursor: pointer;
-      box-shadow: 0 0 15px rgba(0,212,255,0.4);
-      transition: all 0.2s ease;
-      font-family: 'Orbitron', sans-serif;
-      letter-spacing: 1px;
+      box-shadow: 0 0 15px rgba(0,212,255,0.4); transition: all 0.2s ease;
+      font-family: 'Orbitron', sans-serif; letter-spacing: 1px;
     }
     .controls button:disabled { background: #666; cursor: not-allowed; box-shadow: none; }
-    .controls button:hover:not(:disabled) { 
-      transform: scale(1.08); 
-      box-shadow: 0 0 25px rgba(0,212,255,0.8), 0 0 40px rgba(0,212,255,0.4);
-    }
-    
+    .controls button:hover:not(:disabled) { transform: scale(1.08); box-shadow: 0 0 25px rgba(0,212,255,0.8); }
     .info { font-size: 10px; color: rgba(255,255,255,0.4); text-align: center; letter-spacing: 1px; }
-    
     .result {
       display: none; position: fixed; top: 50%; left: 50%;
       transform: translate(-50%, -50%); background: rgba(10,10,30,0.98);
       padding: 30px 45px; border-radius: 20px; text-align: center;
-      z-index: 50; border: 3px solid #00d4ff; max-width: 450px;
+      z-index: 50; border: 3px solid #00d4ff; max-width: 500px;
       box-shadow: 0 0 40px rgba(0,212,255,0.4), 0 0 80px rgba(0,0,0,0.8);
     }
     .result.show { display: block; }
-    .result h2 { color: #00d4ff; font-size: 20px; letter-spacing: 3px; text-shadow: 0 0 20px rgba(0,212,255,0.5); }
+    .result h2 { color: #00d4ff; font-size: 20px; letter-spacing: 3px; }
     .result .amount { font-size: 48px; color: #00ff66; margin: 12px 0; text-shadow: 0 0 30px rgba(0,255,100,0.5); }
     .result .rtp { font-size: 12px; color: rgba(255,255,255,0.6); letter-spacing: 1px; }
     .result .verify-section { 
@@ -152,96 +126,49 @@
       color: #000; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;
     }
     .result .verify-btn-result:disabled { background: #666; cursor: wait; }
-    
-    .auto-results {
-      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background: rgba(0,0,0,0.95); padding: 20px 30px; border-radius: 15px;
-      border: 3px solid #00d4ff; z-index: 100; display: none; min-width: 300px;
-    }
-    
-    .leaderboard {
-      position: fixed; bottom: 10px; right: 10px;
-      background: rgba(0,0,0,0.7); padding: 10px 15px; border-radius: 12px;
-      border: 1px solid rgba(255,215,0,0.3); min-width: 180px;
-      font-family: 'Orbitron', sans-serif;
-    }
-    .leaderboard-title { font-size: 11px; color: #ffd700; font-weight: bold; margin-bottom: 6px; }
-    .leaderboard-subtitle { font-size: 8px; color: #666; margin-bottom: 6px; }
-    .leaderboard-entry { font-size: 10px; margin: 3px 0; }
-    .leaderboard-entry.gold { color: #ffd700; }
-    .leaderboard-entry.silver { color: #c0c0c0; }
-    .leaderboard-entry.bronze { color: #cd7f32; }
-    .leaderboard-entry.normal { color: #888; }
-    .auto-results.show { display: block; }
-    .auto-results h2 { color: #00d4ff; margin-bottom: 15px; text-align: center; }
-    .auto-results table { width: 100%; border-collapse: collapse; }
-    .auto-results th, .auto-results td { padding: 8px; text-align: center; border-bottom: 1px solid #333; }
-    .auto-results th { color: #00d4ff; }
-    .auto-results .best { color: #00ff66; font-weight: bold; }
-    .auto-results .worst { color: #ff4444; }
-    .auto-results .close-btn { margin-top: 15px; padding: 8px 20px; background: #00d4ff; color: #000; border: none; border-radius: 5px; cursor: pointer; width: 100%; }
-    
     .mode-indicator {
       position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
       padding: 5px 15px; border-radius: 15px; font-size: 11px; font-weight: bold;
       background: rgba(255,165,0,0.3); border: 1px solid #ffa500; color: #ffcc00;
       font-family: 'Orbitron', sans-serif; letter-spacing: 1px;
-      box-shadow: 0 0 10px rgba(255,165,0,0.3);
     }
-    .mode-indicator.human { background: rgba(0,255,100,0.3); border-color: #00ff66; color: #00ff66; box-shadow: 0 0 10px rgba(0,255,100,0.3); }
-    
+    .mode-indicator.human { background: rgba(0,255,100,0.3); border-color: #00ff66; color: #00ff66; }
     .server-status {
       position: fixed; top: 10px; right: 10px; padding: 5px 10px;
-      border-radius: 10px; font-size: 10px;
-      font-family: 'Orbitron', sans-serif; letter-spacing: 1px;
+      border-radius: 10px; font-size: 10px; font-family: 'Orbitron', sans-serif;
     }
-    .server-status.online { background: rgba(0,255,100,0.2); border: 1px solid #00ff66; color: #00ff66; box-shadow: 0 0 10px rgba(0,255,100,0.3); }
+    .server-status.online { background: rgba(0,255,100,0.2); border: 1px solid #00ff66; color: #00ff66; }
     .server-status.offline { background: rgba(255,0,0,0.2); border: 1px solid #ff4444; color: #ff4444; }
-    
     .sound-btn {
       position: fixed; top: 10px; left: 10px; width: 40px; height: 40px;
       border-radius: 50%; border: 2px solid #00d4ff; background: rgba(0,0,0,0.5);
-      font-size: 20px; cursor: pointer;
-      transition: all 0.2s ease;
+      font-size: 20px; cursor: pointer; transition: all 0.2s ease;
     }
     .sound-btn:hover { transform: scale(1.1); box-shadow: 0 0 15px rgba(0,212,255,0.5); }
-    .sound-btn.on { background: rgba(0,212,255,0.3); box-shadow: 0 0 15px rgba(0,212,255,0.5); }
-    
-    /* Auth UI */
-    .auth-panel {
-      position: fixed; top: 10px; right: 120px;
-      display: flex; align-items: center; gap: 10px;
-    }
+    .sound-btn.on { background: rgba(0,212,255,0.3); }
+    .auth-panel { position: fixed; top: 10px; right: 120px; display: flex; align-items: center; gap: 10px; }
     .auth-btn {
       padding: 8px 16px; border-radius: 20px; border: 2px solid #00d4ff;
       background: rgba(0,0,0,0.5); color: #00d4ff; font-weight: bold;
       cursor: pointer; font-size: 11px; font-family: 'Orbitron', sans-serif;
-      transition: all 0.2s ease;
     }
-    .auth-btn:hover { background: rgba(0,212,255,0.2); box-shadow: 0 0 15px rgba(0,212,255,0.5); transform: scale(1.05); }
+    .auth-btn:hover { background: rgba(0,212,255,0.2); }
     .auth-btn.google { border-color: #4285f4; color: #4285f4; }
     .user-info {
       display: flex; align-items: center; gap: 8px;
       padding: 5px 12px; background: rgba(0,0,0,0.5);
       border-radius: 20px; border: 1px solid #00ff66;
     }
-    .user-avatar {
-      width: 28px; height: 28px; border-radius: 50%;
-      border: 2px solid #00ff66;
-    }
+    .user-avatar { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #00ff66; }
     .user-name { color: #00ff66; font-size: 13px; font-weight: bold; }
-    
-    /* Nickname modal */
     .modal-overlay {
       display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.8); z-index: 200;
-      justify-content: center; align-items: center;
+      background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center;
     }
     .modal-overlay.show { display: flex; }
     .modal {
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-      border: 3px solid #00d4ff; border-radius: 15px;
-      padding: 30px; text-align: center; max-width: 400px;
+      border: 3px solid #00d4ff; border-radius: 15px; padding: 30px; text-align: center; max-width: 400px;
     }
     .modal h2 { color: #00d4ff; margin-bottom: 20px; }
     .modal input {
@@ -256,6 +183,25 @@
     }
     .modal button:disabled { background: #666; cursor: not-allowed; }
     .modal .error { color: #ff4444; font-size: 12px; margin-top: 10px; }
+    .leaderboard {
+      position: fixed; bottom: 10px; right: 10px;
+      background: rgba(0,0,0,0.7); padding: 10px 15px; border-radius: 12px;
+      border: 1px solid rgba(255,215,0,0.3); min-width: 220px;
+    }
+    .leaderboard-title { font-size: 11px; color: #ffd700; font-weight: bold; margin-bottom: 6px; }
+    .leaderboard-subtitle { font-size: 8px; color: #666; margin-bottom: 6px; }
+    .leaderboard-entry { font-size: 10px; margin: 3px 0; }
+    .leaderboard-entry.gold { color: #ffd700; }
+    .leaderboard-entry.silver { color: #c0c0c0; }
+    .leaderboard-entry.bronze { color: #cd7f32; }
+    .leaderboard-entry.normal { color: #888; }
+    .commitment-display {
+      position: fixed; bottom: 10px; left: 10px;
+      background: rgba(0,0,0,0.7); padding: 8px 12px; border-radius: 8px;
+      border: 1px solid rgba(0,255,100,0.3); font-size: 9px; max-width: 200px;
+    }
+    .commitment-display .label { color: #00ff66; margin-bottom: 4px; }
+    .commitment-display .hash { color: #666; font-family: monospace; word-break: break-all; }
   </style>
 </head>
 <body>
@@ -266,7 +212,6 @@
     <button class="auth-btn google" id="loginBtn" onclick="signInWithGoogle()">🔑 Sign In</button>
   </div>
   
-  <!-- Nickname Modal -->
   <div class="modal-overlay" id="nicknameModal">
     <div class="modal">
       <h2>🎮 Choose Your Nickname</h2>
@@ -289,18 +234,10 @@
     </div>
     <div class="indicators-column">
       <div class="indicator-row" id="progressiveLamps">
-        <div class="lamp">×1</div>
-        <div class="lamp">×2</div>
-        <div class="lamp">×3</div>
-        <div class="lamp">×4</div>
-        <div class="lamp">×5</div>
+        <div class="lamp">×1</div><div class="lamp">×2</div><div class="lamp">×3</div><div class="lamp">×4</div><div class="lamp">×5</div>
       </div>
       <div class="indicator-row" id="timeoutDots">
-        <div class="timeout-dot"></div>
-        <div class="timeout-dot"></div>
-        <div class="timeout-dot"></div>
-        <div class="timeout-dot"></div>
-        <div class="timeout-dot"></div>
+        <div class="timeout-dot"></div><div class="timeout-dot"></div><div class="timeout-dot"></div><div class="timeout-dot"></div><div class="timeout-dot"></div>
       </div>
     </div>
     <div class="stat">
@@ -326,22 +263,19 @@
       <option value="avoider">🏃 Avoider</option>
     </select>
     <button id="playBtn">▶ PLAY</button>
-    <button id="autoBtn" style="display:none;">AUTO ×10</button>
   </div>
   
   <div class="info">Move bumper to direct balls into goals (top corners)</div>
+  
+  <div class="commitment-display" id="commitmentDisplay">
+    <div class="label">🔒 Current Commitment</div>
+    <div class="hash" id="currentCommitment">Loading...</div>
+  </div>
   
   <div class="leaderboard" id="leaderboard">
     <div class="leaderboard-title">🏆 TOP WEEK</div>
     <div class="leaderboard-subtitle">Last 7 days | min 100 balls</div>
     <div id="leaderboardList">Loading...</div>
-  </div>
-  
-  <div class="auto-results" id="autoResults">
-    <h2>🤖 AUTO SIMULATION</h2>
-    <div id="autoProgress"></div>
-    <table id="autoTable"></table>
-    <button class="close-btn" id="autoClose">CLOSE</button>
   </div>
 
   <div class="result" id="result">
@@ -352,8 +286,8 @@
       <strong>🔒 Verification Data:</strong>
       <div>Game ID: <code id="vGameId"></code></div>
       <div>Client Seed: <code id="vClientSeed"></code></div>
-      <div>Commitment: <code id="vCommitment"></code></div>
-      <div>Server Seed: <code id="vServerSeed"></code></div>
+      <div>Commitment (recorded before game): <code id="vCommitment"></code></div>
+      <div>Server Seed (revealed after): <code id="vServerSeed"></code></div>
       <button class="verify-btn-result" id="verifyBtn">✓ VERIFY FAIRNESS</button>
       <div id="verifyResult" style="margin-top:10px;"></div>
     </div>
@@ -371,127 +305,56 @@ const firebaseConfig = {
   appId: "1:356698016255:web:913ed696aa4b3d17baffca",
   measurementId: "G-6C5X8BPRWP"
 };
-
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
-
-// Set persistence to local
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
-let currentUser = null;
-let userData = null;
+let currentUser = null, userData = null;
 
-// ===== AUTH FUNCTIONS =====
 async function signInWithGoogle() {
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
-    // Try popup first
-    try {
-      await auth.signInWithPopup(provider);
-    } catch (popupError) {
-      // If popup blocked, fall back to redirect
-      if (popupError.code === 'auth/popup-blocked' || popupError.code === 'auth/popup-closed-by-user') {
-        await auth.signInWithRedirect(provider);
-      } else {
-        throw popupError;
-      }
-    }
-  } catch (err) {
-    console.error('Sign in failed:', err);
-    alert('Sign in failed: ' + err.message);
-  }
+    try { await auth.signInWithPopup(provider); }
+    catch (e) { if (e.code === 'auth/popup-blocked') await auth.signInWithRedirect(provider); else throw e; }
+  } catch (err) { alert('Sign in failed: ' + err.message); }
 }
-
-function signOut() {
-  auth.signOut();
-}
-
+function signOut() { auth.signOut(); }
 async function resetBalance() {
   if (!currentUser || !userData) return;
   if (!confirm('Reset balance to $1000?')) return;
-  
   balance = 1000;
-  const userRef = db.collection('paddla_users').doc(currentUser.uid);
-  await userRef.update({ balance: 1000 });
-  updateAuthUI();
-  updateUI();
+  await db.collection('paddla_users').doc(currentUser.uid).update({ balance: 1000 });
+  updateAuthUI(); updateUI();
 }
 
 auth.onAuthStateChanged(async (user) => {
   currentUser = user;
   if (user) {
-    const userRef = db.collection('paddla_users').doc(user.uid);
-    const doc = await userRef.get();
-    
-    if (doc.exists) {
-      userData = doc.data();
-      balance = userData.balance || 1000;
-      updateAuthUI();
-      updateUI();
-    } else {
-      // New user - show nickname modal
-      document.getElementById('nicknameModal').classList.add('show');
-    }
-  } else {
-    userData = null;
-    balance = 1000; // Demo balance for non-logged users
-    updateAuthUI();
-    updateUI();
-  }
+    const doc = await db.collection('paddla_users').doc(user.uid).get();
+    if (doc.exists) { userData = doc.data(); balance = userData.balance || 1000; updateAuthUI(); updateUI(); }
+    else document.getElementById('nicknameModal').classList.add('show');
+  } else { userData = null; balance = 1000; updateAuthUI(); updateUI(); }
 });
 
 async function saveNickname() {
   const nickname = document.getElementById('nicknameInput').value.trim();
   const errorEl = document.getElementById('nicknameError');
-  
-  if (nickname.length < 3 || nickname.length > 15) {
-    errorEl.textContent = 'Nickname must be 3-15 characters';
-    return;
-  }
-  if (!/^[a-zA-Z0-9_]+$/.test(nickname)) {
-    errorEl.textContent = 'Only letters, numbers and underscore allowed';
-    return;
-  }
-  
-  // Check if nickname taken
+  if (nickname.length < 3 || nickname.length > 15) { errorEl.textContent = '3-15 characters'; return; }
+  if (!/^[a-zA-Z0-9_]+$/.test(nickname)) { errorEl.textContent = 'Letters, numbers, underscore only'; return; }
   const existing = await db.collection('paddla_users').where('nickname', '==', nickname).get();
-  if (!existing.empty) {
-    errorEl.textContent = 'Nickname already taken';
-    return;
-  }
-  
-  // Create user document
-  const userRef = db.collection('paddla_users').doc(currentUser.uid);
-  userData = {
-    nickname,
-    balance: 1000,
-    gamesPlayed: 0,
-    totalWon: 0,
-    totalBet: 0,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    photoURL: currentUser.photoURL || null
-  };
-  await userRef.set(userData);
-  
-  balance = userData.balance;
+  if (!existing.empty) { errorEl.textContent = 'Nickname taken'; return; }
+  userData = { nickname, balance: 1000, gamesPlayed: 0, totalWon: 0, totalBet: 0, createdAt: firebase.firestore.FieldValue.serverTimestamp(), photoURL: currentUser.photoURL || null };
+  await db.collection('paddla_users').doc(currentUser.uid).set(userData);
+  balance = 1000;
   document.getElementById('nicknameModal').classList.remove('show');
-  updateAuthUI();
-  updateUI();
+  updateAuthUI(); updateUI();
 }
 
 function updateAuthUI() {
   const panel = document.getElementById('authPanel');
   if (currentUser && userData) {
-    panel.innerHTML = `
-      <div class="user-info">
-        ${userData.photoURL ? `<img class="user-avatar" src="${userData.photoURL}" alt="">` : ''}
-        <span class="user-name">${userData.nickname}</span>
-        <span style="color:#00d4ff;">${balance}</span>
-      </div>
-      <button class="auth-btn" onclick="resetBalance()" style="border-color:#ff6600;color:#ff6600;">Reset $</button>
-      <button class="auth-btn" onclick="signOut()">Logout</button>
-    `;
+    panel.innerHTML = `<div class="user-info">${userData.photoURL ? `<img class="user-avatar" src="${userData.photoURL}">` : ''}<span class="user-name">${userData.nickname}</span><span style="color:#00d4ff;">$${balance}</span></div><button class="auth-btn" onclick="resetBalance()" style="border-color:#ff6600;color:#ff6600;">Reset</button><button class="auth-btn" onclick="signOut()">Logout</button>`;
   } else {
     panel.innerHTML = `<button class="auth-btn google" onclick="signInWithGoogle()">🔑 Sign In</button>`;
   }
@@ -499,88 +362,78 @@ function updateAuthUI() {
 
 async function saveGameResult(bet, win) {
   if (!currentUser || !userData) return;
-  
-  const userRef = db.collection('paddla_users').doc(currentUser.uid);
-  await userRef.update({
-    balance: balance,
-    gamesPlayed: firebase.firestore.FieldValue.increment(1),
+  await db.collection('paddla_users').doc(currentUser.uid).update({
+    balance, gamesPlayed: firebase.firestore.FieldValue.increment(1),
     totalWon: firebase.firestore.FieldValue.increment(win),
     totalBet: firebase.firestore.FieldValue.increment(bet)
   });
-  
-  // Save game to history
   await db.collection('paddla_games').add({
-    userId: currentUser.uid,
-    nickname: userData.nickname,
-    bet,
-    win,
-    rtp: (win / bet * 100).toFixed(1),
-    playedAt: firebase.firestore.FieldValue.serverTimestamp()
+    userId: currentUser.uid, nickname: userData.nickname, bet, win,
+    rtp: (win / bet * 100).toFixed(1), playedAt: firebase.firestore.FieldValue.serverTimestamp()
   });
 }
 
+// ===== SERVER =====
 const SERVER_URL = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://paddla.onrender.com';
+let serverOnline = false;
+let currentCommitment = null;
+
+async function fetchCommitment() {
+  try {
+    const res = await fetch(`${SERVER_URL}/commitment`);
+    const data = await res.json();
+    currentCommitment = data.commitment;
+    document.getElementById('currentCommitment').textContent = currentCommitment.substring(0, 24) + '...';
+    serverOnline = true;
+    document.getElementById('serverStatus').className = 'server-status online';
+    document.getElementById('serverStatus').textContent = '🟢 Online';
+    return data;
+  } catch {
+    serverOnline = false;
+    document.getElementById('serverStatus').className = 'server-status offline';
+    document.getElementById('serverStatus').textContent = '⚫ Offline';
+    document.getElementById('currentCommitment').textContent = 'Offline';
+    return null;
+  }
+}
+fetchCommitment();
+setInterval(fetchCommitment, 30000);
 
 // ===== AUDIO =====
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
 let audioCtx = null, soundEnabled = false;
-
 function initAudio() { if (!audioCtx) audioCtx = new AudioCtx(); }
-function toggleSound() {
-  initAudio(); soundEnabled = !soundEnabled;
-  document.getElementById('soundBtn').textContent = soundEnabled ? '🔊' : '🔇';
-  document.getElementById('soundBtn').classList.toggle('on', soundEnabled);
-  if (soundEnabled) playTone(440, 0.1, 'sine', 0.2);
-}
-function playTone(freq, dur, type = 'sine', vol = 0.3) {
-  if (!audioCtx || !soundEnabled) return;
-  const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
-  osc.type = type; osc.frequency.value = freq;
-  gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
-  osc.connect(gain); gain.connect(audioCtx.destination);
-  osc.start(); osc.stop(audioCtx.currentTime + dur);
-}
-function playGoal(prog) {
-  const f = 400 + prog * 100;
-  playTone(f, 0.1, 'square', 0.2);
-  setTimeout(() => playTone(f * 1.5, 0.15, 'square', 0.2), 50);
-  setTimeout(() => playTone(f * 2, 0.2, 'square', 0.25), 100);
-}
+function toggleSound() { initAudio(); soundEnabled = !soundEnabled; document.getElementById('soundBtn').textContent = soundEnabled ? '🔊' : '🔇'; document.getElementById('soundBtn').classList.toggle('on', soundEnabled); if (soundEnabled) playTone(440, 0.1, 'sine', 0.2); }
+function playTone(freq, dur, type = 'sine', vol = 0.3) { if (!audioCtx || !soundEnabled) return; const osc = audioCtx.createOscillator(), gain = audioCtx.createGain(); osc.type = type; osc.frequency.value = freq; gain.gain.setValueAtTime(vol, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + dur); }
+function playGoal(p) { const f = 400 + p * 100; playTone(f, 0.1, 'square', 0.2); setTimeout(() => playTone(f * 1.5, 0.15, 'square', 0.2), 50); setTimeout(() => playTone(f * 2, 0.2, 'square', 0.25), 100); }
 function playExplosion() { for (let i = 0; i < 5; i++) setTimeout(() => playTone(100 + Math.random() * 200, 0.1, 'sawtooth', 0.15), i * 30); }
 function playBounce() { playTone(300 + Math.random() * 200, 0.05, 'triangle', 0.1); }
 function playRecharge() { playTone(600, 0.1, 'sine', 0.15); setTimeout(() => playTone(800, 0.1, 'sine', 0.15), 50); }
 function playDouble() { playTone(500, 0.1, 'square', 0.2); setTimeout(() => playTone(700, 0.15, 'square', 0.25), 80); }
 function playSpawn() { playTone(200, 0.08, 'sine', 0.1); }
 function playTimeout() { playTone(150, 0.2, 'sawtooth', 0.15); setTimeout(() => playTone(100, 0.3, 'sawtooth', 0.1), 100); }
-function playProgressiveReset() {
-  [400, 300, 200, 100].forEach((f, i) => setTimeout(() => playTone(f, i === 3 ? 0.3 : 0.1, 'square', 0.2), i * 80));
-}
-function playGameOver(win) {
-  if (win) [523, 659, 784, 1047].forEach((n, i) => setTimeout(() => playTone(n, 0.2, 'square', 0.2), i * 150));
-  else { playTone(200, 0.3, 'sawtooth', 0.15); setTimeout(() => playTone(180, 0.3, 'sawtooth', 0.15), 300); setTimeout(() => playTone(160, 0.4, 'sawtooth', 0.12), 600); }
-}
+function playProgressiveReset() { [400, 300, 200, 100].forEach((f, i) => setTimeout(() => playTone(f, i === 3 ? 0.3 : 0.1, 'square', 0.2), i * 80)); }
+function playGameOver(win) { if (win) [523, 659, 784, 1047].forEach((n, i) => setTimeout(() => playTone(n, 0.2, 'square', 0.2), i * 150)); else { playTone(200, 0.3, 'sawtooth', 0.15); setTimeout(() => playTone(180, 0.3, 'sawtooth', 0.15), 300); setTimeout(() => playTone(160, 0.4, 'sawtooth', 0.12), 600); } }
 
-// ===== ENGINE =====
+// ===== ENGINE (Input-Seeded Randomness) =====
+const SHA256_K = new Uint32Array([0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
+function sha256Pure(msg) { const bytes = typeof msg === 'string' ? new TextEncoder().encode(msg) : new Uint8Array(msg); const bitLen = bytes.length * 8; const padLen = (bytes.length + 9 + 63) & ~63; const padded = new Uint8Array(padLen); padded.set(bytes); padded[bytes.length] = 0x80; const view = new DataView(padded.buffer); view.setUint32(padLen - 4, bitLen, false); let h0=0x6a09e667,h1=0xbb67ae85,h2=0x3c6ef372,h3=0xa54ff53a,h4=0x510e527f,h5=0x9b05688c,h6=0x1f83d9ab,h7=0x5be0cd19; const w = new Uint32Array(64); for (let off = 0; off < padLen; off += 64) { for (let i = 0; i < 16; i++) w[i] = view.getUint32(off + i * 4, false); for (let i = 16; i < 64; i++) { const s0 = ((w[i-15]>>>7)|(w[i-15]<<25))^((w[i-15]>>>18)|(w[i-15]<<14))^(w[i-15]>>>3); const s1 = ((w[i-2]>>>17)|(w[i-2]<<15))^((w[i-2]>>>19)|(w[i-2]<<13))^(w[i-2]>>>10); w[i] = (w[i-16]+s0+w[i-7]+s1)>>>0; } let a=h0,b=h1,c=h2,d=h3,e=h4,f=h5,g=h6,h=h7; for (let i = 0; i < 64; i++) { const S1=((e>>>6)|(e<<26))^((e>>>11)|(e<<21))^((e>>>25)|(e<<7)); const ch=(e&f)^(~e&g); const t1=(h+S1+ch+SHA256_K[i]+w[i])>>>0; const S0=((a>>>2)|(a<<30))^((a>>>13)|(a<<19))^((a>>>22)|(a<<10)); const maj=(a&b)^(a&c)^(b&c); const t2=(S0+maj)>>>0; h=g;g=f;f=e;e=(d+t1)>>>0;d=c;c=b;b=a;a=(t1+t2)>>>0; } h0=(h0+a)>>>0;h1=(h1+b)>>>0;h2=(h2+c)>>>0;h3=(h3+d)>>>0;h4=(h4+e)>>>0;h5=(h5+f)>>>0;h6=(h6+g)>>>0;h7=(h7+h)>>>0; } const result = new Uint8Array(32); const rv = new DataView(result.buffer); rv.setUint32(0,h0,false);rv.setUint32(4,h1,false);rv.setUint32(8,h2,false);rv.setUint32(12,h3,false);rv.setUint32(16,h4,false);rv.setUint32(20,h5,false);rv.setUint32(24,h6,false);rv.setUint32(28,h7,false); return result; }
+function hmacSha256Pure(key, msg) { const keyBytes = typeof key === 'string' ? new TextEncoder().encode(key) : new Uint8Array(key); const msgBytes = typeof msg === 'string' ? new TextEncoder().encode(msg) : new Uint8Array(msg); let keyPad = keyBytes; if (keyBytes.length > 64) keyPad = sha256Pure(keyBytes); if (keyPad.length < 64) { const tmp = new Uint8Array(64); tmp.set(keyPad); keyPad = tmp; } const ipad = new Uint8Array(64), opad = new Uint8Array(64); for (let i = 0; i < 64; i++) { ipad[i] = keyPad[i] ^ 0x36; opad[i] = keyPad[i] ^ 0x5c; } const inner = new Uint8Array(64 + msgBytes.length); inner.set(ipad); inner.set(msgBytes, 64); const innerHash = sha256Pure(inner); const outer = new Uint8Array(64 + 32); outer.set(opad); outer.set(innerHash, 64); return sha256Pure(outer); }
+function bytesToHex(bytes) { return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(''); }
+function bytesToDouble(bytes) { const view = new DataView(bytes.buffer || new Uint8Array(bytes).buffer); const high = view.getUint32(0, false) >>> 0; const low = view.getUint32(4, false) >>> 0; return (high * 0x100000000 + low) / 0x10000000000000000; }
+
 const FP_ROUND = 1e10;
 function fpRound(v) { return Math.round(v * FP_ROUND) / FP_ROUND; }
-
-class JavaRandom {
-  constructor(seed) { this.seed = (BigInt(seed) ^ 0x5DEECE66Dn) & 0xFFFFFFFFFFFFn; }
-  next(bits) { this.seed = (this.seed * 0x5DEECE66Dn + 0xBn) & 0xFFFFFFFFFFFFn; return Number(this.seed >> BigInt(48 - bits)); }
-  nextDouble() { return (this.next(26) * 0x8000000 + this.next(27)) / 0x20000000000000; }
-}
-
 function dist(ax, ay, bx, by) { return Math.sqrt((bx-ax)**2 + (by-ay)**2); }
 function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
 
-const CONFIG = {
-  FIELD: 9, BALL_R: 0.2, SPEED: 0.05, GOAL_R: 1.02,
-  CENTER_R: 0.225, CENTER_X: 4.5, CENTER_Y: 4.5, COUNTDOWN: 45,
-  GOLDEN_CHANCE: 0.01, EXPLOSIVE_CHANCE: 1/75,
-  SPAWN_COOLDOWN: 60, SPAWN_INTERVAL: 60, MAX_ON_FIELD: 10,
-  TIMEOUT_LIMIT: 5, PROGRESSIVE_CAP: 5, BET_PER_BALL: 5, MAX_TICKS_PER_BALL: 600
-};
+class InputSeededRNG {
+  constructor(gameSeedHex) { this.gameSeedHex = gameSeedHex; this.currentTick = -1; this.bumperX = 0; this.bumperY = 0; this.counter = 0; }
+  setTickContext(tick, bumperX, bumperY) { if (this.currentTick !== tick || this.bumperX !== bumperX || this.bumperY !== bumperY) { this.currentTick = tick; this.bumperX = bumperX; this.bumperY = bumperY; this.counter = 0; } }
+  nextDouble(eventType = 'rnd') { const input = `${this.currentTick}:${this.bumperX.toFixed(4)}:${this.bumperY.toFixed(4)}:${eventType}:${this.counter++}`; const hash = hmacSha256Pure(this.gameSeedHex, input); return bytesToDouble(hash); }
+}
+
+const CONFIG = { FIELD: 9, BALL_R: 0.2, SPEED: 0.05, GOAL_R: 1.02, CENTER_R: 0.225, CENTER_X: 4.5, CENTER_Y: 4.5, COUNTDOWN: 45, GOLDEN_CHANCE: 0.01, EXPLOSIVE_CHANCE: 1/75, SPAWN_COOLDOWN: 60, SPAWN_INTERVAL: 60, MAX_ON_FIELD: 10, TIMEOUT_LIMIT: 5, PROGRESSIVE_CAP: 5, BET_PER_BALL: 5, MAX_TICKS_PER_BALL: 600 };
 const BUMPER = { RADIUS: 0.4, MIN_Y: 0.4, MAX_Y: 3.5, MIN_X: 1.5, MAX_X: 7.5, MAX_SPEED: 0.15, START_X: 4.5, START_Y: 2.0 };
 const VALUE_COLORS = { 9:'#00ff00', 8:'#33ff00', 7:'#66ff00', 6:'#99ff00', 5:'#ccff00', 4:'#ffff00', 3:'#ffcc00', 2:'#ff9900', 1:'#ff6600', 0:'#ff0000' };
 
@@ -589,119 +442,63 @@ function isInRightGoal(b) { return dist(b.x, b.y, CONFIG.FIELD, 0) < CONFIG.GOAL
 function isGoal(b) { return isInLeftGoal(b) || isInRightGoal(b); }
 function isInCenter(b) { return dist(b.x, b.y, CONFIG.CENTER_X, CONFIG.CENTER_Y) < CONFIG.CENTER_R + CONFIG.BALL_R; }
 function isInUpperHalf(b) { return b.y < CONFIG.FIELD / 2; }
-
-function createBall(rng, id) {
-  const x = 0.5 + rng.nextDouble() * 8, y = CONFIG.FIELD - 0.3;
-  const angle = (220 + rng.nextDouble() * 100) * Math.PI / 180;
-  const typeRoll = rng.nextDouble();
-  let type = 'normal', multiplier = 1;
-  if (typeRoll < CONFIG.GOLDEN_CHANCE) { type = 'golden'; multiplier = 3; }
-  else if (typeRoll < CONFIG.GOLDEN_CHANCE + CONFIG.EXPLOSIVE_CHANCE) { type = 'explosive'; }
-  return { id, x, y, dx: Math.cos(angle) * CONFIG.SPEED, dy: Math.sin(angle) * CONFIG.SPEED, value: 9, ticksSinceCountdown: 0, alive: true, type, multiplier };
-}
-
-function randomizeBounce(ball, rng) {
-  const angle = Math.atan2(ball.dy, ball.dx) + (rng.nextDouble() - 0.5) * 0.1 * Math.PI;
-  const speed = Math.sqrt(ball.dx**2 + ball.dy**2);
-  ball.dx = fpRound(Math.cos(angle) * speed);
-  ball.dy = fpRound(Math.sin(angle) * speed);
-}
-
 function createBumper() { return { x: BUMPER.START_X, y: BUMPER.START_Y, targetX: BUMPER.START_X, targetY: BUMPER.START_Y }; }
+function moveBumper(bumper) { const dx = bumper.targetX - bumper.x, dy = bumper.targetY - bumper.y, d = Math.sqrt(dx*dx + dy*dy); if (d > BUMPER.MAX_SPEED) { bumper.x = fpRound(bumper.x + (dx/d) * BUMPER.MAX_SPEED); bumper.y = fpRound(bumper.y + (dy/d) * BUMPER.MAX_SPEED); } else { bumper.x = bumper.targetX; bumper.y = bumper.targetY; } }
+function createBall(rng, id) { const x = 0.5 + rng.nextDouble('spawn_x') * 8, y = CONFIG.FIELD - 0.3; const angle = (220 + rng.nextDouble('spawn_angle') * 100) * Math.PI / 180; const typeRoll = rng.nextDouble('spawn_type'); let type = 'normal', multiplier = 1; if (typeRoll < CONFIG.GOLDEN_CHANCE) { type = 'golden'; multiplier = 3; } else if (typeRoll < CONFIG.GOLDEN_CHANCE + CONFIG.EXPLOSIVE_CHANCE) { type = 'explosive'; } return { id, x, y, dx: Math.cos(angle) * CONFIG.SPEED, dy: Math.sin(angle) * CONFIG.SPEED, value: 9, ticksSinceCountdown: 0, alive: true, type, multiplier }; }
+function randomizeBounce(ball, rng, eventType) { const variation = (rng.nextDouble(eventType) - 0.5) * 0.1 * Math.PI; const angle = Math.atan2(ball.dy, ball.dx) + variation; const speed = Math.sqrt(ball.dx**2 + ball.dy**2); ball.dx = fpRound(Math.cos(angle) * speed); ball.dy = fpRound(Math.sin(angle) * speed); }
+function collideBallBumper(ball, bumper, rng) { const d = dist(ball.x, ball.y, bumper.x, bumper.y), minDist = CONFIG.BALL_R + BUMPER.RADIUS; if (d < minDist && d > 0) { const nx = (ball.x - bumper.x)/d, ny = (ball.y - bumper.y)/d, dot = ball.dx*nx + ball.dy*ny; ball.dx = fpRound(ball.dx - 2*dot*nx); ball.dy = fpRound(ball.dy - 2*dot*ny); ball.x = fpRound(bumper.x + nx*minDist); ball.y = fpRound(bumper.y + ny*minDist); randomizeBounce(ball, rng, `bumper_${ball.id}`); return true; } return false; }
 
-function moveBumper(bumper) {
-  const dx = bumper.targetX - bumper.x, dy = bumper.targetY - bumper.y;
-  const d = Math.sqrt(dx*dx + dy*dy);
-  if (d > BUMPER.MAX_SPEED) {
-    bumper.x = fpRound(bumper.x + (dx/d) * BUMPER.MAX_SPEED);
-    bumper.y = fpRound(bumper.y + (dy/d) * BUMPER.MAX_SPEED);
-  } else { bumper.x = bumper.targetX; bumper.y = bumper.targetY; }
-}
-
-function collideBallBumper(ball, bumper, rng) {
-  const d = dist(ball.x, ball.y, bumper.x, bumper.y);
-  const minDist = CONFIG.BALL_R + BUMPER.RADIUS;
-  if (d < minDist && d > 0) {
-    const nx = (ball.x - bumper.x)/d, ny = (ball.y - bumper.y)/d;
-    const dot = ball.dx*nx + ball.dy*ny;
-    ball.dx = fpRound(ball.dx - 2*dot*nx); ball.dy = fpRound(ball.dy - 2*dot*ny);
-    ball.x = fpRound(bumper.x + nx*minDist); ball.y = fpRound(bumper.y + ny*minDist);
-    randomizeBounce(ball, rng);
-    return true;
-  }
-  return false;
-}
-
-// ===== AI STRATEGIES =====
+// AI Strategies
 let hunterTargetId = null, defenderTargetId = null, sniperTargetId = null;
-
 const STRATEGIES = {
   human: null,
   stationary: () => ({ x: BUMPER.START_X, y: BUMPER.START_Y }),
-  hunter: (state) => {
-    let target = state.balls.find(b => b.id === hunterTargetId && b.alive && b.y < CONFIG.FIELD/2);
-    if (!target) {
-      let best = -Infinity;
-      for (const b of state.balls) {
-        if (!b.alive || b.y > CONFIG.FIELD/2) continue;
-        const score = (b.dy < 0 ? 100 : 0) + b.value*10 - b.y;
-        if (score > best) { best = score; target = b; }
-      }
-      hunterTargetId = target?.id || null;
-    }
-    return target ? { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.8, BUMPER.MIN_Y, BUMPER.MAX_Y) }
-                  : { x: BUMPER.START_X, y: BUMPER.MAX_Y - 0.5 };
-  },
-  defender: (state) => {
-    let target = state.balls.find(b => b.id === defenderTargetId && b.alive && b.y < CONFIG.FIELD/2);
-    if (!target) {
-      let best = -Infinity;
-      for (const b of state.balls) {
-        if (!b.alive || b.y >= CONFIG.FIELD/2) continue;
-        const score = (b.dy > 0 ? 100 : 0) + b.value*b.multiplier*10 + (CONFIG.FIELD/2 - b.y);
-        if (score > best) { best = score; target = b; }
-      }
-      defenderTargetId = target?.id || null;
-    }
-    if (!target) target = state.balls.find(b => b.alive);
-    return target ? { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.5, BUMPER.MIN_Y, BUMPER.MAX_Y) }
-                  : { x: 4.5, y: 2.5 };
-  },
-  sniper: (state) => {
-    let target = state.balls.find(b => b.id === sniperTargetId && b.alive && b.y < CONFIG.FIELD/2);
-    if (!target) {
-      let best = -Infinity;
-      for (const b of state.balls) {
-        if (!b.alive || b.y >= CONFIG.FIELD/2) continue;
-        const score = b.value*b.multiplier*10 - b.y;
-        if (score > best) { best = score; target = b; }
-      }
-      sniperTargetId = target?.id || null;
-    }
-    if (target) {
-      const offsetX = target.x < 4.5 ? 0.5 : -0.5;
-      return { x: clamp(target.x + offsetX, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.3, BUMPER.MIN_Y, BUMPER.MAX_Y) };
-    }
-    return { x: 4.5, y: 2.0 };
-  },
-  random: (state, rng) => {
-    if (state.tickCount % 30 === 0) return { x: BUMPER.MIN_X + rng.nextDouble()*(BUMPER.MAX_X-BUMPER.MIN_X), y: BUMPER.MIN_Y + rng.nextDouble()*(BUMPER.MAX_Y-BUMPER.MIN_Y) };
-    return { x: state.bumper.targetX, y: state.bumper.targetY };
-  },
-  avoider: (state) => {
-    let avgX = 0, avgY = 0, cnt = 0;
-    for (const b of state.balls) { if (b.alive && b.y < CONFIG.FIELD/2) { avgX += b.x; avgY += b.y; cnt++; } }
-    if (cnt) return { x: clamp(state.bumper.x + (state.bumper.x - avgX/cnt)*0.5, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(state.bumper.y + (state.bumper.y - avgY/cnt)*0.5, BUMPER.MIN_Y, BUMPER.MAX_Y) };
-    return { x: BUMPER.START_X, y: BUMPER.START_Y };
-  }
+  hunter: (state) => { let target = state.balls.find(b => b.id === hunterTargetId && b.alive && b.y < CONFIG.FIELD/2); if (!target) { let best = -Infinity; for (const b of state.balls) { if (!b.alive || b.y > CONFIG.FIELD/2) continue; const score = (b.dy < 0 ? 100 : 0) + b.value*10 - b.y; if (score > best) { best = score; target = b; } } hunterTargetId = target?.id || null; } return target ? { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.8, BUMPER.MIN_Y, BUMPER.MAX_Y) } : { x: BUMPER.START_X, y: BUMPER.MAX_Y - 0.5 }; },
+  defender: (state) => { let target = state.balls.find(b => b.id === defenderTargetId && b.alive && b.y < CONFIG.FIELD/2); if (!target) { let best = -Infinity; for (const b of state.balls) { if (!b.alive || b.y >= CONFIG.FIELD/2) continue; const score = (b.dy > 0 ? 100 : 0) + b.value*b.multiplier*10 + (CONFIG.FIELD/2 - b.y); if (score > best) { best = score; target = b; } } defenderTargetId = target?.id || null; } if (!target) target = state.balls.find(b => b.alive); return target ? { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.5, BUMPER.MIN_Y, BUMPER.MAX_Y) } : { x: 4.5, y: 2.5 }; },
+  sniper: (state) => { let target = state.balls.find(b => b.id === sniperTargetId && b.alive && b.y < CONFIG.FIELD/2); if (!target) { let best = -Infinity; for (const b of state.balls) { if (!b.alive || b.y >= CONFIG.FIELD/2) continue; const score = b.value*b.multiplier*10 - b.y; if (score > best) { best = score; target = b; } } sniperTargetId = target?.id || null; } if (target) { const offsetX = target.x < 4.5 ? 0.5 : -0.5; return { x: clamp(target.x + offsetX, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.3, BUMPER.MIN_Y, BUMPER.MAX_Y) }; } return { x: 4.5, y: 2.0 }; },
+  random: (state) => { if (state.tickCount % 30 === 0) return { x: BUMPER.MIN_X + Math.random()*(BUMPER.MAX_X-BUMPER.MIN_X), y: BUMPER.MIN_Y + Math.random()*(BUMPER.MAX_Y-BUMPER.MIN_Y) }; return { x: state.bumper.targetX, y: state.bumper.targetY }; },
+  avoider: (state) => { let avgX = 0, avgY = 0, cnt = 0; for (const b of state.balls) { if (b.alive && b.y < CONFIG.FIELD/2) { avgX += b.x; avgY += b.y; cnt++; } } if (cnt) return { x: clamp(state.bumper.x + (state.bumper.x - avgX/cnt)*0.5, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(state.bumper.y + (state.bumper.y - avgY/cnt)*0.5, BUMPER.MIN_Y, BUMPER.MAX_Y) }; return { x: BUMPER.START_X, y: BUMPER.START_Y }; }
 };
+
+function createInitialState(gameSeedHex, numBalls) { return { rng: new InputSeededRNG(gameSeedHex), gameSeedHex, balls: [], bumper: createBumper(), tickCount: 0, ballsSpawned: 0, numBalls, spawnCooldown: 0, progressive: 1, timeoutCount: 0, totalWin: 0, finished: false, nextBallId: 1, inputLog: [] }; }
+
+function tick(state, bumperTarget) {
+  if (state.finished) return [];
+  const events = [];
+  state.tickCount++;
+  if (state.spawnCooldown > 0) state.spawnCooldown--;
+  if (bumperTarget) { state.bumper.targetX = clamp(bumperTarget.x, BUMPER.MIN_X, BUMPER.MAX_X); state.bumper.targetY = clamp(bumperTarget.y, BUMPER.MIN_Y, BUMPER.MAX_Y); }
+  moveBumper(state.bumper);
+  state.rng.setTickContext(state.tickCount, state.bumper.x, state.bumper.y);
+  // Log input
+  state.inputLog.push({ tick: state.tickCount, target: { x: state.bumper.targetX, y: state.bumper.targetY } });
+  // Spawn
+  if (state.tickCount % CONFIG.SPAWN_INTERVAL === 0 && state.balls.length < CONFIG.MAX_ON_FIELD && state.spawnCooldown <= 0 && state.ballsSpawned < state.numBalls) { const ball = createBall(state.rng, state.nextBallId++); state.balls.push(ball); state.ballsSpawned++; state.spawnCooldown = CONFIG.SPAWN_COOLDOWN; events.push({ type: 'spawn', ball }); }
+  // Update balls
+  for (const b of state.balls) { if (!b.alive) continue; b.ticksSinceCountdown++; b.x = fpRound(b.x + b.dx); b.y = fpRound(b.y + b.dy); const R = CONFIG.BALL_R, F = CONFIG.FIELD; let hitWall = false; if (b.x - R < 0) { b.x = R; b.dx = -b.dx; hitWall = true; } if (b.x + R > F) { b.x = F - R; b.dx = -b.dx; hitWall = true; } if (b.y - R < 0) { b.y = R; b.dy = -b.dy; hitWall = true; } if (b.y + R > F) { b.y = F - R; b.dy = -b.dy; hitWall = true; } if (b.type === 'normal' && b.ticksSinceCountdown >= CONFIG.COUNTDOWN && b.value > 0) { b.value--; b.ticksSinceCountdown = 0; if (b.value <= 0) { b.alive = false; b.diedFromTimeout = true; events.push({ type: 'timeout', ball: b }); } } if (b.alive && hitWall) randomizeBounce(b, state.rng, `wall_${b.id}`); }
+  // Bumper collision
+  for (const b of state.balls) if (b.alive && collideBallBumper(b, state.bumper, state.rng)) events.push({ type: 'bumperHit', ball: b });
+  // Center
+  for (const b of state.balls) { if (b.alive && isInCenter(b)) { const dx = b.x - CONFIG.CENTER_X, dy = b.y - CONFIG.CENTER_Y, d = Math.sqrt(dx*dx+dy*dy); if (d > 0) { b.dx = (dx/d)*CONFIG.SPEED; b.dy = (dy/d)*CONFIG.SPEED; randomizeBounce(b, state.rng, `center_${b.id}`); } if (b.type === 'normal' && b.value < 9) { b.value = 9; b.ticksSinceCountdown = 0; events.push({ type: 'recharge', ball: b }); } } }
+  // Goals
+  for (const ball of state.balls) { if (!ball.alive) continue; if (isGoal(ball)) { const prize = ball.value * ball.multiplier * state.progressive; state.totalWin += prize; if (ball.type === 'golden') state.timeoutCount = 0; if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++; events.push({ type: 'goal', ball, prize, side: isInLeftGoal(ball) ? 'left' : 'right' }); ball.alive = false; if (ball.type === 'explosive') { state.timeoutCount = 0; events.push({ type: 'explosion', ball, x: ball.x, y: ball.y }); for (const o of state.balls) { if (o.alive && o.id !== ball.id && isInUpperHalf(o)) { const ep = o.value * o.multiplier * state.progressive; state.totalWin += ep; if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++; events.push({ type: 'exploded', ball: o, prize: ep }); o.alive = false; } } } } }
+  // Ball-ball collisions
+  for (let i = 0; i < state.balls.length; i++) { for (let j = i + 1; j < state.balls.length; j++) { const b1 = state.balls[i], b2 = state.balls[j]; if (!b1.alive || !b2.alive) continue; if (dist(b1.x, b1.y, b2.x, b2.y) < CONFIG.BALL_R * 2) { const s1 = b1.type !== 'normal', s2 = b2.type !== 'normal'; if (s1 && s2) { const dx = b2.x - b1.x, dy = b2.y - b1.y, d = Math.sqrt(dx*dx+dy*dy)||1, nx = dx/d, ny = dy/d, ov = CONFIG.BALL_R*2-d; if (ov > 0) { b1.x -= nx*ov*0.5; b1.y -= ny*ov*0.5; b2.x += nx*ov*0.5; b2.y += ny*ov*0.5; } b1.dx = -nx*CONFIG.SPEED; b1.dy = -ny*CONFIG.SPEED; b2.dx = nx*CONFIG.SPEED; b2.dy = ny*CONFIG.SPEED; randomizeBounce(b1, state.rng, `coll_${b1.id}_${b2.id}_1`); randomizeBounce(b2, state.rng, `coll_${b1.id}_${b2.id}_2`); continue; } if (s1) { b2.alive = false; state.totalWin += 1; events.push({ type: 'collision', winner: b1, loser: b2, prize: 1 }); continue; } if (s2) { b1.alive = false; state.totalWin += 1; events.push({ type: 'collision', winner: b2, loser: b1, prize: 1 }); continue; } if (b1.value === b2.value) { const prize = b1.value * 2; state.totalWin += prize; events.push({ type: 'double', b1, b2, prize }); const roll = state.rng.nextDouble(`double_${b1.id}_${b2.id}`); if (roll < 0.5) b2.alive = false; else b1.alive = false; } else { state.totalWin += 1; const loser = b1.value < b2.value ? b1 : b2, winner = b1.value < b2.value ? b2 : b1; loser.alive = false; const dx = winner.x - loser.x, dy = winner.y - loser.y, d = Math.sqrt(dx*dx+dy*dy)||1; winner.dx = (dx/d)*CONFIG.SPEED; winner.dy = (dy/d)*CONFIG.SPEED; randomizeBounce(winner, state.rng, `win_${winner.id}`); events.push({ type: 'collision', winner, loser, prize: 1 }); } } } }
+  // Timeouts
+  for (const b of state.balls) { if (!b.alive && b.diedFromTimeout) { state.timeoutCount++; if (state.timeoutCount >= CONFIG.TIMEOUT_LIMIT) { state.progressive = 1; state.timeoutCount = 0; events.push({ type: 'progressiveReset' }); } b.diedFromTimeout = false; } }
+  state.balls = state.balls.filter(b => b.alive);
+  // Auto-collect
+  if (state.balls.length > 0 && !state.balls.some(b => b.type === 'normal')) { for (const b of state.balls) { if (b.alive) { const prize = b.value * b.multiplier * state.progressive; state.totalWin += prize; if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++; events.push({ type: 'autoCollect', ball: b, prize }); b.alive = false; } } state.balls = []; }
+  // End
+  if (state.ballsSpawned >= state.numBalls && state.balls.length === 0) { state.finished = true; events.push({ type: 'gameEnd', totalWin: state.totalWin }); }
+  return events;
+}
 
 // ===== GAME STATE =====
 let gameState = null, gameRunning = false, balance = 1000;
-let currentMode = 'human', strategyRng = null, serverOnline = false;
-let currentGameId = null, currentClientSeed = null, lastVerificationData = null;
-let currentChunk = 0, lastChunkBalls = 0, chunkInputLog = [];
-const CHUNK_SIZE = 50; // Send chunk every 50 balls
+let currentMode = 'human';
+let currentGameId = null, currentClientSeed = null, recordedCommitment = null;
+let lastVerificationData = null;
 const floatingTexts = [], explosionParticles = [];
 let goalFlashLeft = 0, goalFlashRight = 0;
 
@@ -715,270 +512,47 @@ canvas.addEventListener('touchmove', (e) => { e.preventDefault(); const r = canv
 
 document.getElementById('modeSelect').addEventListener('change', (e) => { currentMode = e.target.value; updateModeIndicator(); });
 
-function updateModeIndicator() {
-  const ind = document.getElementById('modeIndicator');
-  const labels = { human:'👆 HUMAN', stationary:'🧍 STATIONARY', hunter:'🎯 HUNTER', defender:'🛡️ DEFENDER', sniper:'🔫 SNIPER', random:'🎲 RANDOM', avoider:'🏃 AVOIDER' };
-  ind.textContent = labels[currentMode];
-  ind.className = 'mode-indicator' + (currentMode === 'human' ? ' human' : '');
-}
+function updateModeIndicator() { const ind = document.getElementById('modeIndicator'); const labels = { human:'👆 HUMAN', stationary:'🧍 STATIONARY', hunter:'🎯 HUNTER', defender:'🛡️ DEFENDER', sniper:'🔫 SNIPER', random:'🎲 RANDOM', avoider:'🏃 AVOIDER' }; ind.textContent = labels[currentMode]; ind.className = 'mode-indicator' + (currentMode === 'human' ? ' human' : ''); }
+function updateProgressiveLamps(level) { document.querySelectorAll('.lamp').forEach((l, i) => l.classList.toggle('active', i < level)); }
+function updateTimeoutDots(count) { document.querySelectorAll('.timeout-dot').forEach((d, i) => d.classList.toggle('active', i < count)); }
 
-function updateProgressiveLamps(level) {
-  document.querySelectorAll('.lamp').forEach((l, i) => l.classList.toggle('active', i < level));
-}
+function updateUI() { if (gameState) { document.getElementById('ballsLeft').textContent = gameState.numBalls - gameState.ballsSpawned + gameState.balls.length; document.getElementById('winDisplay').textContent = '$' + gameState.totalWin; updateProgressiveLamps(gameState.progressive); updateTimeoutDots(gameState.timeoutCount); } document.getElementById('balance').textContent = '$' + balance; }
 
-function updateTimeoutDots(count) {
-  document.querySelectorAll('.timeout-dot').forEach((d, i) => d.classList.toggle('active', i < count));
-}
-
-async function checkServer() {
-  try {
-    const res = await fetch(`${SERVER_URL}/commitment`);
-    await res.json();
-    serverOnline = true;
-    document.getElementById('serverStatus').className = 'server-status online';
-    document.getElementById('serverStatus').textContent = '🟢 Online';
-  } catch { serverOnline = false; document.getElementById('serverStatus').className = 'server-status offline'; document.getElementById('serverStatus').textContent = '⚫ Offline'; }
-}
-checkServer(); setInterval(checkServer, 30000);
-
-function createInitialState(seed, numBalls) {
-  return { rng: new JavaRandom(seed), seed, balls: [], bumper: createBumper(), tickCount: 0, ballsSpawned: 0, numBalls, spawnCooldown: 0, progressive: 1, timeoutCount: 0, totalWin: 0, finished: false, nextBallId: 1, inputLog: [] };
-}
-
-function tick(state, skipInput = false) {
-  if (state.finished) return [];
-  const events = [];
-  state.tickCount++;
-  if (state.spawnCooldown > 0) state.spawnCooldown--;
-
-  if (!skipInput) {
-    if (currentMode === 'human') {
-      state.bumper.targetX = clamp(mouseX, BUMPER.MIN_X, BUMPER.MAX_X);
-      state.bumper.targetY = clamp(mouseY, BUMPER.MIN_Y, BUMPER.MAX_Y);
-    } else {
-      const strat = STRATEGIES[currentMode];
-      if (strat) { const t = strat(state, strategyRng); state.bumper.targetX = clamp(t.x, BUMPER.MIN_X, BUMPER.MAX_X); state.bumper.targetY = clamp(t.y, BUMPER.MIN_Y, BUMPER.MAX_Y); }
-    }
-    // Record every tick for deterministic replay
-    const input = { tick: state.tickCount, target: { x: state.bumper.targetX, y: state.bumper.targetY } };
-    state.inputLog.push(input);
-    chunkInputLog.push(input);
-  }
-  moveBumper(state.bumper);
-
-  if (state.tickCount % CONFIG.SPAWN_INTERVAL === 0 && state.balls.length < CONFIG.MAX_ON_FIELD && state.spawnCooldown <= 0 && state.ballsSpawned < state.numBalls) {
-    const ball = createBall(state.rng, state.nextBallId++);
-    state.balls.push(ball); state.ballsSpawned++; state.spawnCooldown = CONFIG.SPAWN_COOLDOWN;
-    events.push({ type: 'spawn', ball });
-  }
-
-  for (const b of state.balls) {
-    if (!b.alive) continue;
-    b.ticksSinceCountdown++;
-    b.x = fpRound(b.x + b.dx); b.y = fpRound(b.y + b.dy);
-    const R = CONFIG.BALL_R, F = CONFIG.FIELD;
-    if (b.x - R < 0) { b.x = R; b.dx = -b.dx; }
-    if (b.x + R > F) { b.x = F - R; b.dx = -b.dx; }
-    if (b.y - R < 0) { b.y = R; b.dy = -b.dy; }
-    if (b.y + R > F) { b.y = F - R; b.dy = -b.dy; }
-    if (b.type === 'normal' && b.ticksSinceCountdown >= CONFIG.COUNTDOWN && b.value > 0) {
-      b.value--; b.ticksSinceCountdown = 0;
-      if (b.value <= 0) { b.alive = false; b.diedFromTimeout = true; }
-    }
-    if (b.alive && (b.x - R < 0.01 || b.x + R > F - 0.01 || b.y - R < 0.01 || b.y + R > F - 0.01)) randomizeBounce(b, state.rng);
-  }
-
-  for (const b of state.balls) if (b.alive && collideBallBumper(b, state.bumper, state.rng)) events.push({ type: 'bumperHit', ball: b });
-
-  for (const b of state.balls) {
-    if (b.alive && isInCenter(b)) {
-      const dx = b.x - CONFIG.CENTER_X, dy = b.y - CONFIG.CENTER_Y, d = Math.sqrt(dx*dx + dy*dy);
-      if (d > 0) { b.dx = (dx/d)*CONFIG.SPEED; b.dy = (dy/d)*CONFIG.SPEED; randomizeBounce(b, state.rng); }
-      if (b.type === 'normal' && b.value < 9) { b.value = 9; b.ticksSinceCountdown = 0; events.push({ type: 'recharge', ball: b }); }
-    }
-  }
-
-  for (const ball of state.balls) {
-    if (!ball.alive) continue;
-    if (isGoal(ball)) {
-      const prize = ball.value * ball.multiplier * state.progressive;
-      state.totalWin += prize;
-      if (ball.type === 'golden') state.timeoutCount = 0;
-      if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++;
-      events.push({ type: 'goal', ball, prize, side: isInLeftGoal(ball) ? 'left' : 'right' });
-      ball.alive = false;
-      if (ball.type === 'explosive') {
-        state.timeoutCount = 0;
-        events.push({ type: 'explosion', ball, x: ball.x, y: ball.y });
-        for (const o of state.balls) {
-          if (o.alive && o.id !== ball.id && isInUpperHalf(o)) {
-            const ep = o.value * o.multiplier * state.progressive;
-            state.totalWin += ep;
-            if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++;
-            events.push({ type: 'exploded', ball: o, prize: ep });
-            o.alive = false;
-          }
-        }
-      }
-    }
-  }
-
-  for (let i = 0; i < state.balls.length; i++) {
-    for (let j = i + 1; j < state.balls.length; j++) {
-      const b1 = state.balls[i], b2 = state.balls[j];
-      if (!b1.alive || !b2.alive) continue;
-      if (dist(b1.x, b1.y, b2.x, b2.y) < CONFIG.BALL_R * 2) {
-        const s1 = b1.type !== 'normal', s2 = b2.type !== 'normal';
-        if (s1 && s2) {
-          const dx = b2.x - b1.x, dy = b2.y - b1.y, d = Math.sqrt(dx*dx + dy*dy) || 1;
-          const nx = dx/d, ny = dy/d, ov = CONFIG.BALL_R*2 - d;
-          if (ov > 0) { b1.x -= nx*ov*0.5; b1.y -= ny*ov*0.5; b2.x += nx*ov*0.5; b2.y += ny*ov*0.5; }
-          b1.dx = -nx*CONFIG.SPEED; b1.dy = -ny*CONFIG.SPEED;
-          b2.dx = nx*CONFIG.SPEED; b2.dy = ny*CONFIG.SPEED;
-          randomizeBounce(b1, state.rng); randomizeBounce(b2, state.rng);
-          continue;
-        }
-        if (s1) { b2.alive = false; state.totalWin += 1; events.push({ type: 'collision', winner: b1, loser: b2, prize: 1 }); continue; }
-        if (s2) { b1.alive = false; state.totalWin += 1; events.push({ type: 'collision', winner: b2, loser: b1, prize: 1 }); continue; }
-        if (b1.value === b2.value) {
-          const prize = b1.value * 2;
-          state.totalWin += prize;
-          events.push({ type: 'double', b1, b2, prize });
-          if (state.rng.nextDouble() < 0.5) b2.alive = false; else b1.alive = false;
-        } else {
-          state.totalWin += 1;
-          const loser = b1.value < b2.value ? b1 : b2, winner = b1.value < b2.value ? b2 : b1;
-          loser.alive = false;
-          const dx = winner.x - loser.x, dy = winner.y - loser.y, d = Math.sqrt(dx*dx + dy*dy) || 1;
-          winner.dx = (dx/d)*CONFIG.SPEED; winner.dy = (dy/d)*CONFIG.SPEED;
-          randomizeBounce(winner, state.rng);
-          events.push({ type: 'collision', winner, loser, prize: 1 });
-        }
-      }
-    }
-  }
-
-  for (const b of state.balls) {
-    if (!b.alive && b.diedFromTimeout) {
-      state.timeoutCount++;
-      events.push({ type: 'timeout', ball: b });
-      if (state.timeoutCount >= CONFIG.TIMEOUT_LIMIT) {
-        state.progressive = 1; state.timeoutCount = 0;
-        events.push({ type: 'progressiveReset' });
-      }
-      b.diedFromTimeout = false;
-    }
-  }
-
-  state.balls = state.balls.filter(b => b.alive);
-
-  if (state.balls.length > 0 && !state.balls.some(b => b.type === 'normal')) {
-    for (const b of state.balls) {
-      if (b.alive) {
-        const prize = b.value * b.multiplier * state.progressive;
-        state.totalWin += prize;
-        if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++;
-        events.push({ type: 'autoCollect', ball: b, prize });
-        b.alive = false;
-      }
-    }
-    state.balls = [];
-  }
-
-  if (state.ballsSpawned >= state.numBalls && state.balls.length === 0) {
-    state.finished = true;
-    events.push({ type: 'gameEnd', totalWin: state.totalWin });
-  }
-
-  return events;
-}
-
-// ===== RENDERING =====
+// Rendering
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = '#0a0a1a'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-  
   const la = 0.3 + goalFlashLeft * 0.5, ra = 0.3 + goalFlashRight * 0.5;
   ctx.fillStyle = `rgba(0,255,100,${la})`; ctx.beginPath(); ctx.arc(0, 0, CONFIG.GOAL_R * SCALE, 0, Math.PI/2); ctx.lineTo(0, 0); ctx.fill();
   ctx.fillStyle = `rgba(0,255,100,${ra})`; ctx.beginPath(); ctx.arc(canvas.width, 0, CONFIG.GOAL_R * SCALE, Math.PI/2, Math.PI); ctx.lineTo(canvas.width, 0); ctx.fill();
   ctx.strokeStyle = '#00ff66'; ctx.lineWidth = 2;
   ctx.beginPath(); ctx.arc(0, 0, CONFIG.GOAL_R * SCALE, 0, Math.PI/2); ctx.stroke();
   ctx.beginPath(); ctx.arc(canvas.width, 0, CONFIG.GOAL_R * SCALE, Math.PI/2, Math.PI); ctx.stroke();
-  
   ctx.fillStyle = 'rgba(0,200,255,0.2)'; ctx.beginPath(); ctx.arc(CONFIG.CENTER_X * SCALE, CONFIG.CENTER_Y * SCALE, CONFIG.CENTER_R * SCALE, 0, Math.PI*2); ctx.fill();
   ctx.strokeStyle = '#00d4ff'; ctx.stroke();
-  
   ctx.fillStyle = 'rgba(255,255,255,0.03)';
   ctx.fillRect(BUMPER.MIN_X * SCALE, BUMPER.MIN_Y * SCALE, (BUMPER.MAX_X - BUMPER.MIN_X) * SCALE, (BUMPER.MAX_Y - BUMPER.MIN_Y) * SCALE);
-  
-  for (const p of explosionParticles) {
-    ctx.fillStyle = `rgba(255,${150+Math.random()*100|0},0,${p.life})`;
-    ctx.beginPath(); ctx.arc(p.x * SCALE, p.y * SCALE, p.size * SCALE, 0, Math.PI*2); ctx.fill();
-  }
-  
-  // Draw bumper (always visible)
-  const bx = gameState ? gameState.bumper.x : BUMPER.START_X;
-  const by = gameState ? gameState.bumper.y : BUMPER.START_Y;
+  for (const p of explosionParticles) { ctx.fillStyle = `rgba(255,${150+Math.random()*100|0},0,${p.life})`; ctx.beginPath(); ctx.arc(p.x * SCALE, p.y * SCALE, p.size * SCALE, 0, Math.PI*2); ctx.fill(); }
+  const bx = gameState ? gameState.bumper.x : BUMPER.START_X, by = gameState ? gameState.bumper.y : BUMPER.START_Y;
   ctx.fillStyle = '#00d4ff'; ctx.shadowColor = '#00d4ff'; ctx.shadowBlur = 15;
   ctx.beginPath(); ctx.arc(bx * SCALE, by * SCALE, BUMPER.RADIUS * SCALE, 0, Math.PI*2); ctx.fill();
   ctx.shadowBlur = 0; ctx.fillStyle = '#004466';
   ctx.beginPath(); ctx.arc(bx * SCALE, by * SCALE, BUMPER.RADIUS * SCALE * 0.6, 0, Math.PI*2); ctx.fill();
-  
-  if (gameState) {
-    
-    for (const b of gameState.balls) {
-      if (!b.alive) continue;
-      let color, glow;
-      if (b.type === 'golden') { color = '#ffa500'; glow = '#ff8c00'; }
-      else if (b.type === 'explosive') { color = '#ff4444'; glow = '#ff0000'; }
-      else { color = VALUE_COLORS[b.value] || '#fff'; glow = color; }
-      ctx.shadowColor = glow; ctx.shadowBlur = 12; ctx.fillStyle = color;
-      ctx.beginPath(); ctx.arc(b.x * SCALE, b.y * SCALE, CONFIG.BALL_R * SCALE, 0, Math.PI*2); ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = b.type === 'explosive' ? '#fff' : '#000';
-      ctx.font = 'bold 10px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      if (b.type === 'normal') ctx.fillText(b.value, b.x * SCALE, b.y * SCALE);
-      else if (b.type === 'golden') ctx.fillText('G', b.x * SCALE, b.y * SCALE);
-      else ctx.fillText('💥', b.x * SCALE, b.y * SCALE);
-    }
-  }
-  
-  if (gameRunning && currentMode === 'human') {
-    ctx.strokeStyle = 'rgba(0,212,255,0.4)'; ctx.lineWidth = 1; ctx.setLineDash([5, 5]);
-    ctx.beginPath(); ctx.arc(clamp(mouseX, BUMPER.MIN_X, BUMPER.MAX_X) * SCALE, clamp(mouseY, BUMPER.MIN_Y, BUMPER.MAX_Y) * SCALE, BUMPER.RADIUS * SCALE, 0, Math.PI*2); ctx.stroke();
-    ctx.setLineDash([]);
-  }
-  
-  for (const ft of floatingTexts) {
-    ctx.save(); ctx.globalAlpha = ft.opacity; ctx.fillStyle = ft.color;
-    ctx.font = `bold ${ft.size||16}px Arial`; ctx.textAlign = 'center';
-    ctx.shadowColor = ft.color; ctx.shadowBlur = 10;
-    ctx.fillText(ft.text, ft.x, ft.y); ctx.restore();
-  }
+  if (gameState) { for (const b of gameState.balls) { if (!b.alive) continue; let color, glow; if (b.type === 'golden') { color = '#ffa500'; glow = '#ff8c00'; } else if (b.type === 'explosive') { color = '#ff4444'; glow = '#ff0000'; } else { color = VALUE_COLORS[b.value] || '#fff'; glow = color; } ctx.shadowColor = glow; ctx.shadowBlur = 12; ctx.fillStyle = color; ctx.beginPath(); ctx.arc(b.x * SCALE, b.y * SCALE, CONFIG.BALL_R * SCALE, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur = 0; ctx.fillStyle = b.type === 'explosive' ? '#fff' : '#000'; ctx.font = 'bold 10px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; if (b.type === 'normal') ctx.fillText(b.value, b.x * SCALE, b.y * SCALE); else if (b.type === 'golden') ctx.fillText('G', b.x * SCALE, b.y * SCALE); else ctx.fillText('💥', b.x * SCALE, b.y * SCALE); } }
+  if (gameRunning && currentMode === 'human') { ctx.strokeStyle = 'rgba(0,212,255,0.4)'; ctx.lineWidth = 1; ctx.setLineDash([5, 5]); ctx.beginPath(); ctx.arc(clamp(mouseX, BUMPER.MIN_X, BUMPER.MAX_X) * SCALE, clamp(mouseY, BUMPER.MIN_Y, BUMPER.MAX_Y) * SCALE, BUMPER.RADIUS * SCALE, 0, Math.PI*2); ctx.stroke(); ctx.setLineDash([]); }
+  for (const ft of floatingTexts) { ctx.save(); ctx.globalAlpha = ft.opacity; ctx.fillStyle = ft.color; ctx.font = `bold ${ft.size||16}px Arial`; ctx.textAlign = 'center'; ctx.shadowColor = ft.color; ctx.shadowBlur = 10; ctx.fillText(ft.text, ft.x, ft.y); ctx.restore(); }
 }
 
 function showFloatingText(x, y, text, color, size = 16) { floatingTexts.push({ x: x * SCALE, y: y * SCALE, text, color, opacity: 1, dy: -2, size }); }
 function createExplosion(x, y) { for (let i = 0; i < 20; i++) { const a = Math.random() * Math.PI * 2, s = 0.05 + Math.random() * 0.1; explosionParticles.push({ x, y, dx: Math.cos(a)*s, dy: Math.sin(a)*s, life: 1, size: 0.1 + Math.random()*0.15 }); } }
-
-function updateEffects() {
-  for (let i = floatingTexts.length - 1; i >= 0; i--) { floatingTexts[i].y += floatingTexts[i].dy; floatingTexts[i].opacity -= 0.025; if (floatingTexts[i].opacity <= 0) floatingTexts.splice(i, 1); }
-  for (let i = explosionParticles.length - 1; i >= 0; i--) { explosionParticles[i].x += explosionParticles[i].dx; explosionParticles[i].y += explosionParticles[i].dy; explosionParticles[i].life -= 0.03; if (explosionParticles[i].life <= 0) explosionParticles.splice(i, 1); }
-  goalFlashLeft *= 0.9; goalFlashRight *= 0.9;
-}
-
-function updateUI() {
-  if (gameState) {
-    document.getElementById('ballsLeft').textContent = gameState.numBalls - gameState.ballsSpawned + gameState.balls.length;
-    document.getElementById('winDisplay').textContent = '$' + gameState.totalWin;
-    updateProgressiveLamps(gameState.progressive);
-    updateTimeoutDots(gameState.timeoutCount);
-  }
-  document.getElementById('balance').textContent = '$' + balance;
-}
+function updateEffects() { for (let i = floatingTexts.length - 1; i >= 0; i--) { floatingTexts[i].y += floatingTexts[i].dy; floatingTexts[i].opacity -= 0.025; if (floatingTexts[i].opacity <= 0) floatingTexts.splice(i, 1); } for (let i = explosionParticles.length - 1; i >= 0; i--) { explosionParticles[i].x += explosionParticles[i].dx; explosionParticles[i].y += explosionParticles[i].dy; explosionParticles[i].life -= 0.03; if (explosionParticles[i].life <= 0) explosionParticles.splice(i, 1); } goalFlashLeft *= 0.9; goalFlashRight *= 0.9; }
 
 function gameLoop() {
   if (gameRunning && gameState && !gameState.finished) {
-    const events = tick(gameState);
+    let target;
+    if (currentMode === 'human') { target = { x: clamp(mouseX, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(mouseY, BUMPER.MIN_Y, BUMPER.MAX_Y) }; }
+    else { const strat = STRATEGIES[currentMode]; if (strat) target = strat(gameState); }
+    const events = tick(gameState, target);
     for (const e of events) {
       if (e.type === 'goal') { showFloatingText(e.ball.x, e.ball.y, '+' + e.prize, '#00ff66', 20); if (e.side === 'left') goalFlashLeft = 1; else goalFlashRight = 1; playGoal(gameState.progressive); }
       if (e.type === 'explosion') { createExplosion(e.x, e.y); playExplosion(); }
@@ -986,17 +560,7 @@ function gameLoop() {
       if (e.type === 'double') { showFloatingText((e.b1.x + e.b2.x)/2, (e.b1.y + e.b2.y)/2, 'DOUBLE +' + e.prize, '#ffd700', 22); playDouble(); }
       if (e.type === 'timeout') { showFloatingText(e.ball.x, e.ball.y, '✗', '#ff4444'); playTimeout(); }
       if (e.type === 'progressiveReset') { showFloatingText(4.5, 2, 'RESET ×1', '#ff4444', 24); playProgressiveReset(); updateTimeoutDots(5); setTimeout(() => updateTimeoutDots(0), 500); }
-      if (e.type === 'spawn') { 
-        playSpawn();
-        // Check if time to send chunk
-        const ballsPlayed = gameState.ballsSpawned;
-        if (ballsPlayed - lastChunkBalls >= CHUNK_SIZE && serverOnline && currentGameId) {
-          sendChunk(currentGameId, currentChunk, chunkInputLog, ballsPlayed);
-          currentChunk++;
-          lastChunkBalls = ballsPlayed;
-          chunkInputLog = [];
-        }
-      }
+      if (e.type === 'spawn') { playSpawn(); }
       if (e.type === 'autoCollect') { showFloatingText(e.ball.x, e.ball.y, '💫 +' + e.prize, '#ffaa00', 20); createExplosion(e.ball.x, e.ball.y); playGoal(gameState.progressive); }
       if (e.type === 'collision' && e.prize > 1) { showFloatingText(e.loser.x, e.loser.y, '+' + e.prize, '#ffff00'); }
       if (e.type === 'recharge') { playRecharge(); }
@@ -1007,44 +571,24 @@ function gameLoop() {
         document.getElementById('modeSelect').disabled = false;
         document.getElementById('finalWin').textContent = gameState.totalWin;
         const bet = gameState.numBalls * CONFIG.BET_PER_BALL, rtp = gameState.totalWin / bet;
-        document.getElementById('finalRtp').textContent = `Bet: ${bet} | RTP: ${(rtp * 100).toFixed(1)}%`;
+        document.getElementById('finalRtp').textContent = `Bet: $${bet} | RTP: ${(rtp * 100).toFixed(1)}%`;
         playGameOver(rtp >= 1);
-        
-        // Add winnings to balance and save
         balance += gameState.totalWin;
         saveGameResult(bet, gameState.totalWin);
         updateAuthUI();
-        setTimeout(loadLeaderboard, 2000); // Refresh leaderboard
-        
-        if (lastVerificationData && serverOnline) {
-          document.getElementById('vGameId').textContent = lastVerificationData.gameId;
-          document.getElementById('vClientSeed').textContent = lastVerificationData.clientSeed;
-          document.getElementById('vCommitment').textContent = lastVerificationData.commitment;
+        setTimeout(loadLeaderboard, 2000);
+        // Finish on server
+        if (serverOnline && currentGameId) {
+          document.getElementById('vGameId').textContent = currentGameId;
+          document.getElementById('vClientSeed').textContent = currentClientSeed;
+          document.getElementById('vCommitment').textContent = recordedCommitment;
           document.getElementById('vServerSeed').textContent = 'Verifying...';
           document.getElementById('verifyBtn').disabled = true;
           document.getElementById('verifySection').style.display = 'block';
-          // Send final chunk then finish
-          (async () => {
-            try {
-              if (chunkInputLog.length > 0) {
-                await sendChunk(currentGameId, currentChunk, chunkInputLog, gameState.ballsSpawned);
-              }
-              const result = await finishGameOnServer(lastVerificationData.gameId, gameState.totalWin);
-              if (result.verified) {
-                document.getElementById('vServerSeed').textContent = result.serverSeed;
-                lastVerificationData.serverSeed = result.serverSeed;
-                lastVerificationData.gameSeedHex = result.gameSeedHex;
-                document.getElementById('verifyBtn').disabled = false;
-              } else {
-                document.getElementById('vServerSeed').textContent = 'VERIFICATION FAILED!';
-                document.getElementById('vServerSeed').style.color = '#ff4444';
-              }
-            } catch (err) {
-              console.error('Verification error:', err);
-              document.getElementById('vServerSeed').textContent = 'Error: ' + err.message;
-            }
-          })();
-        } else document.getElementById('verifySection').style.display = 'none';
+          finishGameOnServer();
+        } else {
+          document.getElementById('verifySection').style.display = 'none';
+        }
         document.getElementById('result').classList.add('show');
       }
     }
@@ -1053,79 +597,107 @@ function gameLoop() {
   updateEffects(); render(); requestAnimationFrame(gameLoop);
 }
 
-// Send chunk asynchronously
-async function sendChunk(gameId, chunkNum, inputLog, ballsPlayed) {
+async function finishGameOnServer() {
   try {
-    await fetch(`${SERVER_URL}/game/${gameId}/chunk`, {
+    const res = await fetch(`${SERVER_URL}/game/${currentGameId}/finish`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chunkNum, inputLog, ballsPlayed })
-    });
-  } catch (err) {
-    console.error('Chunk send failed:', err);
-  }
-}
-
-async function finishGameOnServer(gameId, clientTotalWin) {
-  try {
-    const res = await fetch(`${SERVER_URL}/game/${gameId}/finish`, { 
-      method: 'POST', 
-      headers: { 'Content-Type': 'application/json' }, 
-      body: JSON.stringify({ clientTotalWin }) 
+      body: JSON.stringify({ inputLog: gameState.inputLog, clientTotalWin: gameState.totalWin })
     });
     const data = await res.json();
     if (data.verified) {
-      return { verified: true, serverSeed: data.verification.serverSeed, gameSeedHex: data.verification.gameSeedHex };
+      lastVerificationData = {
+        gameId: currentGameId,
+        clientSeed: currentClientSeed,
+        commitment: recordedCommitment,
+        serverSeed: data.verification.serverSeed,
+        gameSeedHex: data.verification.gameSeedHex
+      };
+      document.getElementById('vServerSeed').textContent = data.verification.serverSeed;
+      document.getElementById('verifyBtn').disabled = false;
     } else {
-      return { verified: false };
+      document.getElementById('vServerSeed').textContent = 'MISMATCH! Server: ' + data.serverTotalWin;
+      document.getElementById('vServerSeed').style.color = '#ff4444';
     }
   } catch (err) {
-    console.error('Finish failed:', err);
-    return { verified: false };
+    console.error('Finish error:', err);
+    document.getElementById('vServerSeed').textContent = 'Error: ' + err.message;
   }
 }
 
+// Verification
 document.getElementById('verifyBtn').addEventListener('click', async () => {
   if (!lastVerificationData?.serverSeed) { document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ No data</span>'; return; }
   const vd = lastVerificationData;
   try {
-    const enc = new TextEncoder();
-    const hash = await crypto.subtle.digest('SHA-256', enc.encode(vd.serverSeed));
-    const commitment = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-    if (commitment !== vd.commitment) { document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ Commitment mismatch!</span>'; return; }
-    const key = await crypto.subtle.importKey('raw', enc.encode(vd.serverSeed), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-    const sig = await crypto.subtle.sign('HMAC', key, enc.encode(vd.clientSeed + ':' + vd.gameId));
-    const gameSeedHex = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
-    if (gameSeedHex !== vd.gameSeedHex) { document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ Seed mismatch!</span>'; return; }
-    document.getElementById('verifyResult').innerHTML = '<span style="color:#00ff66">✓ VERIFIED!</span>';
-  } catch { document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ Error</span>'; }
+    // Verify commitment
+    const seedBytes = new TextEncoder().encode(vd.serverSeed);
+    const hashBytes = sha256Pure(seedBytes);
+    const computedCommitment = bytesToHex(hashBytes);
+    if (computedCommitment !== vd.commitment) {
+      document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ Commitment mismatch!</span>';
+      return;
+    }
+    // Verify game seed
+    const hmacInput = `${vd.clientSeed}:${vd.gameId}`;
+    const hmacBytes = hmacSha256Pure(vd.serverSeed, hmacInput);
+    const computedGameSeed = bytesToHex(hmacBytes);
+    if (computedGameSeed !== vd.gameSeedHex) {
+      document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ Game seed mismatch!</span>';
+      return;
+    }
+    document.getElementById('verifyResult').innerHTML = '<span style="color:#00ff66">✓ VERIFIED! Server could not have cheated.</span>';
+  } catch (err) {
+    document.getElementById('verifyResult').innerHTML = `<span style="color:#ff4444">❌ Error: ${err.message}</span>`;
+  }
 });
 
+// Play button
 document.getElementById('playBtn').addEventListener('click', async () => {
   initAudio();
   const numBalls = parseInt(document.getElementById('ballCount').value) || 100;
   const bet = numBalls * CONFIG.BET_PER_BALL;
   if (bet > balance) { alert('Insufficient balance!'); return; }
+  
+  // STEP 1: Fetch and record commitment BEFORE generating clientSeed
+  if (serverOnline) {
+    const commitmentData = await fetchCommitment();
+    if (!commitmentData) { alert('Server offline!'); return; }
+    recordedCommitment = commitmentData.commitment;
+  }
+  
   balance -= bet;
+  
+  // STEP 2: Generate clientSeed AFTER recording commitment
   currentClientSeed = 'client_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
-  lastVerificationData = null;
-  let gameSeed;
+  
+  let gameSeedHex;
   if (serverOnline) {
     try {
-      const res = await fetch(`${SERVER_URL}/game/start`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientSeed: currentClientSeed, numBalls }) });
+      // STEP 3: Start game - server returns gameSeedHex
+      // This is SAFE with input-seeded randomness: random = f(gameSeedHex, bumper_position)
+      // Client cannot predict future events without committing to bumper position first
+      const res = await fetch(`${SERVER_URL}/game/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientSeed: currentClientSeed, numBalls, recordedCommitment })
+      });
       const data = await res.json();
+      if (data.error) { alert(data.error); balance += bet; return; }
       currentGameId = data.gameId;
-      lastVerificationData = { gameId: data.gameId, clientSeed: currentClientSeed, commitment: data.commitment };
-      gameSeed = parseInt(data.gameSeedHex, 16);
-    } catch { gameSeed = Math.floor(Date.now() / 1000); }
-  } else gameSeed = Math.floor(Date.now() / 1000);
-  strategyRng = new JavaRandom(gameSeed + 999999);
+      gameSeedHex = data.gameSeedHex;  // Server reveals seed - safe with input-seeded RNG
+    } catch (err) {
+      console.error(err);
+      gameSeedHex = generateFallbackSeed();
+    }
+  } else {
+    gameSeedHex = generateFallbackSeed();
+  }
+  
   hunterTargetId = defenderTargetId = sniperTargetId = null;
-  gameState = createInitialState(gameSeed, numBalls);
+  gameState = createInitialState(gameSeedHex, numBalls);
   gameRunning = true;
-  currentChunk = 0;
-  lastChunkBalls = 0;
-  chunkInputLog = [];
+  lastVerificationData = null;
   updateTimeoutDots(0);
   document.getElementById('playBtn').disabled = true;
   document.getElementById('modeSelect').disabled = true;
@@ -1133,100 +705,27 @@ document.getElementById('playBtn').addEventListener('click', async () => {
   updateUI();
 });
 
-document.getElementById('autoBtn').addEventListener('click', async () => {
-  const numBalls = parseInt(document.getElementById('ballCount').value) || 100;
-  const strategies = ['stationary', 'hunter', 'defender', 'sniper', 'random', 'avoider'];
-  const results = {}; strategies.forEach(s => results[s] = { rtps: [] });
-  document.getElementById('autoResults').classList.add('show');
-  document.getElementById('autoTable').innerHTML = '';
-  const baseSeed = Math.floor(Date.now() / 1000);
-  for (let run = 0; run < 10; run++) {
-    document.getElementById('autoProgress').textContent = `Running... ${run + 1}/10`;
-    await new Promise(r => setTimeout(r, 10));
-    for (const strat of strategies) {
-      const result = simulateStrategy(baseSeed + run, numBalls, strat);
-      results[strat].rtps.push(result.totalWin / (numBalls * CONFIG.BET_PER_BALL) * 100);
-    }
-  }
-  const stats = strategies.map(s => { const rtps = results[s].rtps; return { strat: s, avg: rtps.reduce((a,b)=>a+b,0)/rtps.length, min: Math.min(...rtps), max: Math.max(...rtps) }; }).sort((a,b) => b.avg - a.avg);
-  const labels = { stationary: '🧍', hunter: '🎯', defender: '🛡️', sniper: '🔫', random: '🎲', avoider: '🏃' };
-  let html = '<tr><th></th><th>Avg</th><th>Min</th><th>Max</th></tr>';
-  stats.forEach((s, i) => { html += `<tr class="${i === 0 ? 'best' : i === stats.length - 1 ? 'worst' : ''}"><td>${labels[s.strat]} ${s.strat}</td><td>${s.avg.toFixed(1)}%</td><td>${s.min.toFixed(0)}%</td><td>${s.max.toFixed(0)}%</td></tr>`; });
-  document.getElementById('autoProgress').textContent = `10 runs × ${numBalls} balls`;
-  document.getElementById('autoTable').innerHTML = html;
-});
-
-document.getElementById('autoClose').addEventListener('click', () => document.getElementById('autoResults').classList.remove('show'));
-
-function simulateStrategy(seed, numBalls, strategyName) {
-  const state = createInitialState(seed, numBalls);
-  const stratRng = new JavaRandom(seed + 999999);
-  const strategy = STRATEGIES[strategyName];
-  hunterTargetId = defenderTargetId = sniperTargetId = null;
-  let ticks = 0;
-  while (!state.finished && ticks < numBalls * CONFIG.MAX_TICKS_PER_BALL) {
-    if (strategy) { const t = strategy(state, stratRng); state.bumper.targetX = clamp(t.x, BUMPER.MIN_X, BUMPER.MAX_X); state.bumper.targetY = clamp(t.y, BUMPER.MIN_Y, BUMPER.MAX_Y); }
-    tick(state, true); ticks++;
-  }
-  return { totalWin: state.totalWin };
+function generateFallbackSeed() {
+  const input = `fallback:${Date.now()}:${Math.random()}`;
+  const hash = sha256Pure(input);
+  return bytesToHex(hash);
 }
 
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    document.getElementById('result').classList.remove('show');
-    document.getElementById('autoResults').classList.remove('show');
-    // Balance already added in gameEnd handler
-  }
-});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.getElementById('result').classList.remove('show'); });
 
-// Show AUTO button only if ?debug=17
-if (new URLSearchParams(window.location.search).get('debug') === '17') {
-  document.getElementById('autoBtn').style.display = 'inline-block';
-}
-
-// ===== LEADERBOARD =====
+// Leaderboard
 async function loadLeaderboard() {
   try {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const snapshot = await db.collection('paddla_games')
-      .where('playedAt', '>=', sevenDaysAgo)
-      .get();  // Filter bet>=500 client-side to avoid composite index
-    
+    const snapshot = await db.collection('paddla_games').where('playedAt', '>=', sevenDaysAgo).get();
     const best = {};
-    snapshot.forEach(doc => {
-      const e = doc.data();
-      if (!e.nickname || !e.rtp || e.bet < 500) return;  // min 100 balls
-      const rtp = parseFloat(e.rtp);
-      if (!best[e.nickname] || rtp > best[e.nickname].rtp || 
-          (rtp === best[e.nickname].rtp && e.bet > best[e.nickname].bet)) {
-        best[e.nickname] = { nick: e.nickname, rtp: rtp, balls: Math.floor(e.bet / 5) };
-      }
-    });
-    
-    const entries = Object.values(best);
-    entries.sort((a, b) => b.rtp - a.rtp || b.balls - a.balls);
-    renderLeaderboard(entries.slice(0, 10));
-  } catch (err) {
-    console.error('Leaderboard error:', err);
-    document.getElementById('leaderboardList').innerHTML = '<div style="color:#666">—</div>';
-  }
-}
-
-function renderLeaderboard(entries) {
-  const el = document.getElementById('leaderboardList');
-  if (!el) return;
-  const medals = ['🥇', '🥈', '🥉'];
-  if (entries.length === 0) {
-    el.innerHTML = '<div style="color:#666">No entries yet</div>';
-    return;
-  }
-  let html = '';
-  entries.forEach((e, i) => {
-    const medal = i < 3 ? medals[i] : (i + 1) + '.';
-    const cls = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : 'normal';
-    html += `<div class="leaderboard-entry ${cls}">${medal} <b>${e.nick}</b> ${e.rtp.toFixed(1)}% <span style="font-size:8px;color:#555">(${e.balls})</span></div>`;
-  });
-  el.innerHTML = html;
+    snapshot.forEach(doc => { const e = doc.data(); if (!e.nickname || !e.rtp || e.bet < 500) return; const rtp = parseFloat(e.rtp); if (!best[e.nickname] || rtp > best[e.nickname].rtp) best[e.nickname] = { nick: e.nickname, rtp, balls: Math.floor(e.bet / 5) }; });
+    const entries = Object.values(best).sort((a, b) => b.rtp - a.rtp).slice(0, 10);
+    const el = document.getElementById('leaderboardList');
+    const medals = ['🥇', '🥈', '🥉'];
+    if (entries.length === 0) { el.innerHTML = '<div style="color:#666">No entries yet</div>'; return; }
+    el.innerHTML = entries.map((e, i) => `<div class="leaderboard-entry ${i < 3 ? ['gold','silver','bronze'][i] : 'normal'}">${i < 3 ? medals[i] : (i+1)+'.'} <b>${e.nick}</b> ${e.rtp.toFixed(1)}% <span style="font-size:8px;color:#555">(${e.balls})</span></div>`).join('');
+  } catch (err) { console.error('Leaderboard error:', err); document.getElementById('leaderboardList').innerHTML = '<div style="color:#666">—</div>'; }
 }
 
 updateModeIndicator(); updateProgressiveLamps(1); render(); gameLoop(); loadLeaderboard();
