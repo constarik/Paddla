@@ -2,17 +2,15 @@
 const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
-// const path = require('path'); // Not needed anymore
+const path = require('path');
 const { createInitialState, replayChunk, finishGame, CONFIG } = require('./engine');
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
 
-// Redirect root to GitHub Pages
-app.get('/', (req, res) => {
-  res.redirect(301, 'https://constarik.github.io/Paddla/');
-});
+// Serve static files
+app.use(express.static(path.join(__dirname, '../client')));
 
 // Server seed rotation
 let serverSeed = crypto.randomBytes(32).toString('hex');
