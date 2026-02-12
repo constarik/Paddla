@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>PADDLA v0.5 - Provably Fair</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏓</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-TRP1QX4878"></script>
   <script>
@@ -19,31 +21,44 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { overflow: hidden; height: 100%; touch-action: manipulation; }
     body {
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 50%, #0d1b2a 100%);
       min-height: 100vh;
       display: flex; justify-content: center; align-items: center;
-      font-family: Arial, sans-serif; color: white;
+      font-family: 'Orbitron', sans-serif; color: white;
       flex-direction: column; gap: 8px;
     }
-    h1 { color: #00d4ff; text-shadow: 0 0 20px rgba(0,212,255,0.5); font-size: 1.8rem; }
+    h1 { 
+      color: #00d4ff; 
+      text-shadow: 0 0 30px rgba(0,212,255,0.8), 0 0 60px rgba(0,212,255,0.4); 
+      font-size: 2.2rem; 
+      font-weight: 900;
+      letter-spacing: 4px;
+    }
     .pf-badge { 
       background: rgba(0,255,100,0.2); border: 1px solid #00ff66; 
-      padding: 3px 10px; border-radius: 10px; font-size: 11px; color: #00ff66;
-      margin-left: 10px;
+      padding: 4px 12px; border-radius: 12px; font-size: 10px; color: #00ff66;
+      margin-left: 15px; letter-spacing: 1px;
+      box-shadow: 0 0 10px rgba(0,255,100,0.3);
     }
     .game-container { position: relative; }
     canvas {
-      border: 3px solid #00d4ff; border-radius: 10px;
-      box-shadow: 0 0 30px rgba(0,212,255,0.3);
+      border: 3px solid #00d4ff; border-radius: 15px;
+      box-shadow: 0 0 40px rgba(0,212,255,0.4), inset 0 0 30px rgba(0,0,0,0.5);
       cursor: none;
     }
     
-    /* Timeout dots row */
-    .timeout-row {
-      display: flex; justify-content: center; gap: 15px; padding: 6px 0;
+    /* Indicators column (timeout + progressive) */
+    .indicators-column {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+    }
+    .indicator-row {
+      display: flex; gap: 6px; align-items: center;
+    }
+    .indicator-label {
+      font-size: 9px; color: rgba(255,255,255,0.5); width: 50px; text-align: right;
     }
     .timeout-dot {
-      width: 18px; height: 18px; border-radius: 50%;
+      width: 16px; height: 16px; border-radius: 50%;
       background: #222; border: 2px solid #444;
       transition: all 0.3s;
     }
@@ -55,19 +70,20 @@
     }
     
     .stats {
-      display: flex; gap: 20px; font-size: 14px;
-      background: rgba(0,0,0,0.3); padding: 10px 20px; border-radius: 10px;
+      display: flex; gap: 20px; font-size: 14px; align-items: center;
+      background: rgba(0,0,0,0.4); padding: 12px 25px; border-radius: 15px;
+      border: 1px solid rgba(0,212,255,0.2);
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
     }
     .stat { text-align: center; }
-    .stat-value { font-size: 24px; font-weight: bold; color: #00d4ff; }
-    .stat-label { font-size: 11px; color: rgba(255,255,255,0.7); }
+    .stat-value { font-size: 24px; font-weight: bold; color: #00d4ff; text-shadow: 0 0 10px rgba(0,212,255,0.5); }
+    .stat-label { font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 1px; }
     
-    .progressive-lamps { display: flex; gap: 6px; align-items: center; }
     .lamp {
-      width: 26px; height: 26px; border-radius: 50%;
-      background: #333; border: 2px solid #555;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: #222; border: 2px solid #444;
       display: flex; align-items: center; justify-content: center;
-      font-size: 9px; font-weight: bold; color: #666;
+      font-size: 8px; font-weight: bold; color: #555;
       transition: all 0.3s;
     }
     .lamp.active {
@@ -84,31 +100,44 @@
     .controls input, .controls select {
       padding: 8px; border-radius: 8px;
       border: 2px solid #00d4ff; background: rgba(0,0,0,0.5);
-      color: #00d4ff; font-size: 14px; font-weight: bold; text-align: center;
+      color: #00d4ff; font-size: 13px; font-weight: bold; text-align: center;
+      font-family: 'Orbitron', sans-serif;
+      transition: all 0.2s ease;
+    }
+    .controls input:focus, .controls select:focus {
+      outline: none; box-shadow: 0 0 15px rgba(0,212,255,0.5);
     }
     .controls input { width: 70px; }
-    .controls select { min-width: 120px; cursor: pointer; }
+    .controls select { min-width: 130px; cursor: pointer; }
     .controls select option { background: #1a1a2e; }
     .controls button {
       padding: 10px 25px; font-size: 14px; font-weight: bold;
       background: linear-gradient(180deg, #00d4ff 0%, #0099cc 100%);
       color: #000; border: none; border-radius: 25px; cursor: pointer;
+      box-shadow: 0 0 15px rgba(0,212,255,0.4);
+      transition: all 0.2s ease;
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 1px;
     }
-    .controls button:disabled { background: #666; cursor: not-allowed; }
-    .controls button:hover:not(:disabled) { transform: scale(1.05); }
+    .controls button:disabled { background: #666; cursor: not-allowed; box-shadow: none; }
+    .controls button:hover:not(:disabled) { 
+      transform: scale(1.08); 
+      box-shadow: 0 0 25px rgba(0,212,255,0.8), 0 0 40px rgba(0,212,255,0.4);
+    }
     
-    .info { font-size: 11px; color: rgba(255,255,255,0.4); text-align: center; }
+    .info { font-size: 10px; color: rgba(255,255,255,0.4); text-align: center; letter-spacing: 1px; }
     
     .result {
       display: none; position: fixed; top: 50%; left: 50%;
-      transform: translate(-50%, -50%); background: rgba(0,0,0,0.95);
-      padding: 25px 40px; border-radius: 15px; text-align: center;
+      transform: translate(-50%, -50%); background: rgba(10,10,30,0.98);
+      padding: 30px 45px; border-radius: 20px; text-align: center;
       z-index: 50; border: 3px solid #00d4ff; max-width: 450px;
+      box-shadow: 0 0 40px rgba(0,212,255,0.4), 0 0 80px rgba(0,0,0,0.8);
     }
     .result.show { display: block; }
-    .result h2 { color: #00d4ff; font-size: 22px; }
-    .result .amount { font-size: 42px; color: #4CAF50; margin: 8px 0; }
-    .result .rtp { font-size: 13px; color: rgba(255,255,255,0.6); }
+    .result h2 { color: #00d4ff; font-size: 20px; letter-spacing: 3px; text-shadow: 0 0 20px rgba(0,212,255,0.5); }
+    .result .amount { font-size: 48px; color: #00ff66; margin: 12px 0; text-shadow: 0 0 30px rgba(0,255,100,0.5); }
+    .result .rtp { font-size: 12px; color: rgba(255,255,255,0.6); letter-spacing: 1px; }
     .result .verify-section { 
       margin-top: 12px; padding-top: 12px; border-top: 1px solid #333;
       font-size: 10px; text-align: left; color: rgba(255,255,255,0.6);
@@ -140,25 +169,29 @@
     
     .mode-indicator {
       position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-      padding: 5px 15px; border-radius: 15px; font-size: 12px; font-weight: bold;
+      padding: 5px 15px; border-radius: 15px; font-size: 11px; font-weight: bold;
       background: rgba(255,165,0,0.3); border: 1px solid #ffa500; color: #ffcc00;
+      font-family: 'Orbitron', sans-serif; letter-spacing: 1px;
+      box-shadow: 0 0 10px rgba(255,165,0,0.3);
     }
-    .mode-indicator.human { background: rgba(0,255,100,0.3); border-color: #00ff66; color: #00ff66; }
+    .mode-indicator.human { background: rgba(0,255,100,0.3); border-color: #00ff66; color: #00ff66; box-shadow: 0 0 10px rgba(0,255,100,0.3); }
     
     .server-status {
       position: fixed; top: 10px; right: 10px; padding: 5px 10px;
-      border-radius: 10px; font-size: 11px;
+      border-radius: 10px; font-size: 10px;
+      font-family: 'Orbitron', sans-serif; letter-spacing: 1px;
     }
-    .server-status.online { background: rgba(0,255,100,0.2); border: 1px solid #00ff66; color: #00ff66; }
+    .server-status.online { background: rgba(0,255,100,0.2); border: 1px solid #00ff66; color: #00ff66; box-shadow: 0 0 10px rgba(0,255,100,0.3); }
     .server-status.offline { background: rgba(255,0,0,0.2); border: 1px solid #ff4444; color: #ff4444; }
     
     .sound-btn {
       position: fixed; top: 10px; left: 10px; width: 40px; height: 40px;
       border-radius: 50%; border: 2px solid #00d4ff; background: rgba(0,0,0,0.5);
       font-size: 20px; cursor: pointer;
+      transition: all 0.2s ease;
     }
-    .sound-btn:hover { transform: scale(1.1); }
-    .sound-btn.on { background: rgba(0,212,255,0.3); }
+    .sound-btn:hover { transform: scale(1.1); box-shadow: 0 0 15px rgba(0,212,255,0.5); }
+    .sound-btn.on { background: rgba(0,212,255,0.3); box-shadow: 0 0 15px rgba(0,212,255,0.5); }
     
     /* Auth UI */
     .auth-panel {
@@ -168,9 +201,10 @@
     .auth-btn {
       padding: 8px 16px; border-radius: 20px; border: 2px solid #00d4ff;
       background: rgba(0,0,0,0.5); color: #00d4ff; font-weight: bold;
-      cursor: pointer; font-size: 12px;
+      cursor: pointer; font-size: 11px; font-family: 'Orbitron', sans-serif;
+      transition: all 0.2s ease;
     }
-    .auth-btn:hover { background: rgba(0,212,255,0.2); }
+    .auth-btn:hover { background: rgba(0,212,255,0.2); box-shadow: 0 0 15px rgba(0,212,255,0.5); transform: scale(1.05); }
     .auth-btn.google { border-color: #4285f4; color: #4285f4; }
     .user-info {
       display: flex; align-items: center; gap: 8px;
@@ -228,15 +262,7 @@
     </div>
   </div>
   
-  <h1>🏓 PADDLA <span class="pf-badge">🔒 Provably Fair</span></h1>
-  
-  <div class="timeout-row" id="timeoutDots">
-    <div class="timeout-dot"></div>
-    <div class="timeout-dot"></div>
-    <div class="timeout-dot"></div>
-    <div class="timeout-dot"></div>
-    <div class="timeout-dot"></div>
-  </div>
+  <h1>PADDLA <span class="pf-badge">🔒 Provably Fair</span></h1>
   
   <div class="stats">
     <div class="stat">
@@ -247,15 +273,21 @@
       <div class="stat-value" id="winDisplay">$0</div>
       <div class="stat-label">WIN</div>
     </div>
-    <div class="stat">
-      <div class="progressive-lamps" id="progressiveLamps">
+    <div class="indicators-column">
+      <div class="indicator-row" id="progressiveLamps">
         <div class="lamp">×1</div>
         <div class="lamp">×2</div>
         <div class="lamp">×3</div>
         <div class="lamp">×4</div>
         <div class="lamp">×5</div>
       </div>
-      <div class="stat-label">MULTI</div>
+      <div class="indicator-row" id="timeoutDots">
+        <div class="timeout-dot"></div>
+        <div class="timeout-dot"></div>
+        <div class="timeout-dot"></div>
+        <div class="timeout-dot"></div>
+        <div class="timeout-dot"></div>
+      </div>
     </div>
     <div class="stat">
       <div class="stat-value" id="balance">$1000</div>
@@ -280,7 +312,7 @@
       <option value="avoider">🏃 Avoider</option>
     </select>
     <button id="playBtn">▶ PLAY</button>
-    <button id="autoBtn">AUTO ×10</button>
+    <button id="autoBtn" style="display:none;">AUTO ×10</button>
   </div>
   
   <div class="info">Move bumper to direct balls into goals (top corners)</div>
@@ -1121,6 +1153,11 @@ document.addEventListener('keydown', (e) => {
     // Balance already added in gameEnd handler
   }
 });
+
+// Show AUTO button only if ?debug=17
+if (new URLSearchParams(window.location.search).get('debug') === '17') {
+  document.getElementById('autoBtn').style.display = 'inline-block';
+}
 
 updateModeIndicator(); updateProgressiveLamps(1); render(); gameLoop();
 </script>
