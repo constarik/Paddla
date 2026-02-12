@@ -896,11 +896,15 @@ function render() {
     ctx.beginPath(); ctx.arc(p.x * SCALE, p.y * SCALE, p.size * SCALE, 0, Math.PI*2); ctx.fill();
   }
   
+  // Draw bumper (always visible)
+  const bx = gameState ? gameState.bumper.x : BUMPER.START_X;
+  const by = gameState ? gameState.bumper.y : BUMPER.START_Y;
+  ctx.fillStyle = '#00d4ff'; ctx.shadowColor = '#00d4ff'; ctx.shadowBlur = 15;
+  ctx.beginPath(); ctx.arc(bx * SCALE, by * SCALE, BUMPER.RADIUS * SCALE, 0, Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0; ctx.fillStyle = '#004466';
+  ctx.beginPath(); ctx.arc(bx * SCALE, by * SCALE, BUMPER.RADIUS * SCALE * 0.6, 0, Math.PI*2); ctx.fill();
+  
   if (gameState) {
-    ctx.fillStyle = '#00d4ff'; ctx.shadowColor = '#00d4ff'; ctx.shadowBlur = 15;
-    ctx.beginPath(); ctx.arc(gameState.bumper.x * SCALE, gameState.bumper.y * SCALE, BUMPER.RADIUS * SCALE, 0, Math.PI*2); ctx.fill();
-    ctx.shadowBlur = 0; ctx.fillStyle = '#004466';
-    ctx.beginPath(); ctx.arc(gameState.bumper.x * SCALE, gameState.bumper.y * SCALE, BUMPER.RADIUS * SCALE * 0.6, 0, Math.PI*2); ctx.fill();
     
     for (const b of gameState.balls) {
       if (!b.alive) continue;
