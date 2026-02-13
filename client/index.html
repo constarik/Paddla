@@ -255,14 +255,13 @@
     <input type="number" id="ballCount" value="100" min="1" max="1000" step="50">
     <select id="modeSelect">
       <option value="human">👆 Human</option>
-      <option value="stationary">🧍 Stationary</option>
       <option value="hunter">🎯 Hunter</option>
       <option value="defender">🛡️ Defender</option>
-      <option value="sniper">🔫 Sniper</option>
-      <option value="random">🎲 Random</option>
-      <option value="avoider">🏃 Avoider</option>
+      <option value="humanSim">🧠 Human-Sim</option>
+      <option value="sniper">🔫 Sniper (×2 bet)</option>
     </select>
     <button id="playBtn">▶ PLAY</button>
+    <button id="simBtn" style="display:none">📊 SIM</button>
   </div>
   
   <div class="info">Move bumper to direct balls into goals (top corners)</div>
@@ -434,6 +433,7 @@ class InputSeededRNG {
 }
 
 const CONFIG = { FIELD: 9, BALL_R: 0.2, SPEED: 0.05, GOAL_R: 1.02, CENTER_R: 0.225, CENTER_X: 4.5, CENTER_Y: 4.5, COUNTDOWN: 45, GOLDEN_CHANCE: 0.01, EXPLOSIVE_CHANCE: 1/75, SPAWN_COOLDOWN: 60, SPAWN_INTERVAL: 60, MAX_ON_FIELD: 10, TIMEOUT_LIMIT: 5, PROGRESSIVE_CAP: 5, BET_PER_BALL: 5, MAX_TICKS_PER_BALL: 600 };
+const BET_MULTIPLIER = { human: 1, hunter: 1, defender: 1, humanSim: 1, sniper: 2 };
 const BUMPER = { RADIUS: 0.4, MIN_Y: 0.4, MAX_Y: 3.5, MIN_X: 1.5, MAX_X: 7.5, MAX_SPEED: 0.15, START_X: 4.5, START_Y: 2.0 };
 const VALUE_COLORS = { 9:'#00ff00', 8:'#33ff00', 7:'#66ff00', 6:'#99ff00', 5:'#ccff00', 4:'#ffff00', 3:'#ffcc00', 2:'#ff9900', 1:'#ff6600', 0:'#ff0000' };
 
@@ -450,6 +450,9 @@ function collideBallBumper(ball, bumper, rng) { const d = dist(ball.x, ball.y, b
 
 // AI Strategies
 let hunterTargetId = null, defenderTargetId = null, sniperTargetId = null;
+// Human-simulated state
+let hsTargetBall = null, hsTargetX = BUMPER.START_X, hsTargetY = BUMPER.START_Y;
+let hsReactionDelay = 0, hsDistracted = false, hsLastSwitch = 0;
 const STRATEGIES = {
   human: null,
   stationary: () => ({ x: BUMPER.START_X, y: BUMPER.START_Y }),
@@ -457,7 +460,67 @@ const STRATEGIES = {
   defender: (state) => { let target = state.balls.find(b => b.id === defenderTargetId && b.alive && b.y < CONFIG.FIELD/2); if (!target) { let best = -Infinity; for (const b of state.balls) { if (!b.alive || b.y >= CONFIG.FIELD/2) continue; const score = (b.dy > 0 ? 100 : 0) + b.value*b.multiplier*10 + (CONFIG.FIELD/2 - b.y); if (score > best) { best = score; target = b; } } defenderTargetId = target?.id || null; } if (!target) target = state.balls.find(b => b.alive); return target ? { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.5, BUMPER.MIN_Y, BUMPER.MAX_Y) } : { x: 4.5, y: 2.5 }; },
   sniper: (state) => { let target = state.balls.find(b => b.id === sniperTargetId && b.alive && b.y < CONFIG.FIELD/2); if (!target) { let best = -Infinity; for (const b of state.balls) { if (!b.alive || b.y >= CONFIG.FIELD/2) continue; const score = b.value*b.multiplier*10 - b.y; if (score > best) { best = score; target = b; } } sniperTargetId = target?.id || null; } if (target) { const offsetX = target.x < 4.5 ? 0.5 : -0.5; return { x: clamp(target.x + offsetX, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.3, BUMPER.MIN_Y, BUMPER.MAX_Y) }; } return { x: 4.5, y: 2.0 }; },
   random: (state) => { if (state.tickCount % 30 === 0) return { x: BUMPER.MIN_X + Math.random()*(BUMPER.MAX_X-BUMPER.MIN_X), y: BUMPER.MIN_Y + Math.random()*(BUMPER.MAX_Y-BUMPER.MIN_Y) }; return { x: state.bumper.targetX, y: state.bumper.targetY }; },
-  avoider: (state) => { let avgX = 0, avgY = 0, cnt = 0; for (const b of state.balls) { if (b.alive && b.y < CONFIG.FIELD/2) { avgX += b.x; avgY += b.y; cnt++; } } if (cnt) return { x: clamp(state.bumper.x + (state.bumper.x - avgX/cnt)*0.5, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(state.bumper.y + (state.bumper.y - avgY/cnt)*0.5, BUMPER.MIN_Y, BUMPER.MAX_Y) }; return { x: BUMPER.START_X, y: BUMPER.START_Y }; }
+  avoider: (state) => { let avgX = 0, avgY = 0, cnt = 0; for (const b of state.balls) { if (b.alive && b.y < CONFIG.FIELD/2) { avgX += b.x; avgY += b.y; cnt++; } } if (cnt) return { x: clamp(state.bumper.x + (state.bumper.x - avgX/cnt)*0.5, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(state.bumper.y + (state.bumper.y - avgY/cnt)*0.5, BUMPER.MIN_Y, BUMPER.MAX_Y) }; return { x: BUMPER.START_X, y: BUMPER.START_Y }; },
+  
+  // Human-simulated: delays, inaccuracy, attention switching
+  humanSim: (state) => {
+    // Reaction delay (skip updates sometimes)
+    if (hsReactionDelay > 0) { hsReactionDelay--; return { x: hsTargetX, y: hsTargetY }; }
+    
+    // Random distraction (0.1% chance, lasts 40-100 ticks)
+    if (!hsDistracted && Math.random() < 0.001) {
+      hsDistracted = true;
+      hsReactionDelay = 40 + Math.floor(Math.random() * 60);
+    }
+    if (hsDistracted && hsReactionDelay <= 0) hsDistracted = false;
+    
+    // Find target ball (switch attention sometimes)
+    const validBalls = state.balls.filter(b => b.alive && b.y < CONFIG.FIELD/2);
+    if (validBalls.length === 0) {
+      // Slowly drift to center
+      hsTargetX += (BUMPER.START_X - hsTargetX) * 0.02;
+      hsTargetY += (BUMPER.START_Y - hsTargetY) * 0.02;
+      return { x: hsTargetX, y: hsTargetY };
+    }
+    
+    // Switch target? (every ~90-200 ticks or if current target gone)
+    const ticksSinceSwitch = state.tickCount - hsLastSwitch;
+    const currentValid = hsTargetBall && validBalls.find(b => b.id === hsTargetBall.id);
+    if (!currentValid || ticksSinceSwitch > 90 + Math.random() * 110) {
+      // Pick based on rough priority: closer to top, higher value, but imperfect
+      const weights = validBalls.map(b => {
+        let w = (CONFIG.FIELD/2 - b.y) * 2 + b.value * 1.5;
+        w += (Math.random() - 0.5) * 8; // randomness
+        return { ball: b, w };
+      });
+      weights.sort((a, b) => b.w - a.w);
+      hsTargetBall = weights[0]?.ball || null;
+      hsLastSwitch = state.tickCount;
+      hsReactionDelay = 8 + Math.floor(Math.random() * 12); // reaction time
+    }
+    
+    if (hsTargetBall) {
+      // Smooth tracking with slight lag and occasional offset
+      const predictY = hsTargetBall.y + hsTargetBall.dy * 12;
+      const idealX = clamp(hsTargetBall.x, BUMPER.MIN_X, BUMPER.MAX_X);
+      const idealY = clamp(predictY + 0.6, BUMPER.MIN_Y, BUMPER.MAX_Y);
+      
+      // Smooth interpolation (human-like lag)
+      hsTargetX += (idealX - hsTargetX) * 0.08;
+      hsTargetY += (idealY - hsTargetY) * 0.08;
+      
+      // Rare small drift
+      if (Math.random() < 0.02) {
+        hsTargetX += (Math.random() - 0.5) * 0.08;
+        hsTargetY += (Math.random() - 0.5) * 0.05;
+      }
+      
+      hsTargetX = clamp(hsTargetX, BUMPER.MIN_X, BUMPER.MAX_X);
+      hsTargetY = clamp(hsTargetY, BUMPER.MIN_Y, BUMPER.MAX_Y);
+    }
+    
+    return { x: hsTargetX, y: hsTargetY };
+  }
 };
 
 function createInitialState(gameSeedHex, numBalls) { return { rng: new InputSeededRNG(gameSeedHex), gameSeedHex, balls: [], bumper: createBumper(), tickCount: 0, ballsSpawned: 0, numBalls, spawnCooldown: 0, progressive: 1, timeoutCount: 0, totalWin: 0, finished: false, nextBallId: 1, inputLog: [] }; }
@@ -512,7 +575,7 @@ canvas.addEventListener('touchmove', (e) => { e.preventDefault(); const r = canv
 
 document.getElementById('modeSelect').addEventListener('change', (e) => { currentMode = e.target.value; updateModeIndicator(); });
 
-function updateModeIndicator() { const ind = document.getElementById('modeIndicator'); const labels = { human:'👆 HUMAN', stationary:'🧍 STATIONARY', hunter:'🎯 HUNTER', defender:'🛡️ DEFENDER', sniper:'🔫 SNIPER', random:'🎲 RANDOM', avoider:'🏃 AVOIDER' }; ind.textContent = labels[currentMode]; ind.className = 'mode-indicator' + (currentMode === 'human' ? ' human' : ''); }
+function updateModeIndicator() { const ind = document.getElementById('modeIndicator'); const labels = { human:'👆 HUMAN', hunter:'🎯 HUNTER', defender:'🛡️ DEFENDER', humanSim:'🧠 HUMAN-SIM', sniper:'🔫 SNIPER ×2' }; ind.textContent = labels[currentMode] || currentMode; ind.className = 'mode-indicator' + (currentMode === 'human' ? ' human' : ''); }
 function updateProgressiveLamps(level) { document.querySelectorAll('.lamp').forEach((l, i) => l.classList.toggle('active', i < level)); }
 function updateTimeoutDots(count) { document.querySelectorAll('.timeout-dot').forEach((d, i) => d.classList.toggle('active', i < count)); }
 
@@ -656,8 +719,9 @@ document.getElementById('verifyBtn').addEventListener('click', async () => {
 document.getElementById('playBtn').addEventListener('click', async () => {
   initAudio();
   const numBalls = parseInt(document.getElementById('ballCount').value) || 100;
-  const bet = numBalls * CONFIG.BET_PER_BALL;
-  if (bet > balance) { alert('Insufficient balance!'); return; }
+  const multiplier = BET_MULTIPLIER[currentMode] || 1;
+  const bet = numBalls * CONFIG.BET_PER_BALL * multiplier;
+  if (bet > balance) { alert(`Insufficient balance! Need ${bet}`); return; }
   
   // STEP 1: Fetch and record commitment BEFORE generating clientSeed
   if (serverOnline) {
@@ -695,6 +759,8 @@ document.getElementById('playBtn').addEventListener('click', async () => {
   }
   
   hunterTargetId = defenderTargetId = sniperTargetId = null;
+  hsTargetBall = null; hsTargetX = BUMPER.START_X; hsTargetY = BUMPER.START_Y;
+  hsReactionDelay = 0; hsDistracted = false; hsLastSwitch = 0;
   gameState = createInitialState(gameSeedHex, numBalls);
   gameRunning = true;
   lastVerificationData = null;
@@ -726,6 +792,73 @@ async function loadLeaderboard() {
     if (entries.length === 0) { el.innerHTML = '<div style="color:#666">No entries yet</div>'; return; }
     el.innerHTML = entries.map((e, i) => `<div class="leaderboard-entry ${i < 3 ? ['gold','silver','bronze'][i] : 'normal'}">${i < 3 ? medals[i] : (i+1)+'.'} <b>${e.nick}</b> ${e.rtp.toFixed(1)}% <span style="font-size:8px;color:#555">(${e.balls})</span></div>`).join('');
   } catch (err) { console.error('Leaderboard error:', err); document.getElementById('leaderboardList').innerHTML = '<div style="color:#666">—</div>'; }
+}
+
+// Simulation - all strategies
+document.getElementById('simBtn').addEventListener('click', async () => {
+  const numGames = parseInt(prompt('Games per strategy:', '100')) || 100;
+  const ballsPerGame = parseInt(document.getElementById('ballCount').value) || 100;
+  const betPerGame = ballsPerGame * CONFIG.BET_PER_BALL;
+  
+  const strategyNames = ['hunter', 'defender', 'humanSim', 'sniper'];
+  const results = [];
+  
+  document.getElementById('simBtn').disabled = true;
+  
+  for (const mode of strategyNames) {
+    document.getElementById('simBtn').textContent = `⏳ ${mode}...`;
+    await new Promise(r => setTimeout(r, 10));
+    
+    const mult = BET_MULTIPLIER[mode] || 1;
+    const actualBet = betPerGame * mult;
+    let totalWin = 0;
+    const rtps = [];
+    
+    for (let g = 0; g < numGames; g++) {
+      const seed = bytesToHex(sha256Pure(`sim:${Date.now()}:${mode}:${g}:${Math.random()}`));
+      
+      // Reset strategy state
+      hunterTargetId = defenderTargetId = sniperTargetId = null;
+      hsTargetBall = null; hsTargetX = BUMPER.START_X; hsTargetY = BUMPER.START_Y;
+      hsReactionDelay = 0; hsDistracted = false; hsLastSwitch = 0;
+      
+      const state = createInitialState(seed, ballsPerGame);
+      const strat = STRATEGIES[mode];
+      
+      let ticks = 0;
+      while (!state.finished && ticks < 100000) {
+        const target = strat ? strat(state) : null;
+        tick(state, target);
+        ticks++;
+      }
+      
+      totalWin += state.totalWin;
+      rtps.push(state.totalWin / actualBet * 100);
+    }
+    
+    const avgRtp = totalWin / (numGames * actualBet) * 100;
+    const stdDev = Math.sqrt(rtps.reduce((s, r) => s + (r - avgRtp) ** 2, 0) / rtps.length);
+    results.push({ mode, avgRtp, stdDev, min: Math.min(...rtps), max: Math.max(...rtps), mult });
+  }
+  
+  // Sort by RTP
+  results.sort((a, b) => b.avgRtp - a.avgRtp);
+  
+  const report = results.map((r, i) => 
+    `${i+1}. ${r.mode.padEnd(10)} ${r.avgRtp.toFixed(2)}% (±${r.stdDev.toFixed(1)})${r.mult > 1 ? ' [×'+r.mult+' bet]' : ''}`
+  ).join('\n');
+  
+  alert(`RTP by Strategy (${numGames} games × ${ballsPerGame} balls)\n\n${report}`);
+  
+  console.table(results);
+  
+  document.getElementById('simBtn').disabled = false;
+  document.getElementById('simBtn').textContent = '📊 SIM';
+});
+
+// Debug mode
+if (new URLSearchParams(window.location.search).get('debug') === '17') {
+  document.getElementById('simBtn').style.display = 'inline-block';
 }
 
 updateModeIndicator(); updateProgressiveLamps(1); render(); gameLoop(); loadLeaderboard();
