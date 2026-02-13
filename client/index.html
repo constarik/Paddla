@@ -440,7 +440,7 @@ class InputSeededRNG {
   nextDouble(eventType = 'rnd') { const input = `${this.currentTick}:${this.bumperX.toFixed(4)}:${this.bumperY.toFixed(4)}:${eventType}:${this.counter++}`; const hash = hmacSha256Pure(this.gameSeedHex, input); return bytesToDouble(hash); }
 }
 
-const CONFIG = { FIELD: 9, BALL_R: 0.2, SPEED: 0.05, GOAL_R: 1.02, CENTER_R: 0.225, CENTER_X: 4.5, CENTER_Y: 4.5, COUNTDOWN: 45, GOLDEN_CHANCE: 0.01, EXPLOSIVE_CHANCE: 1/75, SPAWN_COOLDOWN: 60, SPAWN_INTERVAL: 60, MAX_ON_FIELD: 10, TIMEOUT_LIMIT: 5, PROGRESSIVE_CAP: 5, MAX_TICKS_PER_BALL: 600 };
+const CONFIG = { FIELD: 9, BALL_R: 0.2, SPEED: 0.05, GOAL_R: 1.02, CENTER_R: 0.225, CENTER_X: 4.5, CENTER_Y: 4.5, COUNTDOWN: 45, GOLDEN_CHANCE: 0.01, EXPLOSIVE_CHANCE: 1/75, SPAWN_COOLDOWN: 60, SPAWN_INTERVAL: 60, MAX_ON_FIELD: 10, TIMEOUT_LIMIT: 5, PROGRESSIVE_CAP: 5, BET_PER_BALL: 5, MAX_TICKS_PER_BALL: 600 };
 const BET_MULTIPLIER = { human: 1, hunter: 1, defender: 1, humanSim: 1, sniper: 2 };
 const BUMPER = { RADIUS: 0.4, MIN_Y: 0.4, MAX_Y: 3.5, MIN_X: 1.5, MAX_X: 7.5, MAX_SPEED: 0.15, START_X: 4.5, START_Y: 2.0 };
 const VALUE_COLORS = { 9:'#00ff00', 8:'#33ff00', 7:'#66ff00', 6:'#99ff00', 5:'#ccff00', 4:'#ffff00', 3:'#ffcc00', 2:'#ff9900', 1:'#ff6600', 0:'#ff0000' };
@@ -531,10 +531,6 @@ const STRATEGIES = {
   }
 };
 
-function calcPrize(baseValue, state) {
-  return Math.round(baseValue * state.betPerBall);
-}
-
 function createInitialState(gameSeedHex, numBalls, betPerBall = 5, totalBet = 0) { return { rng: new InputSeededRNG(gameSeedHex), gameSeedHex, balls: [], bumper: createBumper(), tickCount: 0, ballsSpawned: 0, numBalls, betPerBall, totalBet, spawnCooldown: 0, progressive: 1, timeoutCount: 0, totalWin: 0, finished: false, nextBallId: 1, inputLog: [] }; }
 
 function tick(state, bumperTarget) {
@@ -556,14 +552,14 @@ function tick(state, bumperTarget) {
   // Center
   for (const b of state.balls) { if (b.alive && isInCenter(b)) { const dx = b.x - CONFIG.CENTER_X, dy = b.y - CONFIG.CENTER_Y, d = Math.sqrt(dx*dx+dy*dy); if (d > 0) { b.dx = (dx/d)*CONFIG.SPEED; b.dy = (dy/d)*CONFIG.SPEED; randomizeBounce(b, state.rng, `center_${b.id}`); } if (b.type === 'normal' && b.value < 9) { b.value = 9; b.ticksSinceCountdown = 0; events.push({ type: 'recharge', ball: b }); } } }
   // Goals
-  for (const ball of state.balls) { if (!ball.alive) continue; if (isGoal(ball)) { const prize = calcPrize(ball.value * ball.multiplier * state.progressive, state); state.totalWin += prize; if (ball.type === 'golden') state.timeoutCount = 0; if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++; events.push({ type: 'goal', ball, prize, side: isInLeftGoal(ball) ? 'left' : 'right' }); ball.alive = false; if (ball.type === 'explosive') { state.timeoutCount = 0; events.push({ type: 'explosion', ball, x: ball.x, y: ball.y }); for (const o of state.balls) { if (o.alive && o.id !== ball.id && isInUpperHalf(o)) { const ep = calcPrize(o.value * o.multiplier * state.progressive, state); state.totalWin += ep; if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++; events.push({ type: 'exploded', ball: o, prize: ep }); o.alive = false; } } } } }
+  for (const ball of state.balls) { if (!ball.alive) continue; if (isGoal(ball)) { const prize = ball.value * ball.multiplier * state.progressive; state.totalWin += prize; if (ball.type === 'golden') state.timeoutCount = 0; if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++; events.push({ type: 'goal', ball, prize, side: isInLeftGoal(ball) ? 'left' : 'right' }); ball.alive = false; if (ball.type === 'explosive') { state.timeoutCount = 0; events.push({ type: 'explosion', ball, x: ball.x, y: ball.y }); for (const o of state.balls) { if (o.alive && o.id !== ball.id && isInUpperHalf(o)) { const ep = o.value * o.multiplier * state.progressive; state.totalWin += ep; if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++; events.push({ type: 'exploded', ball: o, prize: ep }); o.alive = false; } } } } }
   // Ball-ball collisions
-  for (let i = 0; i < state.balls.length; i++) { for (let j = i + 1; j < state.balls.length; j++) { const b1 = state.balls[i], b2 = state.balls[j]; if (!b1.alive || !b2.alive) continue; if (dist(b1.x, b1.y, b2.x, b2.y) < CONFIG.BALL_R * 2) { const s1 = b1.type !== 'normal', s2 = b2.type !== 'normal'; if (s1 && s2) { const dx = b2.x - b1.x, dy = b2.y - b1.y, d = Math.sqrt(dx*dx+dy*dy)||1, nx = dx/d, ny = dy/d, ov = CONFIG.BALL_R*2-d; if (ov > 0) { b1.x -= nx*ov*0.5; b1.y -= ny*ov*0.5; b2.x += nx*ov*0.5; b2.y += ny*ov*0.5; } b1.dx = -nx*CONFIG.SPEED; b1.dy = -ny*CONFIG.SPEED; b2.dx = nx*CONFIG.SPEED; b2.dy = ny*CONFIG.SPEED; randomizeBounce(b1, state.rng, `coll_${b1.id}_${b2.id}_1`); randomizeBounce(b2, state.rng, `coll_${b1.id}_${b2.id}_2`); continue; } if (s1) { b2.alive = false; const cp = calcPrize(1, state); state.totalWin += cp; events.push({ type: 'collision', winner: b1, loser: b2, prize: cp }); continue; } if (s2) { b1.alive = false; const cp = calcPrize(1, state); state.totalWin += cp; events.push({ type: 'collision', winner: b2, loser: b1, prize: cp }); continue; } if (b1.value === b2.value) { const prize = calcPrize(b1.value * 2, state); state.totalWin += prize; events.push({ type: 'double', b1, b2, prize }); const roll = state.rng.nextDouble(`double_${b1.id}_${b2.id}`); if (roll < 0.5) b2.alive = false; else b1.alive = false; } else { const cp = calcPrize(1, state); state.totalWin += cp; const loser = b1.value < b2.value ? b1 : b2, winner = b1.value < b2.value ? b2 : b1; loser.alive = false; const dx = winner.x - loser.x, dy = winner.y - loser.y, d = Math.sqrt(dx*dx+dy*dy)||1; winner.dx = (dx/d)*CONFIG.SPEED; winner.dy = (dy/d)*CONFIG.SPEED; randomizeBounce(winner, state.rng, `win_${winner.id}`); events.push({ type: 'collision', winner, loser, prize: 1 }); } } } }
+  for (let i = 0; i < state.balls.length; i++) { for (let j = i + 1; j < state.balls.length; j++) { const b1 = state.balls[i], b2 = state.balls[j]; if (!b1.alive || !b2.alive) continue; if (dist(b1.x, b1.y, b2.x, b2.y) < CONFIG.BALL_R * 2) { const s1 = b1.type !== 'normal', s2 = b2.type !== 'normal'; if (s1 && s2) { const dx = b2.x - b1.x, dy = b2.y - b1.y, d = Math.sqrt(dx*dx+dy*dy)||1, nx = dx/d, ny = dy/d, ov = CONFIG.BALL_R*2-d; if (ov > 0) { b1.x -= nx*ov*0.5; b1.y -= ny*ov*0.5; b2.x += nx*ov*0.5; b2.y += ny*ov*0.5; } b1.dx = -nx*CONFIG.SPEED; b1.dy = -ny*CONFIG.SPEED; b2.dx = nx*CONFIG.SPEED; b2.dy = ny*CONFIG.SPEED; randomizeBounce(b1, state.rng, `coll_${b1.id}_${b2.id}_1`); randomizeBounce(b2, state.rng, `coll_${b1.id}_${b2.id}_2`); continue; } if (s1) { b2.alive = false; state.totalWin += 1; events.push({ type: 'collision', winner: b1, loser: b2, prize: 1 }); continue; } if (s2) { b1.alive = false; state.totalWin += 1; events.push({ type: 'collision', winner: b2, loser: b1, prize: 1 }); continue; } if (b1.value === b2.value) { const prize = b1.value * 2; state.totalWin += prize; events.push({ type: 'double', b1, b2, prize }); const roll = state.rng.nextDouble(`double_${b1.id}_${b2.id}`); if (roll < 0.5) b2.alive = false; else b1.alive = false; } else { state.totalWin += 1; const loser = b1.value < b2.value ? b1 : b2, winner = b1.value < b2.value ? b2 : b1; loser.alive = false; const dx = winner.x - loser.x, dy = winner.y - loser.y, d = Math.sqrt(dx*dx+dy*dy)||1; winner.dx = (dx/d)*CONFIG.SPEED; winner.dy = (dy/d)*CONFIG.SPEED; randomizeBounce(winner, state.rng, `win_${winner.id}`); events.push({ type: 'collision', winner, loser, prize: 1 }); } } } }
   // Timeouts
   for (const b of state.balls) { if (!b.alive && b.diedFromTimeout) { state.timeoutCount++; if (state.timeoutCount >= CONFIG.TIMEOUT_LIMIT) { state.progressive = 1; state.timeoutCount = 0; events.push({ type: 'progressiveReset' }); } b.diedFromTimeout = false; } }
   state.balls = state.balls.filter(b => b.alive);
   // Auto-collect
-  if (state.balls.length > 0 && !state.balls.some(b => b.type === 'normal')) { for (const b of state.balls) { if (b.alive) { const prize = calcPrize(b.value * b.multiplier * state.progressive, state); state.totalWin += prize; if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++; events.push({ type: 'autoCollect', ball: b, prize }); b.alive = false; } } state.balls = []; }
+  if (state.balls.length > 0 && !state.balls.some(b => b.type === 'normal')) { for (const b of state.balls) { if (b.alive) { const prize = b.value * b.multiplier * state.progressive; state.totalWin += prize; if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++; events.push({ type: 'autoCollect', ball: b, prize }); b.alive = false; } } state.balls = []; }
   // End
   if (state.ballsSpawned >= state.numBalls && state.balls.length === 0) { state.finished = true; events.push({ type: 'gameEnd', totalWin: state.totalWin }); }
   return events;
@@ -591,7 +587,7 @@ function updateModeIndicator() { const ind = document.getElementById('modeIndica
 function updateProgressiveLamps(level) { document.querySelectorAll('.lamp').forEach((l, i) => l.classList.toggle('active', i < level)); }
 function updateTimeoutDots(count) { document.querySelectorAll('.timeout-dot').forEach((d, i) => d.classList.toggle('active', i < count)); }
 
-function updateUI() { if (gameState) { document.getElementById('ballsLeft').textContent = gameState.numBalls - gameState.ballsSpawned + gameState.balls.length; document.getElementById('winDisplay').textContent = '$' + gameState.totalWin; updateProgressiveLamps(gameState.progressive); updateTimeoutDots(gameState.timeoutCount); } document.getElementById('balance').textContent = '$' + balance; }
+function updateUI() { if (gameState) { document.getElementById('ballsLeft').textContent = gameState.numBalls - gameState.ballsSpawned + gameState.balls.length; document.getElementById('winDisplay').textContent = '$' + (gameState.totalWin * gameState.betPerBall); updateProgressiveLamps(gameState.progressive); updateTimeoutDots(gameState.timeoutCount); } document.getElementById('balance').textContent = '$' + balance; }
 
 // Rendering
 function render() {
@@ -644,12 +640,13 @@ function gameLoop() {
         gameRunning = false;
         document.getElementById('playBtn').disabled = false;
         document.getElementById('modeSelect').disabled = false;
-        document.getElementById('finalWin').textContent = gameState.totalWin;
-        const bet = gameState.totalBet, rtp = gameState.totalWin / bet;
-        document.getElementById('finalRtp').textContent = `Bet: ${bet} | Win: ${gameState.totalWin} | RTP: ${(rtp * 100).toFixed(1)}%`;
+        const scaledWin = gameState.totalWin * gameState.betPerBall;
+        document.getElementById('finalWin').textContent = scaledWin;
+        const bet = gameState.totalBet, rtp = scaledWin / bet;
+        document.getElementById('finalRtp').textContent = `Bet: $${bet} | Win: $${scaledWin} | RTP: ${(rtp * 100).toFixed(1)}%`;
         playGameOver(rtp >= 1);
-        balance += gameState.totalWin;
-        saveGameResult(bet, gameState.totalWin);
+        balance += scaledWin;
+        saveGameResult(bet, scaledWin);
         updateAuthUI();
         setTimeout(loadLeaderboard, 2000);
         // Finish on server
@@ -734,7 +731,7 @@ document.getElementById('playBtn').addEventListener('click', async () => {
   const betPerBall = parseInt(document.getElementById('betSelect').value) || 5;
   const multiplier = BET_MULTIPLIER[currentMode] || 1;
   const bet = numBalls * betPerBall * multiplier;
-  if (bet > balance) { alert(`Insufficient balance! Need ${bet}`); return; }
+  if (bet > balance) { alert(`Insufficient balance! Need $${bet}`); return; }
   
   // STEP 1: Fetch and record commitment BEFORE generating clientSeed
   if (serverOnline) {
