@@ -1,6 +1,8 @@
-// PADDLA Engine v0.7 - Input-Seeded Randomness (Provably Fair)
+// PADDLA Engine v8 - Input-Seeded Randomness (Provably Fair)
 // Every random call depends on game seed + tick + bumper position
 // This prevents prediction: player can't know future randomness without committing to bumper position
+
+const ENGINE_VERSION = 8;
 
 const crypto = typeof window === 'undefined' ? require('crypto') : null;
 
