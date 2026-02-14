@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>PADDLA v8.0.1 - Provably Fair</title>
+  <title>PADDLA v8.0.2 - Provably Fair</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏓</text></svg>">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
   <!-- Google Analytics -->
@@ -225,7 +225,7 @@
     </div>
   </div>
   
-  <h1>🏓 PADDLA <span class="pf-badge">🔒 Provably Fair</span> <span class="version-badge">v8.0.1</span></h1>
+  <h1>🏓 PADDLA <span class="version-badge">v8.0.2</span> <span class="pf-badge">🔒 Provably Fair</span></h1>
   
   <div class="stats">
     <div class="stat">
@@ -307,7 +307,7 @@
 
 <script>
 // ===== VERSION =====
-const VERSION = '8.0.1';
+const VERSION = '8.0.2';
 
 // ===== FIREBASE CONFIG =====
 const firebaseConfig = {
@@ -597,7 +597,7 @@ function updateModeIndicator() { const ind = document.getElementById('modeIndica
 function updateProgressiveLamps(level) { document.querySelectorAll('.lamp').forEach((l, i) => l.classList.toggle('active', i < level)); }
 function updateTimeoutDots(count) { document.querySelectorAll('.timeout-dot').forEach((d, i) => d.classList.toggle('active', i < count)); }
 
-function updateUI() { if (gameState) { document.getElementById('ballsLeft').textContent = gameState.numBalls - gameState.ballsSpawned + gameState.balls.length; document.getElementById('winDisplay').textContent = '$' + (gameState.totalWin * gameState.betPerBall); updateProgressiveLamps(gameState.progressive); updateTimeoutDots(gameState.timeoutCount); } document.getElementById('balance').textContent = '$' + balance; }
+function updateUI() { if (gameState) { document.getElementById('ballsLeft').textContent = gameState.numBalls - gameState.ballsSpawned + gameState.balls.length; document.getElementById('winDisplay').textContent = '$' + gameState.totalWin; updateProgressiveLamps(gameState.progressive); updateTimeoutDots(gameState.timeoutCount); } document.getElementById('balance').textContent = '$' + balance; }
 
 // Rendering
 function render() {
@@ -650,7 +650,7 @@ function gameLoop() {
         gameRunning = false;
         document.getElementById('playBtn').disabled = false;
         document.getElementById('modeSelect').disabled = false;
-        const scaledWin = gameState.totalWin * gameState.betPerBall;
+        const scaledWin = gameState.totalWin;
         document.getElementById('finalWin').textContent = scaledWin;
         const bet = gameState.totalBet, rtp = scaledWin / bet;
         document.getElementById('finalRtp').textContent = `Bet: $${bet} | Win: $${scaledWin} | RTP: ${(rtp * 100).toFixed(1)}%`;
