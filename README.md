@@ -76,7 +76,7 @@ After game, client can verify:
 
 ## Live Demo
 
-- **Client:** https://constantine.ch/PADDLA/
+- **Client:** https://constarik.github.io/Paddla/
 - **Server:** https://paddla.onrender.com
 
 ## License
