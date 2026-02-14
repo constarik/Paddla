@@ -267,6 +267,7 @@
       <option value="defender">🛡️ Defender</option>
       <option value="humanSim">🧠 Human-Sim</option>
       <option value="sniper">🔫 Sniper (×2 bet)</option>
+      <option value="stationary">🎲 Stationary</option>
     </select>
     <button id="playBtn">▶ PLAY</button>
     <button id="simBtn" style="display:none">📊 SIM</button>
@@ -458,12 +459,14 @@ function collideBallBumper(ball, bumper, rng) { const d = dist(ball.x, ball.y, b
 
 // AI Strategies
 let hunterTargetId = null, defenderTargetId = null, sniperTargetId = null;
+// Stationary random position
+let stationaryX = BUMPER.START_X, stationaryY = BUMPER.START_Y;
 // Human-simulated state
 let hsTargetBall = null, hsTargetX = BUMPER.START_X, hsTargetY = BUMPER.START_Y;
 let hsReactionDelay = 0, hsDistracted = false, hsLastSwitch = 0;
 const STRATEGIES = {
   human: null,
-  stationary: () => ({ x: BUMPER.START_X, y: BUMPER.START_Y }),
+  stationary: () => ({ x: stationaryX, y: stationaryY }),
   hunter: (state) => { let target = state.balls.find(b => b.id === hunterTargetId && b.alive && b.y < CONFIG.FIELD/2); if (!target) { let best = -Infinity; for (const b of state.balls) { if (!b.alive || b.y > CONFIG.FIELD/2) continue; const score = (b.dy < 0 ? 100 : 0) + b.value*10 - b.y; if (score > best) { best = score; target = b; } } hunterTargetId = target?.id || null; } return target ? { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.8, BUMPER.MIN_Y, BUMPER.MAX_Y) } : { x: BUMPER.START_X, y: BUMPER.MAX_Y - 0.5 }; },
   defender: (state) => { let target = state.balls.find(b => b.id === defenderTargetId && b.alive && b.y < CONFIG.FIELD/2); if (!target) { let best = -Infinity; for (const b of state.balls) { if (!b.alive || b.y >= CONFIG.FIELD/2) continue; const score = (b.dy > 0 ? 100 : 0) + b.value*b.multiplier*10 + (CONFIG.FIELD/2 - b.y); if (score > best) { best = score; target = b; } } defenderTargetId = target?.id || null; } if (!target) target = state.balls.find(b => b.alive); return target ? { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.5, BUMPER.MIN_Y, BUMPER.MAX_Y) } : { x: 4.5, y: 2.5 }; },
   sniper: (state) => { let target = state.balls.find(b => b.id === sniperTargetId && b.alive && b.y < CONFIG.FIELD/2); if (!target) { let best = -Infinity; for (const b of state.balls) { if (!b.alive || b.y >= CONFIG.FIELD/2) continue; const score = b.value*b.multiplier*10 - b.y; if (score > best) { best = score; target = b; } } sniperTargetId = target?.id || null; } if (target) { const offsetX = target.x < 4.5 ? 0.5 : -0.5; return { x: clamp(target.x + offsetX, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.3, BUMPER.MIN_Y, BUMPER.MAX_Y) }; } return { x: 4.5, y: 2.0 }; },
@@ -475,10 +478,10 @@ const STRATEGIES = {
     // Reaction delay (skip updates sometimes)
     if (hsReactionDelay > 0) { hsReactionDelay--; return { x: hsTargetX, y: hsTargetY }; }
     
-    // Random distraction (0.1% chance, lasts 40-100 ticks)
-    if (!hsDistracted && Math.random() < 0.001) {
+    // Random distraction (0.5% chance, lasts 50-120 ticks)
+    if (!hsDistracted && Math.random() < 0.005) {
       hsDistracted = true;
-      hsReactionDelay = 40 + Math.floor(Math.random() * 60);
+      hsReactionDelay = 50 + Math.floor(Math.random() * 70);
     }
     if (hsDistracted && hsReactionDelay <= 0) hsDistracted = false;
     
@@ -514,11 +517,11 @@ const STRATEGIES = {
       const idealY = clamp(predictY + 0.6, BUMPER.MIN_Y, BUMPER.MAX_Y);
       
       // Smooth interpolation (human-like lag)
-      hsTargetX += (idealX - hsTargetX) * 0.08;
-      hsTargetY += (idealY - hsTargetY) * 0.08;
+      hsTargetX += (idealX - hsTargetX) * 0.04;
+      hsTargetY += (idealY - hsTargetY) * 0.04;
       
-      // Rare small drift
-      if (Math.random() < 0.02) {
+      // Frequent drift
+      if (Math.random() < 0.06) {
         hsTargetX += (Math.random() - 0.5) * 0.08;
         hsTargetY += (Math.random() - 0.5) * 0.05;
       }
@@ -583,7 +586,7 @@ canvas.addEventListener('touchmove', (e) => { e.preventDefault(); const r = canv
 
 document.getElementById('modeSelect').addEventListener('change', (e) => { currentMode = e.target.value; updateModeIndicator(); });
 
-function updateModeIndicator() { const ind = document.getElementById('modeIndicator'); const labels = { human:'👆 HUMAN', hunter:'🎯 HUNTER', defender:'🛡️ DEFENDER', humanSim:'🧠 HUMAN-SIM', sniper:'🔫 SNIPER ×2' }; ind.textContent = labels[currentMode] || currentMode; ind.className = 'mode-indicator' + (currentMode === 'human' ? ' human' : ''); }
+function updateModeIndicator() { const ind = document.getElementById('modeIndicator'); const labels = { human:'👆 HUMAN', hunter:'🎯 HUNTER', defender:'🛡️ DEFENDER', humanSim:'🧠 HUMAN-SIM', sniper:'🔫 SNIPER ×2', stationary:'🎲 STATIONARY' }; ind.textContent = labels[currentMode] || currentMode; ind.className = 'mode-indicator' + (currentMode === 'human' ? ' human' : ''); }
 function updateProgressiveLamps(level) { document.querySelectorAll('.lamp').forEach((l, i) => l.classList.toggle('active', i < level)); }
 function updateTimeoutDots(count) { document.querySelectorAll('.timeout-dot').forEach((d, i) => d.classList.toggle('active', i < count)); }
 
@@ -771,6 +774,9 @@ document.getElementById('playBtn').addEventListener('click', async () => {
   hunterTargetId = defenderTargetId = sniperTargetId = null;
   hsTargetBall = null; hsTargetX = BUMPER.START_X; hsTargetY = BUMPER.START_Y;
   hsReactionDelay = 0; hsDistracted = false; hsLastSwitch = 0;
+  // Random position for stationary mode
+  stationaryX = BUMPER.MIN_X + Math.random() * (BUMPER.MAX_X - BUMPER.MIN_X);
+  stationaryY = BUMPER.MIN_Y + Math.random() * (BUMPER.MAX_Y - BUMPER.MIN_Y);
   gameState = createInitialState(gameSeedHex, numBalls, betPerBall, bet);
   gameRunning = true;
   lastVerificationData = null;
@@ -810,7 +816,7 @@ document.getElementById('simBtn').addEventListener('click', async () => {
   const ballsPerGame = parseInt(document.getElementById('ballCount').value) || 100;
   const betPerGame = ballsPerGame * CONFIG.BET_PER_BALL;
   
-  const strategyNames = ['hunter', 'defender', 'humanSim', 'sniper'];
+  const strategyNames = ['stationary', 'hunter', 'humanSim', 'sniper'];
   const results = [];
   
   document.getElementById('simBtn').disabled = true;
@@ -831,6 +837,8 @@ document.getElementById('simBtn').addEventListener('click', async () => {
       hunterTargetId = defenderTargetId = sniperTargetId = null;
       hsTargetBall = null; hsTargetX = BUMPER.START_X; hsTargetY = BUMPER.START_Y;
       hsReactionDelay = 0; hsDistracted = false; hsLastSwitch = 0;
+      stationaryX = BUMPER.MIN_X + Math.random() * (BUMPER.MAX_X - BUMPER.MIN_X);
+      stationaryY = BUMPER.MIN_Y + Math.random() * (BUMPER.MAX_Y - BUMPER.MIN_Y);
       
       const state = createInitialState(seed, ballsPerGame);
       const strat = STRATEGIES[mode];
