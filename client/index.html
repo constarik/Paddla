@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>PADDLA v8.1.0 - Provably Fair</title>
+  <title>PADDLA v8.1.1 - Provably Fair</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏓</text></svg>">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
   <!-- Google Analytics -->
@@ -225,7 +225,7 @@
     </div>
   </div>
   
-  <h1>🏓 PADDLA <span class="version-badge">v8.1.0</span> <span class="pf-badge">🔒 Provably Fair</span></h1>
+  <h1>🏓 PADDLA <span class="version-badge">v8.1.1</span> <span class="pf-badge">🔒 Provably Fair</span></h1>
   
   <div class="stats">
     <div class="stat">
@@ -301,13 +301,14 @@
       <div>Commitment (recorded before game): <code id="vCommitment"></code></div>
       <div>Server Seed (revealed after): <code id="vServerSeed"></code></div>
       <button class="verify-btn-result" id="verifyBtn">✓ VERIFY FAIRNESS</button>
+      <button class="verify-btn-result" id="replayBtn" style="background:#00d4ff;margin-left:8px;">▶ REPLAY</button>
       <div id="verifyResult" style="margin-top:10px;"></div>
     </div>
   </div>
 
 <script>
 // ===== VERSION =====
-const VERSION = '8.1.0';
+const VERSION = '8.1.1';
 
 // ===== FIREBASE CONFIG =====
 const firebaseConfig = {
@@ -635,6 +636,27 @@ function createExplosion(x, y) { for (let i = 0; i < 20; i++) { const a = Math.r
 function updateEffects() { for (let i = floatingTexts.length - 1; i >= 0; i--) { floatingTexts[i].y += floatingTexts[i].dy; floatingTexts[i].opacity -= 0.025; if (floatingTexts[i].opacity <= 0) floatingTexts.splice(i, 1); } for (let i = explosionParticles.length - 1; i >= 0; i--) { explosionParticles[i].x += explosionParticles[i].dx; explosionParticles[i].y += explosionParticles[i].dy; explosionParticles[i].life -= 0.03; if (explosionParticles[i].life <= 0) explosionParticles.splice(i, 1); } goalFlashLeft *= 0.9; goalFlashRight *= 0.9; }
 
 function gameLoop() {
+  if (replayRunning && gameState && !gameState.finished) {
+    const entry = replayLog_data[replayLog_idx];
+    const target = entry ? entry.target : null;
+    replayLog_idx++;
+    const events = tick(gameState, target);
+    for (const e of events) {
+      if (e.type === 'goal') { showFloatingText(e.ball.x, e.ball.y, '+' + e.prize, '#00ff66', 20); if (e.side === 'left') goalFlashLeft = 1; else goalFlashRight = 1; playGoal(gameState.progressive); }
+      if (e.type === 'explosion') { createExplosion(e.x, e.y); playExplosion(); }
+      if (e.type === 'exploded') { showFloatingText(e.ball.x, e.ball.y, '+' + e.prize, '#ff6600', 18); }
+      if (e.type === 'double') { showFloatingText((e.b1.x+e.b2.x)/2, (e.b1.y+e.b2.y)/2, 'DOUBLE +'+e.prize, '#ffd700', 22); playDouble(); }
+      if (e.type === 'timeout') { showFloatingText(e.ball.x, e.ball.y, '✗', '#ff4444'); }
+      if (e.type === 'spawn') { playSpawn(); }
+      if (e.type === 'gameEnd') {
+        replayRunning = false;
+        document.getElementById('playBtn').disabled = false;
+        document.getElementById('modeSelect').disabled = false;
+        showFloatingText(4.5, 2, '✓ REPLAY COMPLETE', '#00d4ff', 20);
+      }
+    }
+    updateUI();
+  }
   if (gameRunning && gameState && !gameState.finished) {
     let target;
     if (currentMode === 'human') { target = { x: clamp(mouseX, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(mouseY, BUMPER.MIN_Y, BUMPER.MAX_Y) }; }
@@ -699,7 +721,10 @@ async function finishGameOnServer() {
         clientSeed: currentClientSeed,
         commitment: recordedCommitment,
         serverSeed: data.verification.serverSeed,
-        gameSeedHex: data.verification.gameSeedHex
+        gameSeedHex: data.verification.gameSeedHex,
+        inputLog: gameState.inputLog.slice(),
+        numBalls: gameState.numBalls,
+        betPerBall: gameState.betPerBall
       };
       document.getElementById('vServerSeed').textContent = data.verification.serverSeed;
       document.getElementById('verifyBtn').disabled = false;
@@ -739,6 +764,28 @@ document.getElementById('verifyBtn').addEventListener('click', async () => {
     document.getElementById('verifyResult').innerHTML = `<span style="color:#ff4444">❌ Error: ${err.message}</span>`;
   }
 });
+
+// Replay button
+document.getElementById('replayBtn').addEventListener('click', () => {
+  if (!lastVerificationData?.gameSeedHex || !lastVerificationData?.inputLog) {
+    alert('No replay data available'); return;
+  }
+  const vd = lastVerificationData;
+  document.getElementById('result').classList.remove('show');
+  gameState = createInitialState(vd.gameSeedHex, vd.numBalls, vd.betPerBall, vd.numBalls * vd.betPerBall);
+  let replayIdx = 0;
+  const replayLog = vd.inputLog;
+  gameRunning = false;
+  // Override gameLoop to use inputLog
+  replayRunning = true;
+  replayLog_data = replayLog;
+  replayLog_idx = 0;
+  document.getElementById('playBtn').disabled = true;
+  document.getElementById('modeSelect').disabled = true;
+  updateUI();
+});
+
+let replayRunning = false, replayLog_data = [], replayLog_idx = 0;
 
 // Play button
 document.getElementById('playBtn').addEventListener('click', async () => {
