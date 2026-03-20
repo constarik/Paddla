@@ -330,8 +330,8 @@ let currentUser = null, userData = null;
 async function signInWithGoogle() {
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
-    try { await auth.signInWithPopup(provider); }
-    catch (e) { if (e.code === 'auth/popup-blocked') await auth.signInWithRedirect(provider); else throw e; }
+    try { await auth.signInWithRedirect(provider); }
+    catch (e) { alert('Sign in error: ' + e.message); }
   } catch (err) { alert('Sign in failed: ' + err.message); }
 }
 function signOut() { auth.signOut(); }
