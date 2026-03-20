@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>PADDLA v8.1.5 - Provably Fair</title>
+  <title>PADDLA v8.1.6 - Provably Fair</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏓</text></svg>">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
   <!-- Google Analytics -->
@@ -225,7 +225,7 @@
     </div>
   </div>
   
-  <h1>🏓 PADDLA <span class="version-badge">v8.1.5</span> <span class="pf-badge">🔒 Provably Fair</span></h1>
+  <h1>🏓 PADDLA <span class="version-badge">v8.1.6</span> <span class="pf-badge">🔒 Provably Fair</span></h1>
   
   <div class="stats">
     <div class="stat">
@@ -311,7 +311,7 @@
 
 <script>
 // ===== VERSION =====
-const VERSION = '8.1.5';
+const VERSION = '8.1.6';
 
 // ===== FIREBASE CONFIG =====
 const firebaseConfig = {
@@ -771,7 +771,7 @@ document.getElementById('verifyBtn').addEventListener('click', async () => {
 
 // Controls disable/enable
 function setControlsDisabled(disabled) {
-  ['ballCount','betSelect','modeSelect'].forEach(id => {
+  ['ballCount','betSelect','modeSelect','playBtn'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.disabled = disabled; el.style.opacity = disabled ? '0.4' : '1'; }
   });
