@@ -117,6 +117,7 @@ function hmacSha256Pure(key, message) {
 
 const FP_ROUND = 1e10;
 function fpRound(v) { return Math.round(v * FP_ROUND) / FP_ROUND; }
+function moneyRound(v) { return Math.round(v * 100) / 100; }
 function dist(ax, ay, bx, by) { return Math.sqrt((bx-ax)**2 + (by-ay)**2); }
 function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
 
@@ -390,8 +391,8 @@ function tick(state, bumperTarget) {
     if (!ball.alive) continue;
     if (isGoal(ball)) {
       const betScale = state.betPerBall / 5;
-      const prize = ball.value * ball.multiplier * state.progressive * betScale;
-      state.totalWin += prize;
+      const prize = moneyRound(ball.value * ball.multiplier * state.progressive * betScale);
+      state.totalWin = moneyRound(state.totalWin + prize);
       if (ball.type === 'golden') state.timeoutCount = 0;
       if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++;
       events.push({ type: 'goal', ball, prize, side: isInLeftGoal(ball) ? 'left' : 'right' });
@@ -402,8 +403,8 @@ function tick(state, bumperTarget) {
         events.push({ type: 'explosion', ball, x: ball.x, y: ball.y });
         for (const o of state.balls) {
           if (o.alive && o.id !== ball.id && isInUpperHalf(o)) {
-            const ep = o.value * o.multiplier * state.progressive * betScale;
-            state.totalWin += ep;
+            const ep = moneyRound(o.value * o.multiplier * state.progressive * betScale);
+            state.totalWin = moneyRound(state.totalWin + ep);
             if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++;
             events.push({ type: 'exploded', ball: o, prize: ep });
             o.alive = false;
@@ -435,17 +436,17 @@ function tick(state, bumperTarget) {
           continue;
         }
         
-        if (s1) { b2.alive = false; state.totalWin += (state.betPerBall/5); events.push({ type: 'collision', winner: b1, loser: b2, prize: (state.betPerBall/5) }); continue; }
-        if (s2) { b1.alive = false; state.totalWin += (state.betPerBall/5); events.push({ type: 'collision', winner: b2, loser: b1, prize: (state.betPerBall/5) }); continue; }
+        if (s1) { b2.alive = false; const cp1 = moneyRound(state.betPerBall/5); state.totalWin = moneyRound(state.totalWin + cp1); events.push({ type: 'collision', winner: b1, loser: b2, prize: cp1 }); continue; }
+        if (s2) { b1.alive = false; const cp2 = moneyRound(state.betPerBall/5); state.totalWin = moneyRound(state.totalWin + cp2); events.push({ type: 'collision', winner: b2, loser: b1, prize: cp2 }); continue; }
         
         if (b1.value === b2.value) {
-          const prize = b1.value * 2 * (state.betPerBall/5);
-          state.totalWin += prize;
+          const prize = moneyRound(b1.value * 2 * (state.betPerBall/5));
+          state.totalWin = moneyRound(state.totalWin + prize);
           events.push({ type: 'double', b1, b2, prize });
           const roll = state.rng.nextDouble(`double_${b1.id}_${b2.id}`);
           if (roll < 0.5) b2.alive = false; else b1.alive = false;
         } else {
-          state.totalWin += (state.betPerBall/5);
+          const cp3 = moneyRound(state.betPerBall/5); state.totalWin = moneyRound(state.totalWin + cp3);
           const loser = b1.value < b2.value ? b1 : b2;
           const winner = b1.value < b2.value ? b2 : b1;
           loser.alive = false;
@@ -454,7 +455,7 @@ function tick(state, bumperTarget) {
           winner.dx = (dx/d)*CONFIG.SPEED; 
           winner.dy = (dy/d)*CONFIG.SPEED;
           randomizeBounce(winner, state.rng, `win_${winner.id}`);
-          events.push({ type: 'collision', winner, loser, prize: (state.betPerBall/5) });
+          events.push({ type: 'collision', winner, loser, prize: cp3 });
         }
       }
     }
@@ -479,8 +480,8 @@ function tick(state, bumperTarget) {
   if (state.balls.length > 0 && !state.balls.some(b => b.type === 'normal')) {
     for (const b of state.balls) {
       if (b.alive) {
-        const prize = b.value * b.multiplier * state.progressive * (state.betPerBall/5);
-        state.totalWin += prize;
+        const prize = moneyRound(b.value * b.multiplier * state.progressive * (state.betPerBall/5));
+        state.totalWin = moneyRound(state.totalWin + prize);
         if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++;
         events.push({ type: 'autoCollect', ball: b, prize });
         b.alive = false;

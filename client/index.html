@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>PADDLA v8.0.9 - Provably Fair</title>
+  <title>PADDLA v8.1.0 - Provably Fair</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏓</text></svg>">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
   <!-- Google Analytics -->
@@ -225,7 +225,7 @@
     </div>
   </div>
   
-  <h1>🏓 PADDLA <span class="version-badge">v8.0.9</span> <span class="pf-badge">🔒 Provably Fair</span></h1>
+  <h1>🏓 PADDLA <span class="version-badge">v8.1.0</span> <span class="pf-badge">🔒 Provably Fair</span></h1>
   
   <div class="stats">
     <div class="stat">
@@ -307,7 +307,7 @@
 
 <script>
 // ===== VERSION =====
-const VERSION = '8.0.9';
+const VERSION = '8.1.0';
 
 // ===== FIREBASE CONFIG =====
 const firebaseConfig = {
@@ -444,6 +444,7 @@ function bytesToDouble(bytes) { const view = new DataView(bytes.buffer || new Ui
 
 const FP_ROUND = 1e10;
 function fpRound(v) { return Math.round(v * FP_ROUND) / FP_ROUND; }
+function moneyRound(v) { return Math.round(v * 100) / 100; }
 function dist(ax, ay, bx, by) { return Math.sqrt((bx-ax)**2 + (by-ay)**2); }
 function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
 
@@ -567,14 +568,14 @@ function tick(state, bumperTarget) {
   // Center
   for (const b of state.balls) { if (b.alive && isInCenter(b)) { const dx = b.x - CONFIG.CENTER_X, dy = b.y - CONFIG.CENTER_Y, d = Math.sqrt(dx*dx+dy*dy); if (d > 0) { b.dx = (dx/d)*CONFIG.SPEED; b.dy = (dy/d)*CONFIG.SPEED; randomizeBounce(b, state.rng, `center_${b.id}`); } if (b.type === 'normal' && b.value < 9) { b.value = 9; b.ticksSinceCountdown = 0; events.push({ type: 'recharge', ball: b }); } } }
   // Goals
-  for (const ball of state.balls) { if (!ball.alive) continue; if (isGoal(ball)) { const betScale = state.betPerBall / 5; const prize = ball.value * ball.multiplier * state.progressive * betScale; state.totalWin += prize; if (ball.type === 'golden') state.timeoutCount = 0; if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++; events.push({ type: 'goal', ball, prize, side: isInLeftGoal(ball) ? 'left' : 'right' }); ball.alive = false; if (ball.type === 'explosive') { state.timeoutCount = 0; events.push({ type: 'explosion', ball, x: ball.x, y: ball.y }); for (const o of state.balls) { if (o.alive && o.id !== ball.id && isInUpperHalf(o)) { const ep = o.value * o.multiplier * state.progressive * betScale; state.totalWin += ep; if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++; events.push({ type: 'exploded', ball: o, prize: ep }); o.alive = false; } } } } }
+  for (const ball of state.balls) { if (!ball.alive) continue; if (isGoal(ball)) { const betScale = state.betPerBall / 5; const prize = moneyRound(ball.value * ball.multiplier * state.progressive * betScale); state.totalWin = moneyRound(state.totalWin + prize); if (ball.type === 'golden') state.timeoutCount = 0; if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++; events.push({ type: 'goal', ball, prize, side: isInLeftGoal(ball) ? 'left' : 'right' }); ball.alive = false; if (ball.type === 'explosive') { state.timeoutCount = 0; events.push({ type: 'explosion', ball, x: ball.x, y: ball.y }); for (const o of state.balls) { if (o.alive && o.id !== ball.id && isInUpperHalf(o)) { const ep = moneyRound(o.value * o.multiplier * state.progressive * betScale); state.totalWin = moneyRound(state.totalWin + ep); if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++; events.push({ type: 'exploded', ball: o, prize: ep }); o.alive = false; } } } } }
   // Ball-ball collisions
-  for (let i = 0; i < state.balls.length; i++) { for (let j = i + 1; j < state.balls.length; j++) { const b1 = state.balls[i], b2 = state.balls[j]; if (!b1.alive || !b2.alive) continue; if (dist(b1.x, b1.y, b2.x, b2.y) < CONFIG.BALL_R * 2) { const s1 = b1.type !== 'normal', s2 = b2.type !== 'normal'; if (s1 && s2) { const dx = b2.x - b1.x, dy = b2.y - b1.y, d = Math.sqrt(dx*dx+dy*dy)||1, nx = dx/d, ny = dy/d, ov = CONFIG.BALL_R*2-d; if (ov > 0) { b1.x -= nx*ov*0.5; b1.y -= ny*ov*0.5; b2.x += nx*ov*0.5; b2.y += ny*ov*0.5; } b1.dx = -nx*CONFIG.SPEED; b1.dy = -ny*CONFIG.SPEED; b2.dx = nx*CONFIG.SPEED; b2.dy = ny*CONFIG.SPEED; randomizeBounce(b1, state.rng, `coll_${b1.id}_${b2.id}_1`); randomizeBounce(b2, state.rng, `coll_${b1.id}_${b2.id}_2`); continue; } if (s1) { b2.alive = false; state.totalWin += (state.betPerBall / 5); events.push({ type: 'collision', winner: b1, loser: b2, prize: (state.betPerBall / 5) }); continue; } if (s2) { b1.alive = false; state.totalWin += (state.betPerBall / 5); events.push({ type: 'collision', winner: b2, loser: b1, prize: (state.betPerBall / 5) }); continue; } if (b1.value === b2.value) { const prize = b1.value * 2 * (state.betPerBall / 5); state.totalWin += prize; events.push({ type: 'double', b1, b2, prize }); const roll = state.rng.nextDouble(`double_${b1.id}_${b2.id}`); if (roll < 0.5) b2.alive = false; else b1.alive = false; } else { state.totalWin += (state.betPerBall / 5); const loser = b1.value < b2.value ? b1 : b2, winner = b1.value < b2.value ? b2 : b1; loser.alive = false; const dx = winner.x - loser.x, dy = winner.y - loser.y, d = Math.sqrt(dx*dx+dy*dy)||1; winner.dx = (dx/d)*CONFIG.SPEED; winner.dy = (dy/d)*CONFIG.SPEED; randomizeBounce(winner, state.rng, `win_${winner.id}`); events.push({ type: 'collision', winner, loser, prize: (state.betPerBall / 5) }); } } } }
+  for (let i = 0; i < state.balls.length; i++) { for (let j = i + 1; j < state.balls.length; j++) { const b1 = state.balls[i], b2 = state.balls[j]; if (!b1.alive || !b2.alive) continue; if (dist(b1.x, b1.y, b2.x, b2.y) < CONFIG.BALL_R * 2) { const s1 = b1.type !== 'normal', s2 = b2.type !== 'normal'; if (s1 && s2) { const dx = b2.x - b1.x, dy = b2.y - b1.y, d = Math.sqrt(dx*dx+dy*dy)||1, nx = dx/d, ny = dy/d, ov = CONFIG.BALL_R*2-d; if (ov > 0) { b1.x -= nx*ov*0.5; b1.y -= ny*ov*0.5; b2.x += nx*ov*0.5; b2.y += ny*ov*0.5; } b1.dx = -nx*CONFIG.SPEED; b1.dy = -ny*CONFIG.SPEED; b2.dx = nx*CONFIG.SPEED; b2.dy = ny*CONFIG.SPEED; randomizeBounce(b1, state.rng, `coll_${b1.id}_${b2.id}_1`); randomizeBounce(b2, state.rng, `coll_${b1.id}_${b2.id}_2`); continue; } if (s1) { b2.alive = false; const cp1=moneyRound(state.betPerBall/5); state.totalWin = moneyRound(state.totalWin+cp1); events.push({ type: 'collision', winner: b1, loser: b2, prize: cp1 }); continue; } if (s2) { b1.alive = false; const cp2=moneyRound(state.betPerBall/5); state.totalWin = moneyRound(state.totalWin+cp2); events.push({ type: 'collision', winner: b2, loser: b1, prize: cp2 }); continue; } if (b1.value === b2.value) { const prize = moneyRound(b1.value * 2 * (state.betPerBall / 5)); state.totalWin = moneyRound(state.totalWin + prize); events.push({ type: 'double', b1, b2, prize }); const roll = state.rng.nextDouble(`double_${b1.id}_${b2.id}`); if (roll < 0.5) b2.alive = false; else b1.alive = false; } else { const cp3=moneyRound(state.betPerBall/5); state.totalWin=moneyRound(state.totalWin+cp3); const loser = b1.value < b2.value ? b1 : b2, winner = b1.value < b2.value ? b2 : b1; loser.alive = false; const dx = winner.x - loser.x, dy = winner.y - loser.y, d = Math.sqrt(dx*dx+dy*dy)||1; winner.dx = (dx/d)*CONFIG.SPEED; winner.dy = (dy/d)*CONFIG.SPEED; randomizeBounce(winner, state.rng, `win_${winner.id}`); events.push({ type: 'collision', winner, loser, prize: cp3 }); } } } }
   // Timeouts
   for (const b of state.balls) { if (!b.alive && b.diedFromTimeout) { state.timeoutCount++; if (state.timeoutCount >= CONFIG.TIMEOUT_LIMIT) { state.progressive = 1; state.timeoutCount = 0; events.push({ type: 'progressiveReset' }); } b.diedFromTimeout = false; } }
   state.balls = state.balls.filter(b => b.alive);
   // Auto-collect
-  if (state.balls.length > 0 && !state.balls.some(b => b.type === 'normal')) { for (const b of state.balls) { if (b.alive) { const prize = b.value * b.multiplier * state.progressive * (state.betPerBall / 5); state.totalWin += prize; if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++; events.push({ type: 'autoCollect', ball: b, prize }); b.alive = false; } } state.balls = []; }
+  if (state.balls.length > 0 && !state.balls.some(b => b.type === 'normal')) { for (const b of state.balls) { if (b.alive) { const prize = moneyRound(b.value * b.multiplier * state.progressive * (state.betPerBall / 5)); state.totalWin = moneyRound(state.totalWin + prize); if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++; events.push({ type: 'autoCollect', ball: b, prize }); b.alive = false; } } state.balls = []; }
   // End
   if (state.ballsSpawned >= state.numBalls && state.balls.length === 0) { state.finished = true; events.push({ type: 'gameEnd', totalWin: state.totalWin }); }
   return events;
