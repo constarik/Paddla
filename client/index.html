@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>PADDLA v8.0.7 - Provably Fair</title>
+  <title>PADDLA v8.0.8 - Provably Fair</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏓</text></svg>">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
   <!-- Google Analytics -->
@@ -104,7 +104,7 @@
     }
     .controls button:disabled { background: #666; cursor: not-allowed; box-shadow: none; }
     .controls button:hover:not(:disabled) { transform: scale(1.08); box-shadow: 0 0 25px rgba(0,212,255,0.8); }
-    .info { font-size: 10px; color: rgba(255,255,255,0.4); text-align: center; letter-spacing: 1px; }
+    .info { font-size: 10px; color: rgba(255,255,255,0.7); text-align: center; letter-spacing: 1px; }
     .result {
       display: none; position: fixed; top: 50%; left: 50%;
       transform: translate(-50%, -50%); background: rgba(10,10,30,0.98);
@@ -193,19 +193,19 @@
       border: 1px solid rgba(255,215,0,0.3); min-width: 220px;
     }
     .leaderboard-title { font-size: 11px; color: #ffd700; font-weight: bold; margin-bottom: 6px; }
-    .leaderboard-subtitle { font-size: 8px; color: #666; margin-bottom: 6px; }
+    .leaderboard-subtitle { font-size: 8px; color: #aaa; margin-bottom: 6px; }
     .leaderboard-entry { font-size: 10px; margin: 3px 0; }
     .leaderboard-entry.gold { color: #ffd700; }
     .leaderboard-entry.silver { color: #c0c0c0; }
     .leaderboard-entry.bronze { color: #cd7f32; }
-    .leaderboard-entry.normal { color: #888; }
+    .leaderboard-entry.normal { color: #bbb; }
     .commitment-display {
       position: fixed; bottom: 10px; left: 10px;
       background: rgba(0,0,0,0.7); padding: 8px 12px; border-radius: 8px;
       border: 1px solid rgba(0,255,100,0.3); font-size: 9px; max-width: 200px;
     }
     .commitment-display .label { color: #00ff66; margin-bottom: 4px; }
-    .commitment-display .hash { color: #666; font-family: monospace; word-break: break-all; }
+    .commitment-display .hash { color: #aaa; font-family: monospace; word-break: break-all; }
   </style>
 </head>
 <body>
@@ -225,7 +225,7 @@
     </div>
   </div>
   
-  <h1>🏓 PADDLA <span class="version-badge">v8.0.7</span> <span class="pf-badge">🔒 Provably Fair</span></h1>
+  <h1>🏓 PADDLA <span class="version-badge">v8.0.8</span> <span class="pf-badge">🔒 Provably Fair</span></h1>
   
   <div class="stats">
     <div class="stat">
@@ -307,7 +307,7 @@
 
 <script>
 // ===== VERSION =====
-const VERSION = '8.0.7';
+const VERSION = '8.0.8';
 
 // ===== FIREBASE CONFIG =====
 const firebaseConfig = {
