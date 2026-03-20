@@ -73,7 +73,8 @@ app.get('/commitment', (req, res) => {
 // Client sends clientSeed AFTER recording commitment
 // Server does NOT reveal gameSeed - client cannot predict randomness!
 app.post('/game/start', (req, res) => {
-  const { clientSeed, numBalls, recordedCommitment } = req.body;
+  const { clientSeed, numBalls, betPerBall: clientBetPerBall, recordedCommitment } = req.body;
+  const betPerBall = (clientBetPerBall && [1,5,10,25,50,100].includes(clientBetPerBall)) ? clientBetPerBall : 5;
   
   if (!clientSeed || !numBalls || numBalls < 1 || numBalls > 1000) {
     return res.status(400).json({ error: 'Invalid parameters' });
@@ -107,6 +108,7 @@ app.post('/game/start', (req, res) => {
     commitment: useCommitment,
     gameSeedHex,
     numBalls,
+    betPerBall,
     createdAt: Date.now(),
     finished: false,
     verified: false
@@ -143,7 +145,7 @@ app.post('/game/:id/finish', (req, res) => {
   }
   
   // Replay game with server's gameSeedHex + client's inputLog
-  const replayState = replay(game.gameSeedHex, game.numBalls, inputLog);
+  const replayState = replay(game.gameSeedHex, game.numBalls, inputLog, game.betPerBall || 5);
   const serverTotalWin = replayState.totalWin;
   
   game.finished = true;

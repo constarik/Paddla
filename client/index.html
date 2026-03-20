@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>PADDLA v8.0.8 - Provably Fair</title>
+  <title>PADDLA v8.0.9 - Provably Fair</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏓</text></svg>">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
   <!-- Google Analytics -->
@@ -225,7 +225,7 @@
     </div>
   </div>
   
-  <h1>🏓 PADDLA <span class="version-badge">v8.0.8</span> <span class="pf-badge">🔒 Provably Fair</span></h1>
+  <h1>🏓 PADDLA <span class="version-badge">v8.0.9</span> <span class="pf-badge">🔒 Provably Fair</span></h1>
   
   <div class="stats">
     <div class="stat">
@@ -307,7 +307,7 @@
 
 <script>
 // ===== VERSION =====
-const VERSION = '8.0.8';
+const VERSION = '8.0.9';
 
 // ===== FIREBASE CONFIG =====
 const firebaseConfig = {
@@ -769,7 +769,7 @@ document.getElementById('playBtn').addEventListener('click', async () => {
       const res = await fetch(`${SERVER_URL}/game/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientSeed: currentClientSeed, numBalls, recordedCommitment })
+        body: JSON.stringify({ clientSeed: currentClientSeed, numBalls, betPerBall, recordedCommitment })
       });
       const data = await res.json();
       if (data.error) { alert(data.error); balance += bet; return; }

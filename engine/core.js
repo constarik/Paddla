@@ -281,7 +281,7 @@ function collideBallBumper(ball, bumper, rng) {
 
 // ===== GAME STATE =====
 
-function createInitialState(gameSeedHex, numBalls) {
+function createInitialState(gameSeedHex, numBalls, betPerBall = 5) {
   return { 
     rng: new InputSeededRNG(gameSeedHex),
     gameSeedHex,
@@ -289,7 +289,8 @@ function createInitialState(gameSeedHex, numBalls) {
     bumper: createBumper(), 
     tickCount: 0, 
     ballsSpawned: 0, 
-    numBalls, 
+    numBalls,
+    betPerBall,
     spawnCooldown: 0, 
     progressive: 1, 
     timeoutCount: 0, 
@@ -388,7 +389,8 @@ function tick(state, bumperTarget) {
   for (const ball of state.balls) {
     if (!ball.alive) continue;
     if (isGoal(ball)) {
-      const prize = ball.value * ball.multiplier * state.progressive;
+      const betScale = state.betPerBall / 5;
+      const prize = ball.value * ball.multiplier * state.progressive * betScale;
       state.totalWin += prize;
       if (ball.type === 'golden') state.timeoutCount = 0;
       if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++;
@@ -400,7 +402,7 @@ function tick(state, bumperTarget) {
         events.push({ type: 'explosion', ball, x: ball.x, y: ball.y });
         for (const o of state.balls) {
           if (o.alive && o.id !== ball.id && isInUpperHalf(o)) {
-            const ep = o.value * o.multiplier * state.progressive;
+            const ep = o.value * o.multiplier * state.progressive * betScale;
             state.totalWin += ep;
             if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++;
             events.push({ type: 'exploded', ball: o, prize: ep });
@@ -433,17 +435,17 @@ function tick(state, bumperTarget) {
           continue;
         }
         
-        if (s1) { b2.alive = false; state.totalWin += 1; events.push({ type: 'collision', winner: b1, loser: b2, prize: 1 }); continue; }
-        if (s2) { b1.alive = false; state.totalWin += 1; events.push({ type: 'collision', winner: b2, loser: b1, prize: 1 }); continue; }
+        if (s1) { b2.alive = false; state.totalWin += (state.betPerBall/5); events.push({ type: 'collision', winner: b1, loser: b2, prize: (state.betPerBall/5) }); continue; }
+        if (s2) { b1.alive = false; state.totalWin += (state.betPerBall/5); events.push({ type: 'collision', winner: b2, loser: b1, prize: (state.betPerBall/5) }); continue; }
         
         if (b1.value === b2.value) {
-          const prize = b1.value * 2;
+          const prize = b1.value * 2 * (state.betPerBall/5);
           state.totalWin += prize;
           events.push({ type: 'double', b1, b2, prize });
           const roll = state.rng.nextDouble(`double_${b1.id}_${b2.id}`);
           if (roll < 0.5) b2.alive = false; else b1.alive = false;
         } else {
-          state.totalWin += 1;
+          state.totalWin += (state.betPerBall/5);
           const loser = b1.value < b2.value ? b1 : b2;
           const winner = b1.value < b2.value ? b2 : b1;
           loser.alive = false;
@@ -452,7 +454,7 @@ function tick(state, bumperTarget) {
           winner.dx = (dx/d)*CONFIG.SPEED; 
           winner.dy = (dy/d)*CONFIG.SPEED;
           randomizeBounce(winner, state.rng, `win_${winner.id}`);
-          events.push({ type: 'collision', winner, loser, prize: 1 });
+          events.push({ type: 'collision', winner, loser, prize: (state.betPerBall/5) });
         }
       }
     }
@@ -477,7 +479,7 @@ function tick(state, bumperTarget) {
   if (state.balls.length > 0 && !state.balls.some(b => b.type === 'normal')) {
     for (const b of state.balls) {
       if (b.alive) {
-        const prize = b.value * b.multiplier * state.progressive;
+        const prize = b.value * b.multiplier * state.progressive * (state.betPerBall/5);
         state.totalWin += prize;
         if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++;
         events.push({ type: 'autoCollect', ball: b, prize });
@@ -497,8 +499,8 @@ function tick(state, bumperTarget) {
 }
 
 // Replay from input log
-function replay(gameSeedHex, numBalls, inputLog) {
-  const state = createInitialState(gameSeedHex, numBalls);
+function replay(gameSeedHex, numBalls, inputLog, betPerBall = 5) {
+  const state = createInitialState(gameSeedHex, numBalls, betPerBall);
   
   let inputIdx = 0;
   let safety = 0;
