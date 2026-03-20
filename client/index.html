@@ -343,6 +343,11 @@ async function resetBalance() {
   updateAuthUI(); updateUI();
 }
 
+// Handle redirect result after Google sign-in
+auth.getRedirectResult().then((result) => {
+  if (result && result.user) console.log('Redirect sign-in OK:', result.user.email);
+}).catch((e) => { if (e.code !== 'auth/no-auth-event') console.error('Redirect error:', e.message); });
+
 auth.onAuthStateChanged(async (user) => {
   currentUser = user;
   if (user) {
