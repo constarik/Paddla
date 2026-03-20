@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>PADDLA v8.1.1 - Provably Fair</title>
+  <title>PADDLA v8.1.2 - Provably Fair</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏓</text></svg>">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
   <!-- Google Analytics -->
@@ -225,7 +225,7 @@
     </div>
   </div>
   
-  <h1>🏓 PADDLA <span class="version-badge">v8.1.1</span> <span class="pf-badge">🔒 Provably Fair</span></h1>
+  <h1>🏓 PADDLA <span class="version-badge">v8.1.2</span> <span class="pf-badge">🔒 Provably Fair</span></h1>
   
   <div class="stats">
     <div class="stat">
@@ -308,7 +308,7 @@
 
 <script>
 // ===== VERSION =====
-const VERSION = '8.1.1';
+const VERSION = '8.1.2';
 
 // ===== FIREBASE CONFIG =====
 const firebaseConfig = {
@@ -853,7 +853,7 @@ function generateFallbackSeed() {
   return bytesToHex(hash);
 }
 
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.getElementById('result').classList.remove('show'); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { document.getElementById('result').classList.remove('show'); setControlsDisabled(false); } });
 
 // Leaderboard
 async function loadLeaderboard() {
