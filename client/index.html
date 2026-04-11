@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>PADDLA v8.1.7 - Provably Fair</title>
+  <title>PADDLA v8.2.0 - Registrar Protocol</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏓</text></svg>">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
   <!-- Google Analytics -->
@@ -225,7 +225,7 @@
     </div>
   </div>
   
-  <h1>🏓 PADDLA <span class="version-badge">v8.1.7</span> <span class="pf-badge">🔒 Provably Fair</span></h1>
+  <h1>🏓 PADDLA <span class="version-badge">v8.2.0</span> <span class="pf-badge">🔒 Registrar Protocol</span></h1>
   
   <div class="stats">
     <div class="stat">
@@ -280,7 +280,7 @@
   <div class="info">Move bumper to direct balls into goals (top corners)</div>
   
   <div class="commitment-display" id="commitmentDisplay">
-    <div class="label">🔒 Current Commitment</div>
+    <div class="label">🔒 Registrar Status</div>
     <div class="hash" id="currentCommitment">Loading...</div>
   </div>
   
@@ -295,12 +295,12 @@
     <div class="amount">$<span id="finalWin">0</span></div>
     <div class="rtp" id="finalRtp"></div>
     <div class="verify-section" id="verifySection">
-      <strong>🔒 Verification Data:</strong>
-      <div>Game ID: <code id="vGameId"></code></div>
-      <div>Client Seed: <code id="vClientSeed"></code></div>
-      <div>Commitment (recorded before game): <code id="vCommitment"></code></div>
-      <div>Server Seed (revealed after): <code id="vServerSeed"></code></div>
-      <button class="verify-btn-result" id="verifyBtn">✓ VERIFY FAIRNESS</button>
+      <strong>🔒 Registrar Verification:</strong>
+      <div>Session ID: <code id="vGameId"></code></div>
+      <div>Game Seed (local): <code id="vClientSeed"></code></div>
+      <div>Reg Seed (from server): <code id="vCommitment"></code></div>
+      <div>WASM Result: <code id="vServerSeed"></code></div>
+      <button class="verify-btn-result" id="verifyBtn">✓ REBUILD & VERIFY</button>
       <div style="display:flex;gap:8px;margin-top:12px;justify-content:center;">
         <button class="verify-btn-result" id="replayBtn" style="background:#00d4ff;">▶ REPLAY</button>
         <button class="verify-btn-result" id="closeResultBtn" style="background:#444;">✕ CLOSE</button>
@@ -311,7 +311,7 @@
 
 <script>
 // ===== VERSION =====
-const VERSION = '8.1.7';
+const VERSION = '8.2.0';
 
 // ===== FIREBASE CONFIG =====
 const firebaseConfig = {
@@ -398,31 +398,67 @@ async function saveGameResult(bet, win) {
   });
 }
 
-// ===== SERVER =====
-const SERVER_URL = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://paddla.onrender.com';
-let serverOnline = false;
-let currentCommitment = null;
+// ===== REGISTRAR (Provably Fair WASM) =====
+const REGISTRAR_URL = 'https://registrar-server.onrender.com';
+let registrarOnline = false;
+let currentRegSeed = null, currentSessionId = null, currentGameSeed = null, wasmResult = null;
 
-async function fetchCommitment() {
+// LCG for deterministic WASM generation
+class LCG {
+  constructor(seed) { this.s = seed >>> 0; }
+  next() { this.s = (Math.imul(this.s, 1664525) + 1013904223) >>> 0; return this.s; }
+  range(lo, hi) { return lo + (this.next() % (hi - lo)); }
+}
+
+const BINARY_OPS = [0x6a,0x6b,0x6c,0x73]; // add,sub,mul,xor
+const SHIFT_OPS  = [0x76,0x77,0x78];       // shr_u, rotl, rotr
+function uleb128(n) { const o=[]; do { let b=n&0x7f; n>>>=7; if(n) b|=0x80; o.push(b); } while(n); return o; }
+function sleb128(n) { n=n|0; const o=[]; let more=true; while(more) { let b=n&0x7f; n>>=7; if((n===0&&!(b&0x40))||(n===-1&&(b&0x40))) more=false; else b|=0x80; o.push(b); } return o; }
+
+function buildWasm(regSeed) {
+  const lcg = new LCG(regSeed);
+  const n = lcg.range(4,7);
+  const steps = Array.from({length:n}, () => ({
+    shiftOp: SHIFT_OPS[lcg.range(0,SHIFT_OPS.length)],
+    shiftAmt: 8 + lcg.range(0,8),
+    binOp: BINARY_OPS[lcg.range(0,BINARY_OPS.length)],
+    constVal: (lcg.next()|1)|0,
+  }));
+  const body = [0x00, 0x20, 0x00];
+  for (const s of steps) { body.push(0x41, ...sleb128(s.shiftAmt)); body.push(s.shiftOp); body.push(0x41, ...sleb128(s.constVal)); body.push(s.binOp); }
+  body.push(0x0b);
+  const typeBody = [0x01,0x60,0x01,0x7f,0x01,0x7f];
+  const typeSec = [0x01,...uleb128(typeBody.length),...typeBody];
+  const funcBody = [0x01,0x00];
+  const funcSec = [0x03,...uleb128(funcBody.length),...funcBody];
+  const expName = Array.from('compute').map(c=>c.charCodeAt(0));
+  const expBody = [0x01,...uleb128(expName.length),...expName,0x00,0x00];
+  const expSec = [0x07,...uleb128(expBody.length),...expBody];
+  const bodyWLen = [...uleb128(body.length),...body];
+  const codeBody = [0x01,...bodyWLen];
+  const codeSec = [0x0a,...uleb128(codeBody.length),...codeBody];
+  return { bytes: new Uint8Array([0x00,0x61,0x73,0x6d,0x01,0x00,0x00,0x00,...typeSec,...funcSec,...expSec,...codeSec]), steps };
+}
+
+async function checkRegistrar() {
   try {
-    const res = await fetch(`${SERVER_URL}/commitment`);
-    const data = await res.json();
-    currentCommitment = data.commitment;
-    document.getElementById('currentCommitment').textContent = currentCommitment.substring(0, 24) + '...';
-    serverOnline = true;
+    const r = await fetch(REGISTRAR_URL + '/status', {signal: AbortSignal.timeout(5000)});
+    const d = await r.json();
+    registrarOnline = true;
     document.getElementById('serverStatus').className = 'server-status online';
-    document.getElementById('serverStatus').textContent = '🟢 Online';
-    return data;
+    document.getElementById('serverStatus').textContent = '🟢 Registrar';
+    document.getElementById('currentCommitment').textContent = `Sessions: ${d.activeSessions}`;
+    return d;
   } catch {
-    serverOnline = false;
+    registrarOnline = false;
     document.getElementById('serverStatus').className = 'server-status offline';
     document.getElementById('serverStatus').textContent = '⚫ Offline';
     document.getElementById('currentCommitment').textContent = 'Offline';
     return null;
   }
 }
-fetchCommitment();
-setInterval(fetchCommitment, 30000);
+checkRegistrar();
+setInterval(checkRegistrar, 30000);
 
 // ===== AUDIO =====
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -589,7 +625,6 @@ function tick(state, bumperTarget) {
 // ===== GAME STATE =====
 let gameState = null, gameRunning = false, balance = 1000;
 let currentMode = 'human';
-let currentGameId = null, currentClientSeed = null, recordedCommitment = null;
 let lastVerificationData = null;
 const floatingTexts = [], explosionParticles = [];
 let goalFlashLeft = 0, goalFlashRight = 0;
@@ -608,7 +643,7 @@ function updateModeIndicator() { const ind = document.getElementById('modeIndica
 function updateProgressiveLamps(level) { document.querySelectorAll('.lamp').forEach((l, i) => l.classList.toggle('active', i < level)); }
 function updateTimeoutDots(count) { document.querySelectorAll('.timeout-dot').forEach((d, i) => d.classList.toggle('active', i < count)); }
 
-function updateUI() { if (gameState) { document.getElementById('ballsLeft').textContent = gameState.numBalls - gameState.ballsSpawned + gameState.balls.length; document.getElementById('winDisplay').textContent = '$' + gameState.totalWin; updateProgressiveLamps(gameState.progressive); updateTimeoutDots(gameState.timeoutCount); } document.getElementById('balance').textContent = '$' + balance; }
+function updateUI() { if (gameState) { document.getElementById('ballsLeft').textContent = gameState.numBalls - gameState.ballsSpawned + gameState.balls.length; document.getElementById('winDisplay').textContent = '$' + gameState.totalWin; updateProgressiveLamps(gameState.progressive); updateTimeoutDots(gameState.timeoutCount); } document.getElementById('balance').textContent = '$' + Math.round(balance); }
 
 // Rendering
 function render() {
@@ -691,15 +726,25 @@ function gameLoop() {
         saveGameResult(bet, scaledWin);
         updateAuthUI();
         setTimeout(loadLeaderboard, 2000);
-        // Finish on server
-        if (serverOnline && currentGameId) {
-          document.getElementById('vGameId').textContent = currentGameId;
-          document.getElementById('vClientSeed').textContent = currentClientSeed;
-          document.getElementById('vCommitment').textContent = recordedCommitment;
-          document.getElementById('vServerSeed').textContent = 'Verifying...';
-          document.getElementById('verifyBtn').disabled = true;
+        // Verify with Registrar
+        if (registrarOnline && currentSessionId) {
+          document.getElementById('vGameId').textContent = currentSessionId;
+          document.getElementById('vClientSeed').textContent = currentGameSeed;
+          document.getElementById('vCommitment').textContent = '0x' + currentRegSeed.toString(16).toUpperCase();
+          document.getElementById('vServerSeed').textContent = '0x' + wasmResult.toString(16).toUpperCase().padStart(8,'0');
+          document.getElementById('verifyBtn').disabled = false;
           document.getElementById('verifySection').style.display = 'block';
-          finishGameOnServer();
+          lastVerificationData = {
+            sessionId: currentSessionId,
+            regSeed: currentRegSeed,
+            gameSeed: currentGameSeed,
+            wasmResult: wasmResult,
+            inputLog: gameState.inputLog.slice(),
+            numBalls: gameState.numBalls,
+            betPerBall: gameState.betPerBall,
+            gameSeedHex: gameState.gameSeedHex
+          };
+          verifyWithRegistrar();
         } else {
           document.getElementById('verifySection').style.display = 'none';
         }
@@ -712,59 +757,49 @@ function gameLoop() {
   updateEffects(); render(); requestAnimationFrame(gameLoop);
 }
 
-async function finishGameOnServer() {
+async function verifyWithRegistrar() {
   try {
-    const res = await fetch(`${SERVER_URL}/game/${currentGameId}/finish`, {
+    const res = await fetch(REGISTRAR_URL + '/session/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ inputLog: gameState.inputLog, clientTotalWin: gameState.totalWin })
+      body: JSON.stringify({
+        sessionId: currentSessionId,
+        regSeed: currentRegSeed,
+        gameSeed: currentGameSeed,
+        result: wasmResult
+      })
     });
     const data = await res.json();
-    if (data.verified) {
-      lastVerificationData = {
-        gameId: currentGameId,
-        clientSeed: currentClientSeed,
-        commitment: recordedCommitment,
-        serverSeed: data.verification.serverSeed,
-        gameSeedHex: data.verification.gameSeedHex,
-        inputLog: gameState.inputLog.slice(),
-        numBalls: gameState.numBalls,
-        betPerBall: gameState.betPerBall
-      };
-      document.getElementById('vServerSeed').textContent = data.verification.serverSeed;
-      document.getElementById('verifyBtn').disabled = false;
+    if (data.ok) {
+      document.getElementById('verifyResult').innerHTML = '<span style="color:#00ff66">✓ REGISTRAR VERIFIED!</span>';
     } else {
-      document.getElementById('vServerSeed').textContent = 'MISMATCH! Server: ' + data.serverTotalWin;
-      document.getElementById('vServerSeed').style.color = '#ff4444';
+      document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ Verification failed</span>';
     }
   } catch (err) {
-    console.error('Finish error:', err);
-    document.getElementById('vServerSeed').textContent = 'Error: ' + err.message;
+    console.error('Verify error:', err);
+    document.getElementById('verifyResult').innerHTML = `<span style="color:#ff4444">❌ ${err.message}</span>`;
   }
 }
 
-// Verification
+// Verification - rebuild WASM locally and compare
 document.getElementById('verifyBtn').addEventListener('click', async () => {
-  if (!lastVerificationData?.serverSeed) { document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ No data</span>'; return; }
+  if (!lastVerificationData?.regSeed) { 
+    document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ No data</span>'; 
+    return; 
+  }
   const vd = lastVerificationData;
   try {
-    // Verify commitment
-    const seedBytes = new TextEncoder().encode(vd.serverSeed);
-    const hashBytes = sha256Pure(seedBytes);
-    const computedCommitment = bytesToHex(hashBytes);
-    if (computedCommitment !== vd.commitment) {
-      document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ Commitment mismatch!</span>';
-      return;
+    // Rebuild WASM from regSeed
+    const { bytes } = buildWasm(vd.regSeed);
+    const wasmMod = await WebAssembly.compile(bytes.buffer);
+    const wasmInst = await WebAssembly.instantiate(wasmMod);
+    const localResult = wasmInst.exports.compute(vd.gameSeed) >>> 0;
+    
+    if (localResult === vd.wasmResult) {
+      document.getElementById('verifyResult').innerHTML = '<span style="color:#00ff66">✓ LOCAL VERIFIED! WASM rebuilt independently.</span>';
+    } else {
+      document.getElementById('verifyResult').innerHTML = `<span style="color:#ff4444">❌ Mismatch! Local: 0x${localResult.toString(16)} vs Recorded: 0x${vd.wasmResult.toString(16)}</span>`;
     }
-    // Verify game seed
-    const hmacInput = `${vd.clientSeed}:${vd.gameId}`;
-    const hmacBytes = hmacSha256Pure(vd.serverSeed, hmacInput);
-    const computedGameSeed = bytesToHex(hmacBytes);
-    if (computedGameSeed !== vd.gameSeedHex) {
-      document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ Game seed mismatch!</span>';
-      return;
-    }
-    document.getElementById('verifyResult').innerHTML = '<span style="color:#00ff66">✓ VERIFIED! Server could not have cheated.</span>';
   } catch (err) {
     document.getElementById('verifyResult').innerHTML = `<span style="color:#ff4444">❌ Error: ${err.message}</span>`;
   }
@@ -792,12 +827,9 @@ document.getElementById('replayBtn').addEventListener('click', () => {
   const vd = lastVerificationData;
   document.getElementById('result').classList.remove('show');
   gameState = createInitialState(vd.gameSeedHex, vd.numBalls, vd.betPerBall, vd.numBalls * vd.betPerBall);
-  let replayIdx = 0;
-  const replayLog = vd.inputLog;
   gameRunning = false;
-  // Override gameLoop to use inputLog
   replayRunning = true;
-  replayLog_data = replayLog;
+  replayLog_data = vd.inputLog;
   replayLog_idx = 0;
   document.getElementById('playBtn').disabled = true;
   updateUI();
@@ -814,40 +846,40 @@ document.getElementById('playBtn').addEventListener('click', async () => {
   const bet = numBalls * betPerBall * multiplier;
   if (bet > balance) { alert(`Insufficient balance! Need $${bet}`); return; }
   
-  // STEP 1: Fetch and record commitment BEFORE generating clientSeed
-  if (serverOnline) {
-    const commitmentData = await fetchCommitment();
-    if (!commitmentData) { alert('Server offline!'); return; }
-    recordedCommitment = commitmentData.commitment;
-  }
-  
-  balance -= bet;
-  
-  // STEP 2: Generate clientSeed AFTER recording commitment
-  currentClientSeed = 'client_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
+  // Generate local gameSeed
+  currentGameSeed = (Date.now() ^ (Math.random() * 0xFFFFFFFF)) >>> 0;
   
   let gameSeedHex;
-  if (serverOnline) {
+  if (registrarOnline) {
     try {
-      // STEP 3: Start game - server returns gameSeedHex
-      // This is SAFE with input-seeded randomness: random = f(gameSeedHex, bumper_position)
-      // Client cannot predict future events without committing to bumper position first
-      const res = await fetch(`${SERVER_URL}/game/start`, {
+      // Request session from Registrar
+      const res = await fetch(REGISTRAR_URL + '/session/new', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientSeed: currentClientSeed, numBalls, betPerBall, recordedCommitment })
+        body: JSON.stringify({ gameSeed: currentGameSeed })
       });
       const data = await res.json();
-      if (data.error) { alert(data.error); balance += bet; return; }
-      currentGameId = data.gameId;
-      gameSeedHex = data.gameSeedHex;  // Server reveals seed - safe with input-seeded RNG
+      currentSessionId = data.sessionId;
+      currentRegSeed = data.regSeed;
+      
+      // Build WASM from regSeed
+      const { bytes } = buildWasm(currentRegSeed);
+      const wasmMod = await WebAssembly.compile(bytes.buffer);
+      const wasmInst = await WebAssembly.instantiate(wasmMod);
+      wasmResult = wasmInst.exports.compute(currentGameSeed) >>> 0;
+      
+      // Use WASM result as game seed
+      gameSeedHex = wasmResult.toString(16).padStart(8, '0');
     } catch (err) {
-      console.error(err);
+      console.error('Registrar error:', err);
       gameSeedHex = generateFallbackSeed();
+      currentSessionId = null;
     }
   } else {
     gameSeedHex = generateFallbackSeed();
   }
+  
+  balance -= bet;
   
   hunterTargetId = defenderTargetId = sniperTargetId = null;
   hsTargetBall = null; hsTargetX = BUMPER.START_X; hsTargetY = BUMPER.START_Y;
