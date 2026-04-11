@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>PADDLA v8.2.0 - Registrar Protocol</title>
+  <title>PADDLA v8.2.1 - Registrar Protocol</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏓</text></svg>">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
   <!-- Google Analytics -->
@@ -225,7 +225,7 @@
     </div>
   </div>
   
-  <h1>🏓 PADDLA <span class="version-badge">v8.2.0</span> <span class="pf-badge">🔒 Registrar Protocol</span></h1>
+  <h1>🏓 PADDLA <span class="version-badge">v8.2.1</span> <span class="pf-badge">🔒 Registrar Protocol</span></h1>
   
   <div class="stats">
     <div class="stat">
@@ -311,7 +311,7 @@
 
 <script>
 // ===== VERSION =====
-const VERSION = '8.2.0';
+const VERSION = '8.2.1';
 
 // ===== FIREBASE CONFIG =====
 const firebaseConfig = {
@@ -759,21 +759,23 @@ function gameLoop() {
 
 async function verifyWithRegistrar() {
   try {
-    const res = await fetch(REGISTRAR_URL + '/session/verify', {
+    const res = await fetch(REGISTRAR_URL + '/verify/paddla', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        sessionId: currentSessionId,
         regSeed: currentRegSeed,
         gameSeed: currentGameSeed,
-        result: wasmResult
+        inputLog: gameState.inputLog,
+        clientTotalWin: gameState.totalWin,
+        numBalls: gameState.numBalls,
+        betPerBall: gameState.betPerBall
       })
     });
     const data = await res.json();
     if (data.ok) {
-      document.getElementById('verifyResult').innerHTML = '<span style="color:#00ff66">✓ REGISTRAR VERIFIED!</span>';
+      document.getElementById('verifyResult').innerHTML = `<span style="color:#00ff66">✓ SERVER VERIFIED! Win: $${data.serverTotalWin}</span>`;
     } else {
-      document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ Verification failed</span>';
+      document.getElementById('verifyResult').innerHTML = `<span style="color:#ff4444">❌ MISMATCH! Server: $${data.serverTotalWin} vs Client: $${data.clientTotalWin}</span>`;
     }
   } catch (err) {
     console.error('Verify error:', err);
