@@ -316,7 +316,6 @@
 // ===== VERSION =====
 const VERSION = '9.0.8';
 document.title = `PADDLA v${VERSION} - UVS 1.0`;
-document.querySelector('.version-badge').textContent = `v${VERSION}`;
 
 // ===== CLIENT CONSTANTS (UI only) =====
 const BET_MULTIPLIER = { human:1, hunter:1, defender:1, humanSim:1, sniper:2 };
@@ -451,7 +450,7 @@ function buildWasm(regSeed) {
 
 async function checkRegistrar() {
   try {
-    const r = await fetch(REGISTRAR_URL + '/status', {signal: AbortSignal.timeout(15000)});
+    const r = await fetch(REGISTRAR_URL + '/status', {signal: AbortSignal.timeout(5000)});
     const d = await r.json();
     registrarOnline = true;
     const regVersion = d.version || '?';
@@ -459,7 +458,6 @@ async function checkRegistrar() {
     document.getElementById('serverStatus').className = 'server-status online';
     document.getElementById('serverStatus').textContent = '🟢 Registrar';
     document.getElementById('currentCommitment').textContent = `Sessions: ${d.activeSessions}`;
-    document.querySelector('.version-badge').textContent = `v${VERSION}`;
     document.querySelector('.pf-badge').textContent =
       `🔒 UVS v${uvsVersion}  |  v${VERSION}  |  registrar v${regVersion}`;
     return d;
