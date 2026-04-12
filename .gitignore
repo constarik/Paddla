@@ -1,27 +1,3 @@
-# Dependencies
 node_modules/
-
-# Environment
+npm-debug.log
 .env
-.env.local
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-npm-debug.log*
-
-# Build
-dist/
-build/
-
-# Test coverage
-coverage/
