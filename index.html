@@ -115,7 +115,7 @@
     }
     .result.show { display: block; }
     .result h2 { color: #00d4ff; font-size: 20px; letter-spacing: 3px; }
-    .result .amount { font-size: 48px; color: #00ff66; margin: 12px 0; text-shadow: 0 0 30px rgba(0,255,100,0.5); }
+    .result .amount { font-size: 48px; color: #00cc55; margin: 12px 0; text-shadow: 0 0 30px rgba(0,180,80,0.5); }
     .result .rtp { font-size: 12px; color: rgba(255,255,255,0.6); letter-spacing: 1px; }
     .result .verify-section { 
       margin-top: 12px; padding-top: 12px; border-top: 1px solid #333;
@@ -226,7 +226,7 @@
     </div>
   </div>
   
-  <h1>🏓 PADDLA <span class="version-badge"></span> <span class="pf-badge">🔒 UVS 1.0</span></h1>
+  <h1>🏓 PADDLA <span class="pf-badge">🔒 UVS 1.0</span></h1>
   
   <div class="stats">
     <div class="stat">
@@ -314,7 +314,7 @@
 <script src="engine/core.js"></script>
 <script>
 // ===== VERSION =====
-const VERSION = '9.0.6';
+const VERSION = '9.0.7';
 document.title = `PADDLA v${VERSION} - UVS 1.0`;
 document.querySelector('.version-badge').textContent = `v${VERSION}`;
 
@@ -461,14 +461,14 @@ async function checkRegistrar() {
     document.getElementById('currentCommitment').textContent = `Sessions: ${d.activeSessions}`;
     document.querySelector('.version-badge').textContent = `v${VERSION}`;
     document.querySelector('.pf-badge').textContent =
-      `🔒 UVS v${uvsVersion}  |  client v${VERSION}  |  registrar v${regVersion}`;
+      `🔒 UVS v${uvsVersion}  |  v${VERSION}  |  registrar v${regVersion}`;
     return d;
   } catch {
     registrarOnline = false;
     document.getElementById('serverStatus').className = 'server-status offline';
     document.getElementById('serverStatus').textContent = '⚫ Offline';
     document.getElementById('currentCommitment').textContent = 'Offline';
-    document.querySelector('.pf-badge').textContent = `🔒 UVS 1.0  |  client v${VERSION}  |  registrar offline`;
+    document.querySelector('.pf-badge').textContent = `🔒 UVS 1.0  |  v${VERSION}  |  registrar offline`;
     return null;
   }
 }
@@ -720,7 +720,7 @@ async function verifyWithRegistrar() {
     });
     const data = await res.json();
     if (data.ok) {
-      document.getElementById('verifyServer').innerHTML = `<span style="color:#00ff66">✓ SERVER VERIFIED! Win: $${data.serverTotalWin}</span>`;
+      document.getElementById('verifyServer').innerHTML = `<span style="color:#00cc55">✓ SERVER VERIFIED! Win: $${data.serverTotalWin}</span>`;
     } else {
       let msg = `❌ MISMATCH! Server: $${data.serverTotalWin} vs Client: $${data.clientTotalWin}`;
       if (data.firstMismatch) {
@@ -744,7 +744,7 @@ async function verifyLocal() {
     const wasmInst = await WebAssembly.instantiate(wasmMod);
     const localResult = wasmInst.exports.compute(vd.gameSeed) >>> 0;
     if (localResult === vd.wasmResult) {
-      document.getElementById('verifyLocal').innerHTML = '<span style="color:#00ff66">✓ LOCAL VERIFIED! WASM rebuilt independently.</span>';
+      document.getElementById('verifyLocal').innerHTML = '<span style="color:#00cc55">✓ LOCAL VERIFIED! WASM rebuilt independently.</span>';
     } else {
       document.getElementById('verifyLocal').innerHTML = `<span style="color:#ff4444">❌ Mismatch! Local: 0x${localResult.toString(16)} vs Recorded: 0x${vd.wasmResult.toString(16)}</span>`;
     }
