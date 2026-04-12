@@ -338,7 +338,7 @@ function createInitialState(serverSeed, numBalls, betPerBall=5) {
     // UVS session header
     uvsHeader: {
       type: 'uvs-header',
-      uvsVersion: '1.0',
+      uvsVersion: 1,
       sessionId,
       serverSeedHash,
       clientSeed: 'uvs-paddla',  // bumper position encoded per-tick in combinedSeed

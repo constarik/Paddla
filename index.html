@@ -448,13 +448,13 @@ async function checkRegistrar() {
     const d = await r.json();
     registrarOnline = true;
     const regVersion = d.version || '?';
-    const uvsVersion = d.uvsVersion || '1.0';
+    const uvsVersion = d.uvsVersion || 1;
     document.getElementById('serverStatus').className = 'server-status online';
     document.getElementById('serverStatus').textContent = '🟢 Registrar';
     document.getElementById('currentCommitment').textContent = `Sessions: ${d.activeSessions}`;
     document.querySelector('.version-badge').textContent = `v${VERSION}`;
     document.querySelector('.pf-badge').textContent =
-      `🔒 UVS ${uvsVersion}  |  client v${VERSION}  |  registrar v${regVersion}`;
+      `🔒 UVS v${uvsVersion}  |  client v${VERSION}  |  registrar v${regVersion}`;
     return d;
   } catch {
     registrarOnline = false;
@@ -603,7 +603,7 @@ const STRATEGIES = {
   }
 };
 
-function createInitialState(serverSeed, numBalls, betPerBall = 5, totalBet = 0) { const serverSeedHash = sha256Hex(serverSeed); const sessionId = sha256Hex(`${serverSeedHash}:uvs-paddla:1`); return { uvsHeader: { type:'uvs-header', uvsVersion:'1.0', sessionId, serverSeedHash, clientSeed:'uvs-paddla', minNonce:1, params:{numBalls,betPerBall}, extensions:['physics-arcade@1.0'], timestamp:new Date().toISOString() }, serverSeed, rng: null, balls: [], bumper: createBumper(), tickCount: 0, ballsSpawned: 0, numBalls, betPerBall, totalBet, spawnCooldown: 0, progressive: 1, timeoutCount: 0, totalWin: 0, finished: false, nextBallId: 1, inputLog: [] }; }
+function createInitialState(serverSeed, numBalls, betPerBall = 5, totalBet = 0) { const serverSeedHash = sha256Hex(serverSeed); const sessionId = sha256Hex(`${serverSeedHash}:uvs-paddla:1`); return { uvsHeader: { type:'uvs-header', uvsVersion:1, sessionId, serverSeedHash, clientSeed:'uvs-paddla', minNonce:1, params:{numBalls,betPerBall}, extensions:['physics-arcade@1.0'], timestamp:new Date().toISOString() }, serverSeed, rng: null, balls: [], bumper: createBumper(), tickCount: 0, ballsSpawned: 0, numBalls, betPerBall, totalBet, spawnCooldown: 0, progressive: 1, timeoutCount: 0, totalWin: 0, finished: false, nextBallId: 1, inputLog: [] }; }
 
 function tick(state, bumperTarget) {
   if (state.finished) return [];

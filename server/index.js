@@ -98,15 +98,11 @@ app.post('/game/start', (req, res) => {
   }
   
   const gameId = crypto.randomUUID();
-  const gameSeedHex = crypto.createHmac('sha256', useSeed)
-    .update(`${clientSeed}:${gameId}`)
-    .digest('hex');
-  
+
   games[gameId] = {
     clientSeed,
-    serverSeed: useSeed,  // Snapshot at game start
+    serverSeed: useSeed,
     commitment: useCommitment,
-    gameSeedHex,
     numBalls,
     betPerBall,
     createdAt: Date.now(),
@@ -116,13 +112,11 @@ app.post('/game/start', (req, res) => {
   
   console.log(`[${new Date().toISOString()}] Game started: ${gameId.substring(0, 8)}... (${numBalls} balls)`);
   
-  // With input-seeded randomness, revealing gameSeedHex is SAFE!
-  // Client cannot predict future random events because each depends on bumper position
-  // They must commit to a position before knowing the random outcome
+  // UVS 1.0: server reveals serverSeed — client uses SHA-512(serverSeed:bumperX:bumperY:tick) per tick
   res.json({
     gameId,
     commitment: useCommitment,
-    gameSeedHex  // Safe to reveal - randomness = f(gameSeedHex, bumper_position)
+    serverSeed: useSeed   // UVS 1.0: client derives combinedSeed per tick via SHA-512
   });
 });
 
@@ -144,8 +138,8 @@ app.post('/game/:id/finish', (req, res) => {
     return res.status(400).json({ error: 'Invalid input log' });
   }
   
-  // Replay game with server's gameSeedHex + client's inputLog
-  const replayState = replay(game.gameSeedHex, game.numBalls, inputLog, game.betPerBall || 5);
+  // Replay game with server's serverSeed + client's inputLog (UVS 1.0)
+  const replayState = replay(game.serverSeed, game.numBalls, inputLog, game.betPerBall || 5);
   const serverTotalWin = replayState.totalWin;
   
   game.finished = true;
