@@ -491,6 +491,81 @@ function playGameOver(win) { if (win) [523, 659, 784, 1047].forEach((n, i) => se
 
 // Engine loaded via <script src="engine/core.js">
 
+// ===== AI STRATEGIES =====
+let hunterTargetId = null, defenderTargetId = null, sniperTargetId = null;
+let hsTargetBall = null, hsTargetX = BUMPER.START_X, hsTargetY = BUMPER.START_Y;
+let hsReactionDelay = 0, hsDistracted = false, hsLastSwitch = 0;
+let stationaryX = BUMPER.START_X, stationaryY = BUMPER.START_Y;
+
+const STRATEGIES = {
+  human: () => null,
+  stationary: () => ({ x: stationaryX, y: stationaryY }),
+  random: (state) => {
+    if (state.tickCount % 30 === 0) return { x: BUMPER.MIN_X + Math.random()*(BUMPER.MAX_X-BUMPER.MIN_X), y: BUMPER.MIN_Y + Math.random()*(BUMPER.MAX_Y-BUMPER.MIN_Y) };
+    return { x: state.bumper.targetX, y: state.bumper.targetY };
+  },
+  hunter: (state) => {
+    let target = state.balls.find(b => b.id === hunterTargetId && b.alive && b.y < CONFIG.FIELD/2);
+    if (!target) {
+      let best = -Infinity;
+      for (const b of state.balls) {
+        if (!b.alive || b.y > CONFIG.FIELD/2) continue;
+        const score = (b.dy < 0 ? 100 : 0) + b.value*10 - b.y;
+        if (score > best) { best = score; target = b; }
+      }
+      hunterTargetId = target?.id || null;
+    }
+    return target ? { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.8, BUMPER.MIN_Y, BUMPER.MAX_Y) } : { x: BUMPER.START_X, y: BUMPER.MAX_Y - 0.5 };
+  },
+  defender: (state) => {
+    let target = state.balls.find(b => b.id === defenderTargetId && b.alive && b.y < CONFIG.FIELD/2);
+    if (!target) {
+      let best = -Infinity;
+      for (const b of state.balls) {
+        if (!b.alive || b.y >= CONFIG.FIELD/2) continue;
+        const score = (b.dy > 0 ? 100 : 0) + b.value*b.multiplier*10 + (CONFIG.FIELD/2 - b.y);
+        if (score > best) { best = score; target = b; }
+      }
+      defenderTargetId = target?.id || null;
+    }
+    if (!target) target = state.balls.find(b => b.alive);
+    return target ? { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.5, BUMPER.MIN_Y, BUMPER.MAX_Y) } : { x: 4.5, y: 2.5 };
+  },
+  sniper: (state) => {
+    let target = state.balls.find(b => b.id === sniperTargetId && b.alive && b.y < CONFIG.FIELD/2);
+    if (!target) {
+      let best = -Infinity;
+      for (const b of state.balls) {
+        if (!b.alive || b.y >= CONFIG.FIELD/2) continue;
+        const score = b.value*b.multiplier*10 - b.y;
+        if (score > best) { best = score; target = b; }
+      }
+      sniperTargetId = target?.id || null;
+    }
+    if (target) { const ox = target.x < 4.5 ? 0.5 : -0.5; return { x: clamp(target.x+ox, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y+0.3, BUMPER.MIN_Y, BUMPER.MAX_Y) }; }
+    return { x: 4.5, y: 2.0 };
+  },
+  humanSim: (state) => {
+    const now = state.tickCount;
+    if (hsReactionDelay > 0) { hsReactionDelay--; return { x: hsTargetX, y: hsTargetY }; }
+    if (hsDistracted && now - hsLastSwitch < 30) return { x: hsTargetX, y: hsTargetY };
+    hsDistracted = false;
+    if (Math.random() < 0.02) { hsDistracted = true; hsLastSwitch = now; hsReactionDelay = 5 + Math.floor(Math.random()*10); return { x: hsTargetX, y: hsTargetY }; }
+    let best = null, bestScore = -Infinity;
+    for (const b of state.balls) {
+      if (!b.alive || b.y >= CONFIG.FIELD/2) continue;
+      const score = b.value*b.multiplier*10 + (b.dy < 0 ? 50 : 0) - b.y*2;
+      if (score > bestScore) { bestScore = score; best = b; }
+    }
+    if (best && (!hsTargetBall || hsTargetBall.id !== best.id)) { hsTargetBall = best; hsLastSwitch = now; hsReactionDelay = 3 + Math.floor(Math.random()*8); }
+    if (hsTargetBall && hsTargetBall.alive) {
+      hsTargetX = clamp(hsTargetBall.x + (Math.random()-0.5)*0.3, BUMPER.MIN_X, BUMPER.MAX_X);
+      hsTargetY = clamp(hsTargetBall.y + 0.6 + (Math.random()-0.5)*0.2, BUMPER.MIN_Y, BUMPER.MAX_Y);
+    }
+    return { x: hsTargetX, y: hsTargetY };
+  }
+};
+
 // ===== GAME STATE =====
 let gameState = null, gameRunning = false, balance = 1000;
 let currentMode = 'human';
