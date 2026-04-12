@@ -447,15 +447,21 @@ async function checkRegistrar() {
     const r = await fetch(REGISTRAR_URL + '/status', {signal: AbortSignal.timeout(5000)});
     const d = await r.json();
     registrarOnline = true;
+    const regVersion = d.version || '?';
+    const uvsVersion = d.uvsVersion || '1.0';
     document.getElementById('serverStatus').className = 'server-status online';
     document.getElementById('serverStatus').textContent = '🟢 Registrar';
     document.getElementById('currentCommitment').textContent = `Sessions: ${d.activeSessions}`;
+    document.querySelector('.version-badge').textContent = `v${VERSION}`;
+    document.querySelector('.pf-badge').textContent =
+      `🔒 UVS ${uvsVersion}  |  client v${VERSION}  |  registrar v${regVersion}`;
     return d;
   } catch {
     registrarOnline = false;
     document.getElementById('serverStatus').className = 'server-status offline';
     document.getElementById('serverStatus').textContent = '⚫ Offline';
     document.getElementById('currentCommitment').textContent = 'Offline';
+    document.querySelector('.pf-badge').textContent = `🔒 UVS 1.0  |  client v${VERSION}  |  registrar offline`;
     return null;
   }
 }
