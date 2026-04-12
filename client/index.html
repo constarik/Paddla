@@ -305,14 +305,15 @@
         <button class="verify-btn-result" id="replayBtn" style="background:#00d4ff;">▶ REPLAY</button>
         <button class="verify-btn-result" id="closeResultBtn" style="background:#444;">✕ CLOSE</button>
       </div>
-      <div id="verifyResult" style="margin-top:10px;"></div>
+      <div id="verifyLocal" style="margin-top:10px;"></div>
+      <div id="verifyServer" style="margin-top:4px;"></div>
     </div>
   </div>
 
 <script src="engine/core.js"></script>
 <script>
 // ===== VERSION =====
-const VERSION = '9.0.4';
+const VERSION = '9.0.5';
 document.title = `PADDLA v${VERSION} - UVS 1.0`;
 document.querySelector('.version-badge').textContent = `v${VERSION}`;
 
@@ -718,24 +719,24 @@ async function verifyWithRegistrar() {
     });
     const data = await res.json();
     if (data.ok) {
-      document.getElementById('verifyResult').innerHTML = `<span style="color:#00ff66">✓ SERVER VERIFIED! Win: $${data.serverTotalWin}</span>`;
+      document.getElementById('verifyServer').innerHTML = `<span style="color:#00ff66">✓ SERVER VERIFIED! Win: $${data.serverTotalWin}</span>`;
     } else {
       let msg = `❌ MISMATCH! Server: $${data.serverTotalWin} vs Client: $${data.clientTotalWin}`;
       if (data.firstMismatch) {
         msg += `<br><small>First divergence at tick ${data.firstMismatch.tick} — event: ${data.firstMismatch.event}<br>client: ${data.firstMismatch.clientHash.slice(0,16)}… server: ${data.firstMismatch.serverHash.slice(0,16)}…</small>`;
       }
-      document.getElementById('verifyResult').innerHTML = `<span style="color:#ff4444">${msg}</span>`;
+      document.getElementById('verifyServer').innerHTML = `<span style="color:#ff4444">${msg}</span>`;
     }
   } catch (err) {
     console.error('Verify error:', err);
-    document.getElementById('verifyResult').innerHTML = `<span style="color:#ff4444">❌ ${err.message}</span>`;
+    document.getElementById('verifyServer').innerHTML = `<span style="color:#ff4444">❌ ${err.message}</span>`;
   }
 }
 
 // Verification - rebuild WASM locally and compare
 document.getElementById('verifyBtn').addEventListener('click', async () => {
   if (!lastVerificationData?.regSeed) { 
-    document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ No data</span>'; 
+    document.getElementById('verifyServer').innerHTML = '<span style="color:#ff4444">❌ No data</span>'; 
     return; 
   }
   const vd = lastVerificationData;
@@ -747,12 +748,12 @@ document.getElementById('verifyBtn').addEventListener('click', async () => {
     const localResult = wasmInst.exports.compute(vd.gameSeed) >>> 0;
     
     if (localResult === vd.wasmResult) {
-      document.getElementById('verifyResult').innerHTML = '<span style="color:#00ff66">✓ LOCAL VERIFIED! WASM rebuilt independently.</span>';
+      document.getElementById('verifyLocal').innerHTML = '<span style="color:#00ff66">✓ LOCAL VERIFIED! WASM rebuilt independently.</span>';
     } else {
-      document.getElementById('verifyResult').innerHTML = `<span style="color:#ff4444">❌ Mismatch! Local: 0x${localResult.toString(16)} vs Recorded: 0x${vd.wasmResult.toString(16)}</span>`;
+      document.getElementById('verifyLocal').innerHTML = `<span style="color:#ff4444">❌ Mismatch! Local: 0x${localResult.toString(16)} vs Recorded: 0x${vd.wasmResult.toString(16)}</span>`;
     }
   } catch (err) {
-    document.getElementById('verifyResult').innerHTML = `<span style="color:#ff4444">❌ Error: ${err.message}</span>`;
+    document.getElementById('verifyLocal').innerHTML = `<span style="color:#ff4444">❌ Error: ${err.message}</span>`;
   }
 });
 
