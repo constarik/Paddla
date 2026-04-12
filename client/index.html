@@ -110,6 +110,7 @@
       transform: translate(-50%, -50%); background: rgba(10,10,30,0.98);
       padding: 30px 45px; border-radius: 20px; text-align: center;
       z-index: 50; border: 3px solid #00d4ff; max-width: 500px;
+      min-height: 380px;
       box-shadow: 0 0 40px rgba(0,212,255,0.4), 0 0 80px rgba(0,0,0,0.8);
     }
     .result.show { display: block; }
@@ -300,7 +301,7 @@
       <div>Game Seed (local): <code id="vClientSeed"></code></div>
       <div>Reg Seed (from server): <code id="vCommitment"></code></div>
       <div>WASM Result: <code id="vServerSeed"></code></div>
-      <button class="verify-btn-result" id="verifyBtn">✓ REBUILD & VERIFY</button>
+      <button class="verify-btn-result" id="verifyBtn" style="display:none">✓ REBUILD & VERIFY</button>
       <div style="display:flex;gap:8px;margin-top:12px;justify-content:center;">
         <button class="verify-btn-result" id="replayBtn" style="background:#00d4ff;">▶ REPLAY</button>
         <button class="verify-btn-result" id="closeResultBtn" style="background:#444;">✕ CLOSE</button>
@@ -313,7 +314,7 @@
 <script src="engine/core.js"></script>
 <script>
 // ===== VERSION =====
-const VERSION = '9.0.5';
+const VERSION = '9.0.6';
 document.title = `PADDLA v${VERSION} - UVS 1.0`;
 document.querySelector('.version-badge').textContent = `v${VERSION}`;
 
@@ -677,7 +678,6 @@ function gameLoop() {
           document.getElementById('vClientSeed').textContent = currentGameSeed;
           document.getElementById('vCommitment').textContent = '0x' + currentRegSeed.toString(16).toUpperCase();
           document.getElementById('vServerSeed').textContent = '0x' + wasmResult.toString(16).toUpperCase().padStart(8,'0');
-          document.getElementById('verifyBtn').disabled = false;
           document.getElementById('verifySection').style.display = 'block';
           lastVerificationData = {
             sessionId: currentSessionId,
@@ -690,6 +690,7 @@ function gameLoop() {
             serverSeed: gameState.serverSeed
           };
           verifyWithRegistrar();
+          verifyLocal();
         } else {
           document.getElementById('verifySection').style.display = 'none';
         }
@@ -734,19 +735,14 @@ async function verifyWithRegistrar() {
 }
 
 // Verification - rebuild WASM locally and compare
-document.getElementById('verifyBtn').addEventListener('click', async () => {
-  if (!lastVerificationData?.regSeed) { 
-    document.getElementById('verifyServer').innerHTML = '<span style="color:#ff4444">❌ No data</span>'; 
-    return; 
-  }
+async function verifyLocal() {
+  if (!lastVerificationData?.regSeed) return;
   const vd = lastVerificationData;
   try {
-    // Rebuild WASM from regSeed
     const { bytes } = buildWasm(vd.regSeed);
     const wasmMod = await WebAssembly.compile(bytes.buffer);
     const wasmInst = await WebAssembly.instantiate(wasmMod);
     const localResult = wasmInst.exports.compute(vd.gameSeed) >>> 0;
-    
     if (localResult === vd.wasmResult) {
       document.getElementById('verifyLocal').innerHTML = '<span style="color:#00ff66">✓ LOCAL VERIFIED! WASM rebuilt independently.</span>';
     } else {
@@ -755,7 +751,9 @@ document.getElementById('verifyBtn').addEventListener('click', async () => {
   } catch (err) {
     document.getElementById('verifyLocal').innerHTML = `<span style="color:#ff4444">❌ Error: ${err.message}</span>`;
   }
-});
+}
+
+document.getElementById('verifyBtn').addEventListener('click', verifyLocal);
 
 // Controls disable/enable
 function setControlsDisabled(disabled) {
