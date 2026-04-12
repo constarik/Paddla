@@ -4,7 +4,7 @@
   "description": "Provably Fair интерактивная аркадная игра — UVS 1.0",
   "main": "server/index.js",
   "scripts": {
-    "lint": "eslint engine/core.js",
+    "lint": "eslint engine/core.js client/index.html",
     "start": "node server/index.js",
     "sim": "node simulation/run.js",
     "strategies": "node simulation/strategies.js",
@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "eslint": "^10.2.0",
+    "eslint-plugin-html": "^8.1.4",
     "firebase-admin": "^13.7.0"
   }
 }

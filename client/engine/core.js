@@ -586,7 +586,7 @@ if (typeof module !== 'undefined' && module.exports) {
     CONFIG, BUMPER,
     UVS_PRNG,
     createInitialState, tick,
-    sha256Hex, sha512Hex,
+    sha256Hex, sha512Hex, sha256Pure: _sha256Bytes,
     fpRound, moneyRound, dist, clamp, bytesToHex
   });
 }
