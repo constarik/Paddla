@@ -873,16 +873,16 @@ document.getElementById('playBtn').addEventListener('click', async () => {
       const res = await fetch(REGISTRAR_URL + '/session/new', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameSeed: currentGameSeed, minVersion: '1.0', maxVersion: VERSION })
+        body: JSON.stringify({ gameSeed: currentGameSeed, versions: [10] })
       });
       const data = await res.json();
 
       // UVS version negotiation check
       if (!data.accepted) {
-        alert(`UVS version mismatch!\nClient: ${VERSION}\nServer supports: ${data.serverMin}–${data.serverMax}\nPlease refresh.`);
+        alert(`UVS version mismatch!\nClient supports: [10]\nServer supports: ${JSON.stringify(data.serverVersions)}\nPlease refresh.`);
         return;
       }
-      console.log(`UVS negotiated: ${data.negotiated} (server: ${data.serverMin}–${data.serverMax})`);
+      console.log(`UVS negotiated: v${data.negotiated} (server: ${JSON.stringify(data.serverVersions)})`);
 
       currentSessionId = data.sessionId;
       currentRegSeed = data.regSeed;
