@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>PADDLA v8.0.2 - Provably Fair</title>
+  <title>PADDLA v9.0.0 - UVS 1.0</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏓</text></svg>">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
   <!-- Google Analytics -->
@@ -35,7 +35,7 @@
       letter-spacing: 4px;
     }
     .version-badge {
-      font-size: 10px; color: #666; font-weight: normal;
+      font-size: 10px; color: #aaa; font-weight: normal;
       margin-left: 10px; letter-spacing: 1px;
     }
     .pf-badge { 
@@ -70,7 +70,7 @@
     }
     .stat { text-align: center; }
     .stat-value { font-size: 24px; font-weight: bold; color: #00d4ff; text-shadow: 0 0 10px rgba(0,212,255,0.5); }
-    .stat-label { font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 1px; }
+    .stat-label { font-size: 10px; color: rgba(255,255,255,0.8); letter-spacing: 1px; }
     .lamp {
       width: 22px; height: 22px; border-radius: 50%;
       background: #222; border: 2px solid #444;
@@ -104,7 +104,7 @@
     }
     .controls button:disabled { background: #666; cursor: not-allowed; box-shadow: none; }
     .controls button:hover:not(:disabled) { transform: scale(1.08); box-shadow: 0 0 25px rgba(0,212,255,0.8); }
-    .info { font-size: 10px; color: rgba(255,255,255,0.4); text-align: center; letter-spacing: 1px; }
+    .info { font-size: 10px; color: rgba(255,255,255,0.7); text-align: center; letter-spacing: 1px; }
     .result {
       display: none; position: fixed; top: 50%; left: 50%;
       transform: translate(-50%, -50%); background: rgba(10,10,30,0.98);
@@ -193,19 +193,19 @@
       border: 1px solid rgba(255,215,0,0.3); min-width: 220px;
     }
     .leaderboard-title { font-size: 11px; color: #ffd700; font-weight: bold; margin-bottom: 6px; }
-    .leaderboard-subtitle { font-size: 8px; color: #666; margin-bottom: 6px; }
+    .leaderboard-subtitle { font-size: 8px; color: #aaa; margin-bottom: 6px; }
     .leaderboard-entry { font-size: 10px; margin: 3px 0; }
     .leaderboard-entry.gold { color: #ffd700; }
     .leaderboard-entry.silver { color: #c0c0c0; }
     .leaderboard-entry.bronze { color: #cd7f32; }
-    .leaderboard-entry.normal { color: #888; }
+    .leaderboard-entry.normal { color: #bbb; }
     .commitment-display {
       position: fixed; bottom: 10px; left: 10px;
       background: rgba(0,0,0,0.7); padding: 8px 12px; border-radius: 8px;
       border: 1px solid rgba(0,255,100,0.3); font-size: 9px; max-width: 200px;
     }
     .commitment-display .label { color: #00ff66; margin-bottom: 4px; }
-    .commitment-display .hash { color: #666; font-family: monospace; word-break: break-all; }
+    .commitment-display .hash { color: #aaa; font-family: monospace; word-break: break-all; }
   </style>
 </head>
 <body>
@@ -225,7 +225,7 @@
     </div>
   </div>
   
-  <h1>🏓 PADDLA <span class="version-badge">v8.0.2</span> <span class="pf-badge">🔒 Provably Fair</span></h1>
+  <h1>🏓 PADDLA <span class="version-badge">v8.2.2</span> <span class="pf-badge">🔒 Registrar Protocol</span></h1>
   
   <div class="stats">
     <div class="stat">
@@ -280,7 +280,7 @@
   <div class="info">Move bumper to direct balls into goals (top corners)</div>
   
   <div class="commitment-display" id="commitmentDisplay">
-    <div class="label">🔒 Current Commitment</div>
+    <div class="label">🔒 Registrar Status</div>
     <div class="hash" id="currentCommitment">Loading...</div>
   </div>
   
@@ -295,19 +295,23 @@
     <div class="amount">$<span id="finalWin">0</span></div>
     <div class="rtp" id="finalRtp"></div>
     <div class="verify-section" id="verifySection">
-      <strong>🔒 Verification Data:</strong>
-      <div>Game ID: <code id="vGameId"></code></div>
-      <div>Client Seed: <code id="vClientSeed"></code></div>
-      <div>Commitment (recorded before game): <code id="vCommitment"></code></div>
-      <div>Server Seed (revealed after): <code id="vServerSeed"></code></div>
-      <button class="verify-btn-result" id="verifyBtn">✓ VERIFY FAIRNESS</button>
+      <strong>🔒 Registrar Verification:</strong>
+      <div>Session ID: <code id="vGameId"></code></div>
+      <div>Game Seed (local): <code id="vClientSeed"></code></div>
+      <div>Reg Seed (from server): <code id="vCommitment"></code></div>
+      <div>WASM Result: <code id="vServerSeed"></code></div>
+      <button class="verify-btn-result" id="verifyBtn">✓ REBUILD & VERIFY</button>
+      <div style="display:flex;gap:8px;margin-top:12px;justify-content:center;">
+        <button class="verify-btn-result" id="replayBtn" style="background:#00d4ff;">▶ REPLAY</button>
+        <button class="verify-btn-result" id="closeResultBtn" style="background:#444;">✕ CLOSE</button>
+      </div>
       <div id="verifyResult" style="margin-top:10px;"></div>
     </div>
   </div>
 
 <script>
 // ===== VERSION =====
-const VERSION = '8.0.2';
+const VERSION = '8.2.2';
 
 // ===== FIREBASE CONFIG =====
 const firebaseConfig = {
@@ -330,6 +334,7 @@ let currentUser = null, userData = null;
 async function signInWithGoogle() {
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
     try { await auth.signInWithPopup(provider); }
     catch (e) { if (e.code === 'auth/popup-blocked') await auth.signInWithRedirect(provider); else throw e; }
   } catch (err) { alert('Sign in failed: ' + err.message); }
@@ -342,6 +347,11 @@ async function resetBalance() {
   await db.collection('paddla_users').doc(currentUser.uid).update({ balance: 1000 });
   updateAuthUI(); updateUI();
 }
+
+// Handle redirect result after Google sign-in
+auth.getRedirectResult().then((result) => {
+  if (result && result.user) console.log('Redirect sign-in OK:', result.user.email);
+}).catch((e) => { if (e.code !== 'auth/no-auth-event') console.error('Redirect error:', e.message); });
 
 auth.onAuthStateChanged(async (user) => {
   currentUser = user;
@@ -388,31 +398,67 @@ async function saveGameResult(bet, win) {
   });
 }
 
-// ===== SERVER =====
-const SERVER_URL = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://paddla.onrender.com';
-let serverOnline = false;
-let currentCommitment = null;
+// ===== REGISTRAR (Provably Fair WASM) =====
+const REGISTRAR_URL = 'https://registrar-server.onrender.com';
+let registrarOnline = false;
+let currentRegSeed = null, currentSessionId = null, currentGameSeed = null, wasmResult = null;
 
-async function fetchCommitment() {
+// LCG for deterministic WASM generation
+class LCG {
+  constructor(seed) { this.s = seed >>> 0; }
+  next() { this.s = (Math.imul(this.s, 1664525) + 1013904223) >>> 0; return this.s; }
+  range(lo, hi) { return lo + (this.next() % (hi - lo)); }
+}
+
+const BINARY_OPS = [0x6a,0x6b,0x6c,0x73]; // add,sub,mul,xor
+const SHIFT_OPS  = [0x76,0x77,0x78];       // shr_u, rotl, rotr
+function uleb128(n) { const o=[]; do { let b=n&0x7f; n>>>=7; if(n) b|=0x80; o.push(b); } while(n); return o; }
+function sleb128(n) { n=n|0; const o=[]; let more=true; while(more) { let b=n&0x7f; n>>=7; if((n===0&&!(b&0x40))||(n===-1&&(b&0x40))) more=false; else b|=0x80; o.push(b); } return o; }
+
+function buildWasm(regSeed) {
+  const lcg = new LCG(regSeed);
+  const n = lcg.range(4,7);
+  const steps = Array.from({length:n}, () => ({
+    shiftOp: SHIFT_OPS[lcg.range(0,SHIFT_OPS.length)],
+    shiftAmt: 8 + lcg.range(0,8),
+    binOp: BINARY_OPS[lcg.range(0,BINARY_OPS.length)],
+    constVal: (lcg.next()|1)|0,
+  }));
+  const body = [0x00, 0x20, 0x00];
+  for (const s of steps) { body.push(0x41, ...sleb128(s.shiftAmt)); body.push(s.shiftOp); body.push(0x41, ...sleb128(s.constVal)); body.push(s.binOp); }
+  body.push(0x0b);
+  const typeBody = [0x01,0x60,0x01,0x7f,0x01,0x7f];
+  const typeSec = [0x01,...uleb128(typeBody.length),...typeBody];
+  const funcBody = [0x01,0x00];
+  const funcSec = [0x03,...uleb128(funcBody.length),...funcBody];
+  const expName = Array.from('compute').map(c=>c.charCodeAt(0));
+  const expBody = [0x01,...uleb128(expName.length),...expName,0x00,0x00];
+  const expSec = [0x07,...uleb128(expBody.length),...expBody];
+  const bodyWLen = [...uleb128(body.length),...body];
+  const codeBody = [0x01,...bodyWLen];
+  const codeSec = [0x0a,...uleb128(codeBody.length),...codeBody];
+  return { bytes: new Uint8Array([0x00,0x61,0x73,0x6d,0x01,0x00,0x00,0x00,...typeSec,...funcSec,...expSec,...codeSec]), steps };
+}
+
+async function checkRegistrar() {
   try {
-    const res = await fetch(`${SERVER_URL}/commitment`);
-    const data = await res.json();
-    currentCommitment = data.commitment;
-    document.getElementById('currentCommitment').textContent = currentCommitment.substring(0, 24) + '...';
-    serverOnline = true;
+    const r = await fetch(REGISTRAR_URL + '/status', {signal: AbortSignal.timeout(5000)});
+    const d = await r.json();
+    registrarOnline = true;
     document.getElementById('serverStatus').className = 'server-status online';
-    document.getElementById('serverStatus').textContent = '🟢 Online';
-    return data;
+    document.getElementById('serverStatus').textContent = '🟢 Registrar';
+    document.getElementById('currentCommitment').textContent = `Sessions: ${d.activeSessions}`;
+    return d;
   } catch {
-    serverOnline = false;
+    registrarOnline = false;
     document.getElementById('serverStatus').className = 'server-status offline';
     document.getElementById('serverStatus').textContent = '⚫ Offline';
     document.getElementById('currentCommitment').textContent = 'Offline';
     return null;
   }
 }
-fetchCommitment();
-setInterval(fetchCommitment, 30000);
+checkRegistrar();
+setInterval(checkRegistrar, 30000);
 
 // ===== AUDIO =====
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -433,20 +479,28 @@ function playGameOver(win) { if (win) [523, 659, 784, 1047].forEach((n, i) => se
 // ===== ENGINE (Input-Seeded Randomness) =====
 const SHA256_K = new Uint32Array([0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
 function sha256Pure(msg) { const bytes = typeof msg === 'string' ? new TextEncoder().encode(msg) : new Uint8Array(msg); const bitLen = bytes.length * 8; const padLen = (bytes.length + 9 + 63) & ~63; const padded = new Uint8Array(padLen); padded.set(bytes); padded[bytes.length] = 0x80; const view = new DataView(padded.buffer); view.setUint32(padLen - 4, bitLen, false); let h0=0x6a09e667,h1=0xbb67ae85,h2=0x3c6ef372,h3=0xa54ff53a,h4=0x510e527f,h5=0x9b05688c,h6=0x1f83d9ab,h7=0x5be0cd19; const w = new Uint32Array(64); for (let off = 0; off < padLen; off += 64) { for (let i = 0; i < 16; i++) w[i] = view.getUint32(off + i * 4, false); for (let i = 16; i < 64; i++) { const s0 = ((w[i-15]>>>7)|(w[i-15]<<25))^((w[i-15]>>>18)|(w[i-15]<<14))^(w[i-15]>>>3); const s1 = ((w[i-2]>>>17)|(w[i-2]<<15))^((w[i-2]>>>19)|(w[i-2]<<13))^(w[i-2]>>>10); w[i] = (w[i-16]+s0+w[i-7]+s1)>>>0; } let a=h0,b=h1,c=h2,d=h3,e=h4,f=h5,g=h6,h=h7; for (let i = 0; i < 64; i++) { const S1=((e>>>6)|(e<<26))^((e>>>11)|(e<<21))^((e>>>25)|(e<<7)); const ch=(e&f)^(~e&g); const t1=(h+S1+ch+SHA256_K[i]+w[i])>>>0; const S0=((a>>>2)|(a<<30))^((a>>>13)|(a<<19))^((a>>>22)|(a<<10)); const maj=(a&b)^(a&c)^(b&c); const t2=(S0+maj)>>>0; h=g;g=f;f=e;e=(d+t1)>>>0;d=c;c=b;b=a;a=(t1+t2)>>>0; } h0=(h0+a)>>>0;h1=(h1+b)>>>0;h2=(h2+c)>>>0;h3=(h3+d)>>>0;h4=(h4+e)>>>0;h5=(h5+f)>>>0;h6=(h6+g)>>>0;h7=(h7+h)>>>0; } const result = new Uint8Array(32); const rv = new DataView(result.buffer); rv.setUint32(0,h0,false);rv.setUint32(4,h1,false);rv.setUint32(8,h2,false);rv.setUint32(12,h3,false);rv.setUint32(16,h4,false);rv.setUint32(20,h5,false);rv.setUint32(24,h6,false);rv.setUint32(28,h7,false); return result; }
-function hmacSha256Pure(key, msg) { const keyBytes = typeof key === 'string' ? new TextEncoder().encode(key) : new Uint8Array(key); const msgBytes = typeof msg === 'string' ? new TextEncoder().encode(msg) : new Uint8Array(msg); let keyPad = keyBytes; if (keyBytes.length > 64) keyPad = sha256Pure(keyBytes); if (keyPad.length < 64) { const tmp = new Uint8Array(64); tmp.set(keyPad); keyPad = tmp; } const ipad = new Uint8Array(64), opad = new Uint8Array(64); for (let i = 0; i < 64; i++) { ipad[i] = keyPad[i] ^ 0x36; opad[i] = keyPad[i] ^ 0x5c; } const inner = new Uint8Array(64 + msgBytes.length); inner.set(ipad); inner.set(msgBytes, 64); const innerHash = sha256Pure(inner); const outer = new Uint8Array(64 + 32); outer.set(opad); outer.set(innerHash, 64); return sha256Pure(outer); }
+// ===== SHA-512 pure JS (UVS 1.0) =====
+const _SHA512_K=[0x428a2f98d728ae22n,0x7137449123ef65cdn,0xb5c0fbcfec4d3b2fn,0xe9b5dba58189dbbcn,0x3956c25bf348b538n,0x59f111f1b605d019n,0x923f82a4af194f9bn,0xab1c5ed5da6d8118n,0xd807aa98a3030242n,0x12835b0145706fben,0x243185be4ee4b28cn,0x550c7dc3d5ffb4e2n,0x72be5d74f27b896fn,0x80deb1fe3b1696b1n,0x9bdc06a725c71235n,0xc19bf174cf692694n,0xe49b69c19ef14ad2n,0xefbe4786384f25e3n,0x0fc19dc68b8cd5b5n,0x240ca1cc77ac9c65n,0x2de92c6f592b0275n,0x4a7484aa6ea6e483n,0x5cb0a9dcbd41fbd4n,0x76f988da831153b5n,0x983e5152ee66dfabn,0xa831c66d2db43210n,0xb00327c898fb213fn,0xbf597fc7beef0ee4n,0xc6e00bf33da88fc2n,0xd5a79147930aa725n,0x06ca6351e003826fn,0x142929670a0e6e70n,0x27b70a8546d22ffcn,0x2e1b21385c26c926n,0x4d2c6dfc5ac42aedn,0x53380d139d95b3dfn,0x650a73548baf63den,0x766a0abb3c77b2a8n,0x81c2c92e47edaee6n,0x92722c851482353bn,0xa2bfe8a14cf10364n,0xa81a664bbc423001n,0xc24b8b70d0f89791n,0xc76c51a30654be30n,0xd192e819d6ef5218n,0xd69906245565a910n,0xf40e35855771202an,0x106aa07032bbd1b8n,0x19a4c116b8d2d0c8n,0x1e376c085141ab53n,0x2748774cdf8eeb99n,0x34b0bcb5e19b48a8n,0x391c0cb3c5c95a63n,0x4ed8aa4ae3418acbn,0x5b9cca4f7763e373n,0x682e6ff3d6b2b8a3n,0x748f82ee5defb2fcn,0x78a5636f43172f60n,0x84c87814a1f0ab72n,0x8cc702081a6439ecn,0x90befffa23631e28n,0xa4506cebde82bde9n,0xbef9a3f7b2c67915n,0xc67178f2e372532bn,0xca273eceea26619cn,0xd186b8c721c0c207n,0xeada7dd6cde0eb1en,0xf57d4f7fee6ed178n,0x06f067aa72176fban,0x0a637dc5a2c898a6n,0x113f9804bef90daen,0x1b710b35131c471bn,0x28db77f523047d84n,0x32caab7b40c72493n,0x3c9ebe0a15c9bebcn,0x431d67c49c100d4cn,0x4cc5d4becb3e42b6n,0x597f299cfc657e2an,0x5fcb6fab3ad6faecn,0x6c44198c4a475817n];
+function sha512Pure(msg) { const bytes=typeof msg==='string'?new TextEncoder().encode(msg):new Uint8Array(msg); const bitLen=BigInt(bytes.length*8); const padLen=(bytes.length+17+127)&~127; const padded=new Uint8Array(padLen); padded.set(bytes); padded[bytes.length]=0x80; const dv=new DataView(padded.buffer); dv.setBigUint64(padLen-8,bitLen,false); const M=0xFFFFFFFFFFFFFFFFn; let h0=0x6a09e667f3bcc908n,h1=0xbb67ae8584caa73bn,h2=0x3c6ef372fe94f82bn,h3=0xa54ff53a5f1d36f1n,h4=0x510e527fade682d1n,h5=0x9b05688c2b3e6c1fn,h6=0x1f83d9abfb41bd6bn,h7=0x5be0cd19137e2179n; const w=new Array(80); for(let off=0;off<padLen;off+=128){for(let i=0;i<16;i++)w[i]=dv.getBigUint64(off+i*8,false);for(let i=16;i<80;i++){const w15=w[i-15],w2=w[i-2];const s0=((w15>>1n)|(w15<<63n))^((w15>>8n)|(w15<<56n))^(w15>>7n);const s1=((w2>>19n)|(w2<<45n))^((w2>>61n)|(w2<<3n))^(w2>>6n);w[i]=(w[i-16]+s0+w[i-7]+s1)&M;}let a=h0,b=h1,c=h2,d=h3,e=h4,f=h5,g=h6,h=h7;for(let i=0;i<80;i++){const S1=((e>>14n)|(e<<50n))^((e>>18n)|(e<<46n))^((e>>41n)|(e<<23n));const ch=(e&f)^(~e&g)&M;const t1=(h+S1+ch+_SHA512_K[i]+w[i])&M;const S0=((a>>28n)|(a<<36n))^((a>>34n)|(a<<30n))^((a>>39n)|(a<<25n));const maj=(a&b)^(a&c)^(b&c);const t2=(S0+maj)&M;h=g;g=f;f=e;e=(d+t1)&M;d=c;c=b;b=a;a=(t1+t2)&M;}h0=(h0+a)&M;h1=(h1+b)&M;h2=(h2+c)&M;h3=(h3+d)&M;h4=(h4+e)&M;h5=(h5+f)&M;h6=(h6+g)&M;h7=(h7+h)&M;} const r=new Uint8Array(64);const rv=new DataView(r.buffer);rv.setBigUint64(0,h0,false);rv.setBigUint64(8,h1,false);rv.setBigUint64(16,h2,false);rv.setBigUint64(24,h3,false);rv.setBigUint64(32,h4,false);rv.setBigUint64(40,h5,false);rv.setBigUint64(48,h6,false);rv.setBigUint64(56,h7,false);return r;}
+function sha256Hex(msg){const b=_sha256Bytes(msg);return Array.from(b).map(x=>x.toString(16).padStart(2,'0')).join('');}
+function sha512Hex(msg){const b=sha512Pure(msg);return Array.from(b).map(x=>x.toString(16).padStart(2,'0')).join('');}
+// ===== ChaCha20 pure JS (RFC 8439, UVS 1.0) =====
+function _chacha20Block(key,nonce12,counter,out,outOff){const s=new Uint32Array(16);const dv=new DataView(key.buffer,key.byteOffset);const nv=new DataView(nonce12.buffer,nonce12.byteOffset);s[0]=0x61707865;s[1]=0x3320646en>>>0;s[2]=0x79622d32;s[3]=0x6b206574;for(let i=0;i<8;i++)s[4+i]=dv.getUint32(i*4,true);s[12]=counter>>>0;s[13]=nv.getUint32(0,true);s[14]=nv.getUint32(4,true);s[15]=nv.getUint32(8,true);const x=s.slice();function qr(a,b,c,d){x[a]=(x[a]+x[b])>>>0;x[d]=(x[d]^x[a]);x[d]=(x[d]<<16)|(x[d]>>>16);x[c]=(x[c]+x[d])>>>0;x[b]=(x[b]^x[c]);x[b]=(x[b]<<12)|(x[b]>>>20);x[a]=(x[a]+x[b])>>>0;x[d]=(x[d]^x[a]);x[d]=(x[d]<<8)|(x[d]>>>24);x[c]=(x[c]+x[d])>>>0;x[b]=(x[b]^x[c]);x[b]=(x[b]<<7)|(x[b]>>>25);}for(let i=0;i<10;i++){qr(0,4,8,12);qr(1,5,9,13);qr(2,6,10,14);qr(3,7,11,15);qr(0,5,10,15);qr(1,6,11,12);qr(2,7,8,13);qr(3,4,9,14);}const ov=new DataView(out.buffer,out.byteOffset+outOff);for(let i=0;i<16;i++)ov.setUint32(i*4,((x[i]+s[i])>>>0),true);}
+function _chacha20Keystream(key32,nonce12,numBytes){const out=new Uint8Array(numBytes);const blocks=Math.ceil(numBytes/64);const tmp=new Uint8Array(64);for(let b=0;b<blocks;b++){_chacha20Block(key32,nonce12,b,tmp,0);const end=Math.min(64,numBytes-b*64);out.set(tmp.subarray(0,end),b*64);}return out;}
+// ===== UVS_PRNG (UVS 1.0) =====
+class UVS_PRNG{constructor(combinedSeedHex){const b=new Uint8Array(64);for(let i=0;i<64;i++)b[i]=parseInt(combinedSeedHex.slice(i*2,i*2+2),16);const key32=b.slice(0,32);const nonce12=b.slice(32,44);this._stream=_chacha20Keystream(key32,nonce12,256);this._pos=0;this._log=[];}nextUint32(){const val=new DataView(this._stream.buffer).getUint32(this._pos,true);this._pos+=4;this._log.push(val);return val;}nextDouble(){const hi=this.nextUint32();const lo=this.nextUint32();return(hi*0x100000000+lo)/0x10000000000000000;}consumed(){return[...this._log];}}
+function _tickCombinedSeed(serverSeed,bumperX,bumperY,tick){return sha512Hex(`${serverSeed}:${bumperX.toFixed(4)}:${bumperY.toFixed(4)}:${tick}`);}
+function _sha256Bytes(msg){return sha256Pure(msg);}
 function bytesToHex(bytes) { return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(''); }
 function bytesToDouble(bytes) { const view = new DataView(bytes.buffer || new Uint8Array(bytes).buffer); const high = view.getUint32(0, false) >>> 0; const low = view.getUint32(4, false) >>> 0; return (high * 0x100000000 + low) / 0x10000000000000000; }
 
 const FP_ROUND = 1e10;
 function fpRound(v) { return Math.round(v * FP_ROUND) / FP_ROUND; }
+function moneyRound(v) { return Math.round(v * 100) / 100; }
 function dist(ax, ay, bx, by) { return Math.sqrt((bx-ax)**2 + (by-ay)**2); }
 function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
 
-class InputSeededRNG {
-  constructor(gameSeedHex) { this.gameSeedHex = gameSeedHex; this.currentTick = -1; this.bumperX = 0; this.bumperY = 0; this.counter = 0; }
-  setTickContext(tick, bumperX, bumperY) { if (this.currentTick !== tick || this.bumperX !== bumperX || this.bumperY !== bumperY) { this.currentTick = tick; this.bumperX = bumperX; this.bumperY = bumperY; this.counter = 0; } }
-  nextDouble(eventType = 'rnd') { const input = `${this.currentTick}:${this.bumperX.toFixed(4)}:${this.bumperY.toFixed(4)}:${eventType}:${this.counter++}`; const hash = hmacSha256Pure(this.gameSeedHex, input); return bytesToDouble(hash); }
-}
+// InputSeededRNG replaced by UVS_PRNG (Engine v9, UVS 1.0)
 
 const CONFIG = { FIELD: 9, BALL_R: 0.2, SPEED: 0.05, GOAL_R: 1.02, CENTER_R: 0.225, CENTER_X: 4.5, CENTER_Y: 4.5, COUNTDOWN: 45, GOLDEN_CHANCE: 0.01, EXPLOSIVE_CHANCE: 1/75, SPAWN_COOLDOWN: 60, SPAWN_INTERVAL: 60, MAX_ON_FIELD: 10, TIMEOUT_LIMIT: 5, PROGRESSIVE_CAP: 5, BET_PER_BALL: 5, MAX_TICKS_PER_BALL: 600 };
 const BET_MULTIPLIER = { human: 1, hunter: 1, defender: 1, humanSim: 1, sniper: 2 };
@@ -460,8 +514,8 @@ function isInCenter(b) { return dist(b.x, b.y, CONFIG.CENTER_X, CONFIG.CENTER_Y)
 function isInUpperHalf(b) { return b.y < CONFIG.FIELD / 2; }
 function createBumper() { return { x: BUMPER.START_X, y: BUMPER.START_Y, targetX: BUMPER.START_X, targetY: BUMPER.START_Y }; }
 function moveBumper(bumper) { const dx = bumper.targetX - bumper.x, dy = bumper.targetY - bumper.y, d = Math.sqrt(dx*dx + dy*dy); if (d > BUMPER.MAX_SPEED) { bumper.x = fpRound(bumper.x + (dx/d) * BUMPER.MAX_SPEED); bumper.y = fpRound(bumper.y + (dy/d) * BUMPER.MAX_SPEED); } else { bumper.x = bumper.targetX; bumper.y = bumper.targetY; } }
-function createBall(rng, id) { const x = 0.5 + rng.nextDouble('spawn_x') * 8, y = CONFIG.FIELD - 0.3; const angle = (220 + rng.nextDouble('spawn_angle') * 100) * Math.PI / 180; const typeRoll = rng.nextDouble('spawn_type'); let type = 'normal', multiplier = 1; if (typeRoll < CONFIG.GOLDEN_CHANCE) { type = 'golden'; multiplier = 3; } else if (typeRoll < CONFIG.GOLDEN_CHANCE + CONFIG.EXPLOSIVE_CHANCE) { type = 'explosive'; } return { id, x, y, dx: Math.cos(angle) * CONFIG.SPEED, dy: Math.sin(angle) * CONFIG.SPEED, value: 9, ticksSinceCountdown: 0, alive: true, type, multiplier }; }
-function randomizeBounce(ball, rng, eventType) { const variation = (rng.nextDouble(eventType) - 0.5) * 0.1 * Math.PI; const angle = Math.atan2(ball.dy, ball.dx) + variation; const speed = Math.sqrt(ball.dx**2 + ball.dy**2); ball.dx = fpRound(Math.cos(angle) * speed); ball.dy = fpRound(Math.sin(angle) * speed); }
+function createBall(rng, id) { const x = 0.5 + rng.nextDouble() * 8, y = CONFIG.FIELD - 0.3; const angle = (220 + rng.nextDouble() * 100) * Math.PI / 180; const typeRoll = rng.nextDouble(); let type = 'normal', multiplier = 1; if (typeRoll < CONFIG.GOLDEN_CHANCE) { type = 'golden'; multiplier = 3; } else if (typeRoll < CONFIG.GOLDEN_CHANCE + CONFIG.EXPLOSIVE_CHANCE) { type = 'explosive'; } return { id, x, y, dx: Math.cos(angle) * CONFIG.SPEED, dy: Math.sin(angle) * CONFIG.SPEED, value: 9, ticksSinceCountdown: 0, alive: true, type, multiplier }; }
+function randomizeBounce(ball, rng) { const variation = (rng.nextDouble() - 0.5) * 0.1 * Math.PI; const angle = Math.atan2(ball.dy, ball.dx) + variation; const speed = Math.sqrt(ball.dx**2 + ball.dy**2); ball.dx = fpRound(Math.cos(angle) * speed); ball.dy = fpRound(Math.sin(angle) * speed); }
 function collideBallBumper(ball, bumper, rng) { const d = dist(ball.x, ball.y, bumper.x, bumper.y), minDist = CONFIG.BALL_R + BUMPER.RADIUS; if (d < minDist && d > 0) { const nx = (ball.x - bumper.x)/d, ny = (ball.y - bumper.y)/d, dot = ball.dx*nx + ball.dy*ny; ball.dx = fpRound(ball.dx - 2*dot*nx); ball.dy = fpRound(ball.dy - 2*dot*ny); ball.x = fpRound(bumper.x + nx*minDist); ball.y = fpRound(bumper.y + ny*minDist); randomizeBounce(ball, rng, `bumper_${ball.id}`); return true; } return false; }
 
 // AI Strategies
@@ -541,7 +595,7 @@ const STRATEGIES = {
   }
 };
 
-function createInitialState(gameSeedHex, numBalls, betPerBall = 5, totalBet = 0) { return { rng: new InputSeededRNG(gameSeedHex), gameSeedHex, balls: [], bumper: createBumper(), tickCount: 0, ballsSpawned: 0, numBalls, betPerBall, totalBet, spawnCooldown: 0, progressive: 1, timeoutCount: 0, totalWin: 0, finished: false, nextBallId: 1, inputLog: [] }; }
+function createInitialState(serverSeed, numBalls, betPerBall = 5, totalBet = 0) { const serverSeedHash = sha256Hex(serverSeed); const sessionId = sha256Hex(`${serverSeedHash}:uvs-paddla:1`); return { uvsHeader: { type:'uvs-header', uvsVersion:'1.0', sessionId, serverSeedHash, clientSeed:'uvs-paddla', minNonce:1, params:{numBalls,betPerBall}, extensions:['physics-arcade@1.0'], timestamp:new Date().toISOString() }, serverSeed, rng: null, balls: [], bumper: createBumper(), tickCount: 0, ballsSpawned: 0, numBalls, betPerBall, totalBet, spawnCooldown: 0, progressive: 1, timeoutCount: 0, totalWin: 0, finished: false, nextBallId: 1, inputLog: [] }; }
 
 function tick(state, bumperTarget) {
   if (state.finished) return [];
@@ -550,26 +604,26 @@ function tick(state, bumperTarget) {
   if (state.spawnCooldown > 0) state.spawnCooldown--;
   if (bumperTarget) { state.bumper.targetX = clamp(bumperTarget.x, BUMPER.MIN_X, BUMPER.MAX_X); state.bumper.targetY = clamp(bumperTarget.y, BUMPER.MIN_Y, BUMPER.MAX_Y); }
   moveBumper(state.bumper);
-  state.rng.setTickContext(state.tickCount, state.bumper.x, state.bumper.y);
+  state.rng = new UVS_PRNG(_tickCombinedSeed(state.serverSeed, state.bumper.x, state.bumper.y, state.tickCount));
   // Log input
   state.inputLog.push({ tick: state.tickCount, target: { x: state.bumper.targetX, y: state.bumper.targetY } });
   // Spawn
   if (state.tickCount % CONFIG.SPAWN_INTERVAL === 0 && state.balls.length < CONFIG.MAX_ON_FIELD && state.spawnCooldown <= 0 && state.ballsSpawned < state.numBalls) { const ball = createBall(state.rng, state.nextBallId++); state.balls.push(ball); state.ballsSpawned++; state.spawnCooldown = CONFIG.SPAWN_COOLDOWN; events.push({ type: 'spawn', ball }); }
   // Update balls
-  for (const b of state.balls) { if (!b.alive) continue; b.ticksSinceCountdown++; b.x = fpRound(b.x + b.dx); b.y = fpRound(b.y + b.dy); const R = CONFIG.BALL_R, F = CONFIG.FIELD; let hitWall = false; if (b.x - R < 0) { b.x = R; b.dx = -b.dx; hitWall = true; } if (b.x + R > F) { b.x = F - R; b.dx = -b.dx; hitWall = true; } if (b.y - R < 0) { b.y = R; b.dy = -b.dy; hitWall = true; } if (b.y + R > F) { b.y = F - R; b.dy = -b.dy; hitWall = true; } if (b.type === 'normal' && b.ticksSinceCountdown >= CONFIG.COUNTDOWN && b.value > 0) { b.value--; b.ticksSinceCountdown = 0; if (b.value <= 0) { b.alive = false; b.diedFromTimeout = true; events.push({ type: 'timeout', ball: b }); } } if (b.alive && hitWall) randomizeBounce(b, state.rng, `wall_${b.id}`); }
+  for (const b of state.balls) { if (!b.alive) continue; b.ticksSinceCountdown++; b.x = fpRound(b.x + b.dx); b.y = fpRound(b.y + b.dy); const R = CONFIG.BALL_R, F = CONFIG.FIELD; let hitWall = false; if (b.x - R < 0) { b.x = R; b.dx = -b.dx; hitWall = true; } if (b.x + R > F) { b.x = F - R; b.dx = -b.dx; hitWall = true; } if (b.y - R < 0) { b.y = R; b.dy = -b.dy; hitWall = true; } if (b.y + R > F) { b.y = F - R; b.dy = -b.dy; hitWall = true; } if (b.type === 'normal' && b.ticksSinceCountdown >= CONFIG.COUNTDOWN && b.value > 0) { b.value--; b.ticksSinceCountdown = 0; if (b.value <= 0) { b.alive = false; b.diedFromTimeout = true; events.push({ type: 'timeout', ball: b }); } } if (b.alive && hitWall) randomizeBounce(b, state.rng); }
   // Bumper collision
   for (const b of state.balls) if (b.alive && collideBallBumper(b, state.bumper, state.rng)) events.push({ type: 'bumperHit', ball: b });
   // Center
   for (const b of state.balls) { if (b.alive && isInCenter(b)) { const dx = b.x - CONFIG.CENTER_X, dy = b.y - CONFIG.CENTER_Y, d = Math.sqrt(dx*dx+dy*dy); if (d > 0) { b.dx = (dx/d)*CONFIG.SPEED; b.dy = (dy/d)*CONFIG.SPEED; randomizeBounce(b, state.rng, `center_${b.id}`); } if (b.type === 'normal' && b.value < 9) { b.value = 9; b.ticksSinceCountdown = 0; events.push({ type: 'recharge', ball: b }); } } }
   // Goals
-  for (const ball of state.balls) { if (!ball.alive) continue; if (isGoal(ball)) { const prize = ball.value * ball.multiplier * state.progressive; state.totalWin += prize; if (ball.type === 'golden') state.timeoutCount = 0; if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++; events.push({ type: 'goal', ball, prize, side: isInLeftGoal(ball) ? 'left' : 'right' }); ball.alive = false; if (ball.type === 'explosive') { state.timeoutCount = 0; events.push({ type: 'explosion', ball, x: ball.x, y: ball.y }); for (const o of state.balls) { if (o.alive && o.id !== ball.id && isInUpperHalf(o)) { const ep = o.value * o.multiplier * state.progressive; state.totalWin += ep; if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++; events.push({ type: 'exploded', ball: o, prize: ep }); o.alive = false; } } } } }
+  for (const ball of state.balls) { if (!ball.alive) continue; if (isGoal(ball)) { const betScale = state.betPerBall / 5; const prize = moneyRound(ball.value * ball.multiplier * state.progressive * betScale); state.totalWin = moneyRound(state.totalWin + prize); if (ball.type === 'golden') state.timeoutCount = 0; if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++; events.push({ type: 'goal', ball, prize, side: isInLeftGoal(ball) ? 'left' : 'right' }); ball.alive = false; if (ball.type === 'explosive') { state.timeoutCount = 0; events.push({ type: 'explosion', ball, x: ball.x, y: ball.y }); for (const o of state.balls) { if (o.alive && o.id !== ball.id && isInUpperHalf(o)) { const ep = moneyRound(o.value * o.multiplier * state.progressive * betScale); state.totalWin = moneyRound(state.totalWin + ep); if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++; events.push({ type: 'exploded', ball: o, prize: ep }); o.alive = false; } } } } }
   // Ball-ball collisions
-  for (let i = 0; i < state.balls.length; i++) { for (let j = i + 1; j < state.balls.length; j++) { const b1 = state.balls[i], b2 = state.balls[j]; if (!b1.alive || !b2.alive) continue; if (dist(b1.x, b1.y, b2.x, b2.y) < CONFIG.BALL_R * 2) { const s1 = b1.type !== 'normal', s2 = b2.type !== 'normal'; if (s1 && s2) { const dx = b2.x - b1.x, dy = b2.y - b1.y, d = Math.sqrt(dx*dx+dy*dy)||1, nx = dx/d, ny = dy/d, ov = CONFIG.BALL_R*2-d; if (ov > 0) { b1.x -= nx*ov*0.5; b1.y -= ny*ov*0.5; b2.x += nx*ov*0.5; b2.y += ny*ov*0.5; } b1.dx = -nx*CONFIG.SPEED; b1.dy = -ny*CONFIG.SPEED; b2.dx = nx*CONFIG.SPEED; b2.dy = ny*CONFIG.SPEED; randomizeBounce(b1, state.rng, `coll_${b1.id}_${b2.id}_1`); randomizeBounce(b2, state.rng, `coll_${b1.id}_${b2.id}_2`); continue; } if (s1) { b2.alive = false; state.totalWin += 1; events.push({ type: 'collision', winner: b1, loser: b2, prize: 1 }); continue; } if (s2) { b1.alive = false; state.totalWin += 1; events.push({ type: 'collision', winner: b2, loser: b1, prize: 1 }); continue; } if (b1.value === b2.value) { const prize = b1.value * 2; state.totalWin += prize; events.push({ type: 'double', b1, b2, prize }); const roll = state.rng.nextDouble(`double_${b1.id}_${b2.id}`); if (roll < 0.5) b2.alive = false; else b1.alive = false; } else { state.totalWin += 1; const loser = b1.value < b2.value ? b1 : b2, winner = b1.value < b2.value ? b2 : b1; loser.alive = false; const dx = winner.x - loser.x, dy = winner.y - loser.y, d = Math.sqrt(dx*dx+dy*dy)||1; winner.dx = (dx/d)*CONFIG.SPEED; winner.dy = (dy/d)*CONFIG.SPEED; randomizeBounce(winner, state.rng, `win_${winner.id}`); events.push({ type: 'collision', winner, loser, prize: 1 }); } } } }
+  for (let i = 0; i < state.balls.length; i++) { for (let j = i + 1; j < state.balls.length; j++) { const b1 = state.balls[i], b2 = state.balls[j]; if (!b1.alive || !b2.alive) continue; if (dist(b1.x, b1.y, b2.x, b2.y) < CONFIG.BALL_R * 2) { const s1 = b1.type !== 'normal', s2 = b2.type !== 'normal'; if (s1 && s2) { const dx = b2.x - b1.x, dy = b2.y - b1.y, d = Math.sqrt(dx*dx+dy*dy)||1, nx = dx/d, ny = dy/d, ov = CONFIG.BALL_R*2-d; if (ov > 0) { b1.x -= nx*ov*0.5; b1.y -= ny*ov*0.5; b2.x += nx*ov*0.5; b2.y += ny*ov*0.5; } b1.dx = -nx*CONFIG.SPEED; b1.dy = -ny*CONFIG.SPEED; b2.dx = nx*CONFIG.SPEED; b2.dy = ny*CONFIG.SPEED; randomizeBounce(b1, state.rng); randomizeBounce(b2, state.rng); continue; } if (s1) { b2.alive = false; const cp1=moneyRound(state.betPerBall/5); state.totalWin = moneyRound(state.totalWin+cp1); events.push({ type: 'collision', winner: b1, loser: b2, prize: cp1 }); continue; } if (s2) { b1.alive = false; const cp2=moneyRound(state.betPerBall/5); state.totalWin = moneyRound(state.totalWin+cp2); events.push({ type: 'collision', winner: b2, loser: b1, prize: cp2 }); continue; } if (b1.value === b2.value) { const prize = moneyRound(b1.value * 2 * (state.betPerBall / 5)); state.totalWin = moneyRound(state.totalWin + prize); events.push({ type: 'double', b1, b2, prize }); const roll = state.rng.nextDouble(); if (roll < 0.5) b2.alive = false; else b1.alive = false; } else { const cp3=moneyRound(state.betPerBall/5); state.totalWin=moneyRound(state.totalWin+cp3); const loser = b1.value < b2.value ? b1 : b2, winner = b1.value < b2.value ? b2 : b1; loser.alive = false; const dx = winner.x - loser.x, dy = winner.y - loser.y, d = Math.sqrt(dx*dx+dy*dy)||1; winner.dx = (dx/d)*CONFIG.SPEED; winner.dy = (dy/d)*CONFIG.SPEED; randomizeBounce(winner, state.rng); events.push({ type: 'collision', winner, loser, prize: cp3 }); } } } }
   // Timeouts
   for (const b of state.balls) { if (!b.alive && b.diedFromTimeout) { state.timeoutCount++; if (state.timeoutCount >= CONFIG.TIMEOUT_LIMIT) { state.progressive = 1; state.timeoutCount = 0; events.push({ type: 'progressiveReset' }); } b.diedFromTimeout = false; } }
   state.balls = state.balls.filter(b => b.alive);
   // Auto-collect
-  if (state.balls.length > 0 && !state.balls.some(b => b.type === 'normal')) { for (const b of state.balls) { if (b.alive) { const prize = b.value * b.multiplier * state.progressive; state.totalWin += prize; if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++; events.push({ type: 'autoCollect', ball: b, prize }); b.alive = false; } } state.balls = []; }
+  if (state.balls.length > 0 && !state.balls.some(b => b.type === 'normal')) { for (const b of state.balls) { if (b.alive) { const prize = moneyRound(b.value * b.multiplier * state.progressive * (state.betPerBall / 5)); state.totalWin = moneyRound(state.totalWin + prize); if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++; events.push({ type: 'autoCollect', ball: b, prize }); b.alive = false; } } state.balls = []; }
   // End
   if (state.ballsSpawned >= state.numBalls && state.balls.length === 0) { state.finished = true; events.push({ type: 'gameEnd', totalWin: state.totalWin }); }
   return events;
@@ -578,7 +632,6 @@ function tick(state, bumperTarget) {
 // ===== GAME STATE =====
 let gameState = null, gameRunning = false, balance = 1000;
 let currentMode = 'human';
-let currentGameId = null, currentClientSeed = null, recordedCommitment = null;
 let lastVerificationData = null;
 const floatingTexts = [], explosionParticles = [];
 let goalFlashLeft = 0, goalFlashRight = 0;
@@ -597,7 +650,7 @@ function updateModeIndicator() { const ind = document.getElementById('modeIndica
 function updateProgressiveLamps(level) { document.querySelectorAll('.lamp').forEach((l, i) => l.classList.toggle('active', i < level)); }
 function updateTimeoutDots(count) { document.querySelectorAll('.timeout-dot').forEach((d, i) => d.classList.toggle('active', i < count)); }
 
-function updateUI() { if (gameState) { document.getElementById('ballsLeft').textContent = gameState.numBalls - gameState.ballsSpawned + gameState.balls.length; document.getElementById('winDisplay').textContent = '$' + gameState.totalWin; updateProgressiveLamps(gameState.progressive); updateTimeoutDots(gameState.timeoutCount); } document.getElementById('balance').textContent = '$' + balance; }
+function updateUI() { if (gameState) { document.getElementById('ballsLeft').textContent = gameState.numBalls - gameState.ballsSpawned + gameState.balls.length; document.getElementById('winDisplay').textContent = '$' + gameState.totalWin; updateProgressiveLamps(gameState.progressive); updateTimeoutDots(gameState.timeoutCount); } document.getElementById('balance').textContent = '$' + Math.round(balance); }
 
 // Rendering
 function render() {
@@ -629,6 +682,27 @@ function createExplosion(x, y) { for (let i = 0; i < 20; i++) { const a = Math.r
 function updateEffects() { for (let i = floatingTexts.length - 1; i >= 0; i--) { floatingTexts[i].y += floatingTexts[i].dy; floatingTexts[i].opacity -= 0.025; if (floatingTexts[i].opacity <= 0) floatingTexts.splice(i, 1); } for (let i = explosionParticles.length - 1; i >= 0; i--) { explosionParticles[i].x += explosionParticles[i].dx; explosionParticles[i].y += explosionParticles[i].dy; explosionParticles[i].life -= 0.03; if (explosionParticles[i].life <= 0) explosionParticles.splice(i, 1); } goalFlashLeft *= 0.9; goalFlashRight *= 0.9; }
 
 function gameLoop() {
+  if (replayRunning && gameState && !gameState.finished) {
+    const entry = replayLog_data[replayLog_idx];
+    const target = entry ? entry.target : null;
+    replayLog_idx++;
+    const events = tick(gameState, target);
+    for (const e of events) {
+      if (e.type === 'goal') { showFloatingText(e.ball.x, e.ball.y, '+' + e.prize, '#00ff66', 20); if (e.side === 'left') goalFlashLeft = 1; else goalFlashRight = 1; playGoal(gameState.progressive); }
+      if (e.type === 'explosion') { createExplosion(e.x, e.y); playExplosion(); }
+      if (e.type === 'exploded') { showFloatingText(e.ball.x, e.ball.y, '+' + e.prize, '#ff6600', 18); }
+      if (e.type === 'double') { showFloatingText((e.b1.x+e.b2.x)/2, (e.b1.y+e.b2.y)/2, 'DOUBLE +'+e.prize, '#ffd700', 22); playDouble(); }
+      if (e.type === 'timeout') { showFloatingText(e.ball.x, e.ball.y, '✗', '#ff4444'); }
+      if (e.type === 'spawn') { playSpawn(); }
+      if (e.type === 'gameEnd') {
+        replayRunning = false;
+        document.getElementById('playBtn').disabled = false;
+        showFloatingText(4.5, 2, '✓ REPLAY COMPLETE', '#00d4ff', 20);
+        setTimeout(() => { document.getElementById('result').classList.add('show'); setControlsDisabled(true); }, 1500);
+      }
+    }
+    updateUI();
+  }
   if (gameRunning && gameState && !gameState.finished) {
     let target;
     if (currentMode === 'human') { target = { x: clamp(mouseX, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(mouseY, BUMPER.MIN_Y, BUMPER.MAX_Y) }; }
@@ -659,19 +733,30 @@ function gameLoop() {
         saveGameResult(bet, scaledWin);
         updateAuthUI();
         setTimeout(loadLeaderboard, 2000);
-        // Finish on server
-        if (serverOnline && currentGameId) {
-          document.getElementById('vGameId').textContent = currentGameId;
-          document.getElementById('vClientSeed').textContent = currentClientSeed;
-          document.getElementById('vCommitment').textContent = recordedCommitment;
-          document.getElementById('vServerSeed').textContent = 'Verifying...';
-          document.getElementById('verifyBtn').disabled = true;
+        // Verify with Registrar
+        if (registrarOnline && currentSessionId) {
+          document.getElementById('vGameId').textContent = currentSessionId;
+          document.getElementById('vClientSeed').textContent = currentGameSeed;
+          document.getElementById('vCommitment').textContent = '0x' + currentRegSeed.toString(16).toUpperCase();
+          document.getElementById('vServerSeed').textContent = '0x' + wasmResult.toString(16).toUpperCase().padStart(8,'0');
+          document.getElementById('verifyBtn').disabled = false;
           document.getElementById('verifySection').style.display = 'block';
-          finishGameOnServer();
+          lastVerificationData = {
+            sessionId: currentSessionId,
+            regSeed: currentRegSeed,
+            gameSeed: currentGameSeed,
+            wasmResult: wasmResult,
+            inputLog: gameState.inputLog.slice(),
+            numBalls: gameState.numBalls,
+            betPerBall: gameState.betPerBall,
+            serverSeed: gameState.serverSeed
+          };
+          verifyWithRegistrar();
         } else {
           document.getElementById('verifySection').style.display = 'none';
         }
         document.getElementById('result').classList.add('show');
+        setControlsDisabled(true);
       }
     }
     updateUI();
@@ -679,60 +764,87 @@ function gameLoop() {
   updateEffects(); render(); requestAnimationFrame(gameLoop);
 }
 
-async function finishGameOnServer() {
+async function verifyWithRegistrar() {
   try {
-    const res = await fetch(`${SERVER_URL}/game/${currentGameId}/finish`, {
+    const res = await fetch(REGISTRAR_URL + '/verify/paddla', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ inputLog: gameState.inputLog, clientTotalWin: gameState.totalWin })
+      body: JSON.stringify({
+        regSeed: currentRegSeed,
+        gameSeed: currentGameSeed,
+        inputLog: gameState.inputLog,
+        clientTotalWin: gameState.totalWin,
+        numBalls: gameState.numBalls,
+        betPerBall: gameState.betPerBall
+      })
     });
     const data = await res.json();
-    if (data.verified) {
-      lastVerificationData = {
-        gameId: currentGameId,
-        clientSeed: currentClientSeed,
-        commitment: recordedCommitment,
-        serverSeed: data.verification.serverSeed,
-        gameSeedHex: data.verification.gameSeedHex
-      };
-      document.getElementById('vServerSeed').textContent = data.verification.serverSeed;
-      document.getElementById('verifyBtn').disabled = false;
+    if (data.ok) {
+      document.getElementById('verifyResult').innerHTML = `<span style="color:#00ff66">✓ SERVER VERIFIED! Win: $${data.serverTotalWin}</span>`;
     } else {
-      document.getElementById('vServerSeed').textContent = 'MISMATCH! Server: ' + data.serverTotalWin;
-      document.getElementById('vServerSeed').style.color = '#ff4444';
+      document.getElementById('verifyResult').innerHTML = `<span style="color:#ff4444">❌ MISMATCH! Server: $${data.serverTotalWin} vs Client: $${data.clientTotalWin}</span>`;
     }
   } catch (err) {
-    console.error('Finish error:', err);
-    document.getElementById('vServerSeed').textContent = 'Error: ' + err.message;
+    console.error('Verify error:', err);
+    document.getElementById('verifyResult').innerHTML = `<span style="color:#ff4444">❌ ${err.message}</span>`;
   }
 }
 
-// Verification
+// Verification - rebuild WASM locally and compare
 document.getElementById('verifyBtn').addEventListener('click', async () => {
-  if (!lastVerificationData?.serverSeed) { document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ No data</span>'; return; }
+  if (!lastVerificationData?.regSeed) { 
+    document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ No data</span>'; 
+    return; 
+  }
   const vd = lastVerificationData;
   try {
-    // Verify commitment
-    const seedBytes = new TextEncoder().encode(vd.serverSeed);
-    const hashBytes = sha256Pure(seedBytes);
-    const computedCommitment = bytesToHex(hashBytes);
-    if (computedCommitment !== vd.commitment) {
-      document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ Commitment mismatch!</span>';
-      return;
+    // Rebuild WASM from regSeed
+    const { bytes } = buildWasm(vd.regSeed);
+    const wasmMod = await WebAssembly.compile(bytes.buffer);
+    const wasmInst = await WebAssembly.instantiate(wasmMod);
+    const localResult = wasmInst.exports.compute(vd.gameSeed) >>> 0;
+    
+    if (localResult === vd.wasmResult) {
+      document.getElementById('verifyResult').innerHTML = '<span style="color:#00ff66">✓ LOCAL VERIFIED! WASM rebuilt independently.</span>';
+    } else {
+      document.getElementById('verifyResult').innerHTML = `<span style="color:#ff4444">❌ Mismatch! Local: 0x${localResult.toString(16)} vs Recorded: 0x${vd.wasmResult.toString(16)}</span>`;
     }
-    // Verify game seed
-    const hmacInput = `${vd.clientSeed}:${vd.gameId}`;
-    const hmacBytes = hmacSha256Pure(vd.serverSeed, hmacInput);
-    const computedGameSeed = bytesToHex(hmacBytes);
-    if (computedGameSeed !== vd.gameSeedHex) {
-      document.getElementById('verifyResult').innerHTML = '<span style="color:#ff4444">❌ Game seed mismatch!</span>';
-      return;
-    }
-    document.getElementById('verifyResult').innerHTML = '<span style="color:#00ff66">✓ VERIFIED! Server could not have cheated.</span>';
   } catch (err) {
     document.getElementById('verifyResult').innerHTML = `<span style="color:#ff4444">❌ Error: ${err.message}</span>`;
   }
 });
+
+// Controls disable/enable
+function setControlsDisabled(disabled) {
+  ['ballCount','betSelect','modeSelect','playBtn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.disabled = disabled; el.style.opacity = disabled ? '0.4' : '1'; }
+  });
+}
+
+// Close result button
+document.getElementById('closeResultBtn').addEventListener('click', () => {
+  document.getElementById('result').classList.remove('show');
+  setControlsDisabled(false);
+});
+
+// Replay button
+document.getElementById('replayBtn').addEventListener('click', () => {
+  if (!lastVerificationData?.serverSeed || !lastVerificationData?.inputLog) {
+    alert('No replay data available'); return;
+  }
+  const vd = lastVerificationData;
+  document.getElementById('result').classList.remove('show');
+  gameState = createInitialState(vd.serverSeed, vd.numBalls, vd.betPerBall, vd.numBalls * vd.betPerBall);
+  gameRunning = false;
+  replayRunning = true;
+  replayLog_data = vd.inputLog;
+  replayLog_idx = 0;
+  document.getElementById('playBtn').disabled = true;
+  updateUI();
+});
+
+let replayRunning = false, replayLog_data = [], replayLog_idx = 0;
 
 // Play button
 document.getElementById('playBtn').addEventListener('click', async () => {
@@ -743,40 +855,40 @@ document.getElementById('playBtn').addEventListener('click', async () => {
   const bet = numBalls * betPerBall * multiplier;
   if (bet > balance) { alert(`Insufficient balance! Need $${bet}`); return; }
   
-  // STEP 1: Fetch and record commitment BEFORE generating clientSeed
-  if (serverOnline) {
-    const commitmentData = await fetchCommitment();
-    if (!commitmentData) { alert('Server offline!'); return; }
-    recordedCommitment = commitmentData.commitment;
+  // Generate local gameSeed
+  currentGameSeed = (Date.now() ^ (Math.random() * 0xFFFFFFFF)) >>> 0;
+  
+  let serverSeed;
+  if (registrarOnline) {
+    try {
+      // Request session from Registrar
+      const res = await fetch(REGISTRAR_URL + '/session/new', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameSeed: currentGameSeed })
+      });
+      const data = await res.json();
+      currentSessionId = data.sessionId;
+      currentRegSeed = data.regSeed;
+      
+      // Build WASM from regSeed
+      const { bytes } = buildWasm(currentRegSeed);
+      const wasmMod = await WebAssembly.compile(bytes.buffer);
+      const wasmInst = await WebAssembly.instantiate(wasmMod);
+      wasmResult = wasmInst.exports.compute(currentGameSeed) >>> 0;
+      
+      // Use WASM result as serverSeed (UVS 1.0)
+      serverSeed = wasmResult.toString(16).padStart(64, '0');
+    } catch (err) {
+      console.error('Registrar error:', err);
+      serverSeed = generateFallbackSeed();
+      currentSessionId = null;
+    }
+  } else {
+    serverSeed = generateFallbackSeed();
   }
   
   balance -= bet;
-  
-  // STEP 2: Generate clientSeed AFTER recording commitment
-  currentClientSeed = 'client_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
-  
-  let gameSeedHex;
-  if (serverOnline) {
-    try {
-      // STEP 3: Start game - server returns gameSeedHex
-      // This is SAFE with input-seeded randomness: random = f(gameSeedHex, bumper_position)
-      // Client cannot predict future events without committing to bumper position first
-      const res = await fetch(`${SERVER_URL}/game/start`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientSeed: currentClientSeed, numBalls, recordedCommitment })
-      });
-      const data = await res.json();
-      if (data.error) { alert(data.error); balance += bet; return; }
-      currentGameId = data.gameId;
-      gameSeedHex = data.gameSeedHex;  // Server reveals seed - safe with input-seeded RNG
-    } catch (err) {
-      console.error(err);
-      gameSeedHex = generateFallbackSeed();
-    }
-  } else {
-    gameSeedHex = generateFallbackSeed();
-  }
   
   hunterTargetId = defenderTargetId = sniperTargetId = null;
   hsTargetBall = null; hsTargetX = BUMPER.START_X; hsTargetY = BUMPER.START_Y;
@@ -784,7 +896,7 @@ document.getElementById('playBtn').addEventListener('click', async () => {
   // Random position for stationary mode
   stationaryX = BUMPER.MIN_X + Math.random() * (BUMPER.MAX_X - BUMPER.MIN_X);
   stationaryY = BUMPER.MIN_Y + Math.random() * (BUMPER.MAX_Y - BUMPER.MIN_Y);
-  gameState = createInitialState(gameSeedHex, numBalls, betPerBall, bet);
+  gameState = createInitialState(serverSeed, numBalls, betPerBall, bet);
   gameRunning = true;
   lastVerificationData = null;
   updateTimeoutDots(0);
@@ -800,7 +912,7 @@ function generateFallbackSeed() {
   return bytesToHex(hash);
 }
 
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.getElementById('result').classList.remove('show'); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { document.getElementById('result').classList.remove('show'); setControlsDisabled(false); } });
 
 // Leaderboard
 async function loadLeaderboard() {
