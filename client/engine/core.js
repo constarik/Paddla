@@ -574,17 +574,16 @@ function finishGame(state) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     ENGINE_VERSION,
-    CONFIG, BUMPER, BET_MULTIPLIER, VALUE_COLORS,
+    CONFIG, BUMPER,
     UVS_PRNG,
     createInitialState, tick, replay, finishGame,
     clamp, fpRound, moneyRound, dist, bytesToHex,
     sha256Hex, sha512Hex
   };
 } else if (typeof window !== 'undefined') {
-  // Browser: expose as globals so inline scripts can use them directly
   Object.assign(window, {
     ENGINE_VERSION,
-    CONFIG, BUMPER, BET_MULTIPLIER, VALUE_COLORS,
+    CONFIG, BUMPER,
     UVS_PRNG,
     createInitialState, tick,
     sha256Hex, sha512Hex,
