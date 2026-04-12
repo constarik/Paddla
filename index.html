@@ -316,6 +316,10 @@ const VERSION = '9.0.1';
 document.title = `PADDLA v${VERSION} - UVS 1.0`;
 document.querySelector('.version-badge').textContent = `v${VERSION}`;
 
+// ===== CLIENT CONSTANTS (UI only) =====
+const BET_MULTIPLIER = { human:1, hunter:1, defender:1, humanSim:1, sniper:2 };
+const VALUE_COLORS = { 9:'#00ff00',8:'#33ff00',7:'#66ff00',6:'#99ff00',5:'#ccff00',4:'#ffff00',3:'#ffcc00',2:'#ff9900',1:'#ff6600',0:'#ff0000' };
+
 // ===== FIREBASE CONFIG =====
 const firebaseConfig = {
   apiKey: "AIzaSyCqQSfmsv0ruNWFoHEG93bTBpJxMbww8nM",
