@@ -312,7 +312,7 @@
 <script src="engine/core.js"></script>
 <script>
 // ===== VERSION =====
-const VERSION = '9.0.3';
+const VERSION = '9.0.4';
 document.title = `PADDLA v${VERSION} - UVS 1.0`;
 document.querySelector('.version-badge').textContent = `v${VERSION}`;
 
@@ -663,7 +663,7 @@ function gameLoop() {
         document.getElementById('modeSelect').disabled = false;
         const scaledWin = gameState.totalWin;
         document.getElementById('finalWin').textContent = scaledWin;
-        const bet = gameState.totalBet, rtp = scaledWin / bet;
+        const bet = gameState.numBalls * gameState.betPerBall, rtp = scaledWin / bet;
         document.getElementById('finalRtp').textContent = `Bet: $${bet} | Win: $${scaledWin} | RTP: ${(rtp * 100).toFixed(1)}%`;
         playGameOver(rtp >= 1);
         balance += scaledWin;
