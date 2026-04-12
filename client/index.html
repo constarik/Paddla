@@ -603,7 +603,7 @@ const STRATEGIES = {
   }
 };
 
-function createInitialState(serverSeed, numBalls, betPerBall = 5, totalBet = 0) { const serverSeedHash = sha256Hex(serverSeed); const sessionId = sha256Hex(`${serverSeedHash}:uvs-paddla:1`); return { uvsHeader: { type:'uvs-header', uvsVersion:1, sessionId, serverSeedHash, clientSeed:'uvs-paddla', minNonce:1, params:{numBalls,betPerBall}, extensions:['physics-arcade@1.0'], timestamp:new Date().toISOString() }, serverSeed, rng: null, balls: [], bumper: createBumper(), tickCount: 0, ballsSpawned: 0, numBalls, betPerBall, totalBet, spawnCooldown: 0, progressive: 1, timeoutCount: 0, totalWin: 0, finished: false, nextBallId: 1, inputLog: [] }; }
+function createInitialState(serverSeed, numBalls, betPerBall = 5, totalBet = 0) { const serverSeedHash = sha256Hex(serverSeed); const sessionId = sha256Hex(`${serverSeedHash}:uvs-paddla:1`); return { uvsHeader: { type:'uvs-header', uvsVersion:1, sessionId, serverSeedHash, clientSeed:'uvs-paddla', minNonce:1, params:{numBalls,betPerBall}, extensions:['physics-arcade@1.0'], timestamp:new Date().toISOString() }, serverSeed, rng: null, balls: [], bumper: createBumper(), tickCount: 0, ballsSpawned: 0, numBalls, betPerBall, totalBet, spawnCooldown: 0, progressive: 1, timeoutCount: 0, totalWin: 0, finished: false, nextBallId: 1, inputLog: [], eventLog: [] }; }
 
 function tick(state, bumperTarget) {
   if (state.finished) return [];
@@ -634,6 +634,11 @@ function tick(state, bumperTarget) {
   if (state.balls.length > 0 && !state.balls.some(b => b.type === 'normal')) { for (const b of state.balls) { if (b.alive) { const prize = moneyRound(b.value * b.multiplier * state.progressive * (state.betPerBall / 5)); state.totalWin = moneyRound(state.totalWin + prize); if (state.progressive < CONFIG.PROGRESSIVE_CAP) state.progressive++; events.push({ type: 'autoCollect', ball: b, prize }); b.alive = false; } } state.balls = []; }
   // End
   if (state.ballsSpawned >= state.numBalls && state.balls.length === 0) { state.finished = true; events.push({ type: 'gameEnd', totalWin: state.totalWin }); }
+  // UVS diagnostic: record event log entry if tick had events
+  if (events.length > 0 && state.eventLog) {
+    const stateSnap = { totalWin: state.totalWin, progressive: state.progressive, ballsSpawned: state.ballsSpawned, ballsOnField: state.balls.length };
+    state.eventLog.push({ tick: state.tickCount, events: events.map(e => e.type), stateHash: sha256Hex(JSON.stringify(stateSnap)), totalWin: state.totalWin });
+  }
   return events;
 }
 
@@ -781,6 +786,7 @@ async function verifyWithRegistrar() {
         regSeed: currentRegSeed,
         gameSeed: currentGameSeed,
         inputLog: gameState.inputLog,
+        eventLog: gameState.eventLog,
         clientTotalWin: gameState.totalWin,
         numBalls: gameState.numBalls,
         betPerBall: gameState.betPerBall
@@ -790,7 +796,11 @@ async function verifyWithRegistrar() {
     if (data.ok) {
       document.getElementById('verifyResult').innerHTML = `<span style="color:#00ff66">✓ SERVER VERIFIED! Win: $${data.serverTotalWin}</span>`;
     } else {
-      document.getElementById('verifyResult').innerHTML = `<span style="color:#ff4444">❌ MISMATCH! Server: $${data.serverTotalWin} vs Client: $${data.clientTotalWin}</span>`;
+      let msg = `❌ MISMATCH! Server: $${data.serverTotalWin} vs Client: $${data.clientTotalWin}`;
+      if (data.firstMismatch) {
+        msg += `<br><small>First divergence at tick ${data.firstMismatch.tick} — event: ${data.firstMismatch.event}<br>client: ${data.firstMismatch.clientHash.slice(0,16)}… server: ${data.firstMismatch.serverHash.slice(0,16)}…</small>`;
+      }
+      document.getElementById('verifyResult').innerHTML = `<span style="color:#ff4444">${msg}</span>`;
     }
   } catch (err) {
     console.error('Verify error:', err);
