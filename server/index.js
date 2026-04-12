@@ -16,6 +16,7 @@ app.use(express.json({ limit: '2mb' }));
 
 // Serve static files
 app.use(express.static(path.join(__dirname, '../client')));
+app.use('/engine', express.static(path.join(__dirname, '../engine')));
 
 // ===== COMMITMENT MANAGEMENT =====
 // Server seed rotates periodically. Commitment is SHA256(serverSeed).
