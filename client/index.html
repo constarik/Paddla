@@ -314,7 +314,7 @@
 <script src="engine/core.js"></script>
 <script>
 // ===== VERSION =====
-const VERSION = '9.0.7';
+const VERSION = '9.0.8';
 document.title = `PADDLA v${VERSION} - UVS 1.0`;
 document.querySelector('.version-badge').textContent = `v${VERSION}`;
 
@@ -451,7 +451,7 @@ function buildWasm(regSeed) {
 
 async function checkRegistrar() {
   try {
-    const r = await fetch(REGISTRAR_URL + '/status', {signal: AbortSignal.timeout(5000)});
+    const r = await fetch(REGISTRAR_URL + '/status', {signal: AbortSignal.timeout(15000)});
     const d = await r.json();
     registrarOnline = true;
     const regVersion = d.version || '?';
