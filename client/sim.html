@@ -90,10 +90,7 @@
       <label>BALLS PER GAME</label>
       <input type="number" id="ballsPerGame" value="100" min="10" max="1000" step="10">
     </div>
-    <div class="param">
-      <label>BET PER BALL ($)</label>
-      <input type="number" id="betPerBall" value="5" min="1" max="100">
-    </div>
+
   </div>
   <h2>STRATEGIES</h2>
   <div class="strategies" id="strategyList">
@@ -201,7 +198,7 @@ function randomSeed() {
 document.getElementById('runBtn').addEventListener('click', async () => {
   const numGames = parseInt(document.getElementById('numGames').value) || 200;
   const ballsPerGame = parseInt(document.getElementById('ballsPerGame').value) || 100;
-  const betPerBall = parseInt(document.getElementById('betPerBall').value) || 5;
+  const betPerBall = 5; // fixed — RTP is independent of bet size
 
   const selected = [...document.querySelectorAll('.strat-check input:checked')].map(c => c.value);
   if (!selected.length) { alert('Select at least one strategy'); return; }
