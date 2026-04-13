@@ -71,7 +71,7 @@
       border-color: #ff4444; box-shadow: 0 0 8px #ff0000;
     }
     /* ── Canvas ── */
-    #canvasWrap { position: relative; flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; }
+    #canvasWrap { position: relative; flex: 1; display: flex; align-items: flex-start; justify-content: center; width: 100%; min-height: 0; }
     canvas {
       border: 2px solid #00d4ff; border-radius: 12px;
       box-shadow: 0 0 30px rgba(0,212,255,0.4);
@@ -204,7 +204,7 @@ const ctx = canvas.getContext('2d');
 
 function resizeCanvas() {
   const wrap = document.getElementById('canvasWrap');
-  const size = Math.min(wrap.clientWidth, wrap.clientHeight, 500);
+  const size = Math.min(wrap.clientWidth, wrap.clientHeight, window.innerWidth, 500);
   canvas.width = size;
   canvas.height = size;
 }
