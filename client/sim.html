@@ -260,6 +260,11 @@ document.getElementById('runBtn').addEventListener('click', async () => {
 
   if (!currentUser) { alert('Please sign in first'); return; }
 
+  // MANDATORY server-side quota check before run
+  const freshDoc = await db.collection('paddla_users').doc(currentUser.uid).get();
+  currentSimBalls = freshDoc.exists ? (freshDoc.data().simBalls || 0) : 0;
+  updateQuota();
+
   const totalBalls = numGames * ballsPerGame;
   const remaining = SIM_BALLS_LIMIT - currentSimBalls;
   if (totalBalls > remaining) {
