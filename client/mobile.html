@@ -384,6 +384,7 @@ function processEvents(events) {
       document.getElementById('resultAmount').textContent='$'+win;
       document.getElementById('finalRtp').textContent=`Bet: $${bet} | Win: $${win} | RTP: ${(rtp*100).toFixed(1)}%`;
       balance=Math.max(0,balance-bet)+win;
+      if (lastVerificationData) { lastVerificationData.clientTotalWin = win; lastVerificationData.numBalls = gameState.numBalls; lastVerificationData.betPerBall = gameState.betPerBall; }
       updateUI();
       setTimeout(() => showResult(), 800);
     }
