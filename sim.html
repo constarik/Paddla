@@ -89,6 +89,7 @@
 
 <div id="authOverlay">
   <p id="authMsg">⏳ Loading...</p>
+  <button id="signInBtn" style="display:none;padding:10px 24px;background:#4285f4;color:#fff;border:none;border-radius:8px;font-family:'Orbitron',sans-serif;font-size:12px;cursor:pointer;margin-top:12px">🔐 Sign in with Google</button>
 </div>
 
 <div id="simContent">
@@ -162,7 +163,8 @@ auth.onAuthStateChanged(async (user) => {
   } else {
     document.getElementById('authOverlay').style.display = 'block';
     document.getElementById('simContent').style.display = 'none';
-    document.getElementById('authMsg').innerHTML = '🔒 Please <a href="index.html">sign in</a> to use the simulator';
+    document.getElementById('authMsg').innerHTML = '🔒 Please sign in to use the simulator';
+    document.getElementById('signInBtn').style.display = 'inline-block';
   }
 });
 
@@ -177,8 +179,13 @@ function updateQuota() {
   }
 }
 
-const BET_MULTIPLIER = { human:1, hunter:1, defender:1, humanSim:1, sniper:2, stationary:1 };
+document.getElementById('signInBtn').addEventListener('click', async () => {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  try { await auth.signInWithPopup(provider); }
+  catch(e) { if (e.code === 'auth/popup-blocked') await auth.signInWithRedirect(provider); else alert(e.message); }
+});
 
+const BET_MULTIPLIER = { human:1, hunter:1, defender:1, humanSim:1, sniper:2, stationary:1 };
 // Strategy state
 let hunterTargetId = null, defenderTargetId = null, sniperTargetId = null;
 let hsTargetBall = null, hsTargetX = 4.5, hsTargetY = 4.5;
