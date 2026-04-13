@@ -11,6 +11,9 @@
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date()); gtag('config', 'G-TRP1QX4878');
   </script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -72,12 +75,23 @@
     .back-link { font-size: 10px; color: #aaa; letter-spacing: 1px; margin-bottom: 20px; display: block; }
     .back-link a { color: #00d4ff; text-decoration: none; }
     .back-link a:hover { text-decoration: underline; }
+    #authOverlay { text-align: center; padding: 60px 20px; }
+    #authOverlay p { font-size: 14px; color: #aaa; margin-bottom: 20px; letter-spacing: 1px; }
+    #authOverlay a { color: #00d4ff; text-decoration: none; }
+    #simContent { display: none; }
+    #quota { font-size: 10px; color: #aaa; margin-top: 8px; letter-spacing: 1px; }
   </style>
 </head>
 <body>
 <span class="back-link">← <a href="index.html">Back to PADDLA</a></span>
 <h1>📊 PADDLA SIM</h1>
 <div class="subtitle">RTP SIMULATION BY STRATEGY</div>
+
+<div id="authOverlay">
+  <p>🔒 Please <a href="index.html">sign in</a> to use the simulator</p>
+</div>
+
+<div id="simContent">
 
 <div class="panel">
   <h2>PARAMETERS</h2>
@@ -102,6 +116,7 @@
   </div>
   <button id="runBtn">▶ RUN SIMULATION</button>
   <div id="progress"></div>
+  <div id="quota"></div>
 </div>
 
 <div class="panel" id="results" style="display:none">
@@ -116,8 +131,50 @@
   </table>
 </div>
 
+</div> <!-- /simContent -->
+
 <script src="engine/core.js"></script>
 <script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBoS2NxMYDlsGfb3BEhpGBVLJhv_0EsDRE",
+  authDomain: "holepuncher-constr.firebaseapp.com",
+  projectId: "holepuncher-constr",
+  storageBucket: "holepuncher-constr.firebasestorage.app",
+  messagingSenderId: "584999200764",
+  appId: "1:584999200764:web:1e9fe4b5b00f0b5d6a3d71"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+const SIM_BALLS_LIMIT = 5000;
+let currentUser = null;
+let currentSimBalls = 0;
+
+auth.onAuthStateChanged(async (user) => {
+  currentUser = user;
+  if (user) {
+    document.getElementById('authOverlay').style.display = 'none';
+    document.getElementById('simContent').style.display = 'block';
+    const doc = await db.collection('paddla_users').doc(user.uid).get();
+    currentSimBalls = doc.exists ? (doc.data().simBalls || 0) : 0;
+    updateQuota();
+  } else {
+    document.getElementById('authOverlay').style.display = 'block';
+    document.getElementById('simContent').style.display = 'none';
+  }
+});
+
+function updateQuota() {
+  const remaining = SIM_BALLS_LIMIT - currentSimBalls;
+  document.getElementById('quota').textContent =
+    `Quota: ${currentSimBalls.toLocaleString()} / ${SIM_BALLS_LIMIT.toLocaleString()} balls used | ${remaining.toLocaleString()} remaining`;
+  const btn = document.getElementById('runBtn');
+  if (remaining <= 0) {
+    btn.disabled = true;
+    btn.textContent = '⛔ Quota reached';
+  }
+}
 
 const BET_MULTIPLIER = { human:1, hunter:1, defender:1, humanSim:1, sniper:2, stationary:1 };
 
@@ -201,6 +258,13 @@ document.getElementById('runBtn').addEventListener('click', async () => {
   const ballsPerGame = parseInt(document.getElementById('ballsPerGame').value) || 100;
   const betPerBall = 5; // fixed — RTP is independent of bet size
 
+  if (!currentUser) { alert('Please sign in first'); return; }
+
+  const totalBalls = numGames * ballsPerGame;
+  const remaining = SIM_BALLS_LIMIT - currentSimBalls;
+  if (totalBalls > remaining) {
+    alert(`Not enough quota! Requesting ${totalBalls} balls, only ${remaining} remaining.`); return;
+  }
   const selected = [document.querySelector('.strat-check input:checked')?.value].filter(Boolean);
   if (!selected.length) { alert('Select a strategy'); return; }
 
@@ -273,6 +337,14 @@ document.getElementById('runBtn').addEventListener('click', async () => {
   document.getElementById('results').style.display = 'block';
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
   prog.textContent = `✓ Done — ${numGames} games in ${elapsed}s`;
+
+  // Update quota in Firestore
+  currentSimBalls += totalBalls;
+  await db.collection('paddla_users').doc(currentUser.uid).update({
+    simBalls: firebase.firestore.FieldValue.increment(totalBalls)
+  });
+  updateQuota();
+
   btn.disabled = false;
 });
 </script>
