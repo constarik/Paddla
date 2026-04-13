@@ -207,6 +207,7 @@ document.getElementById('runBtn').addEventListener('click', async () => {
   const btn = document.getElementById('runBtn');
   const prog = document.getElementById('progress');
   btn.disabled = true;
+  const startTime = Date.now();
   document.getElementById('results').style.display = 'none';
 
   const results = [];
@@ -268,7 +269,8 @@ document.getElementById('runBtn').addEventListener('click', async () => {
   }).join('');
 
   document.getElementById('results').style.display = 'block';
-  prog.textContent = `✓ Done — ${numGames} games × ${selected.length} strategies`;
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  prog.textContent = `✓ Done — ${numGames} games in ${elapsed}s`;
   btn.disabled = false;
 });
 </script>
