@@ -235,10 +235,12 @@ document.getElementById('runBtn').addEventListener('click', async () => {
     totalWin += state.totalWin;
     rtps.push(state.totalWin / actualBet * 100);
 
-    // yield every game to keep UI responsive and show progress
-    const avgSoFar = totalWin / ((g + 1) * actualBet) * 100;
-    prog.textContent = `⏳ ${mode}: ${g + 1}/${numGames} | RTP so far: ${avgSoFar.toFixed(1)}%`;
-    await new Promise(r => setTimeout(r, 0));
+    // yield every 10 games to keep UI responsive
+    if (g % 10 === 9) {
+      const avgSoFar = totalWin / ((g + 1) * actualBet) * 100;
+      prog.textContent = `⏳ ${mode}: ${g + 1}/${numGames} | RTP so far: ${avgSoFar.toFixed(1)}%`;
+      await new Promise(r => setTimeout(r, 0));
+    }
     }
 
     const avgRtp = totalWin / (numGames * actualBet) * 100;
