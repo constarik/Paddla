@@ -277,6 +277,14 @@
     <button id="playBtn">▶ PLAY</button>
     <button id="simBtn" style="display:none">📊 SIM</button>
   </div>
+  <div style="text-align:center;margin-top:6px;font-size:10px;color:rgba(255,255,255,0.4);">
+    <label style="cursor:pointer;margin-right:12px;">
+      <input type="checkbox" id="errWasm"> simulate WASM error
+    </label>
+    <label style="cursor:pointer;">
+      <input type="checkbox" id="errUvs"> simulate UVS error
+    </label>
+  </div>
   
   <div class="info">Move bumper to direct balls into goals (top corners)</div>
   
@@ -314,7 +322,7 @@
 <script src="engine/core.js"></script>
 <script>
 // ===== VERSION =====
-const VERSION = '9.0.8';
+const VERSION = '9.0.9';
 document.title = `PADDLA v${VERSION} - UVS 1.0`;
 
 // ===== CLIENT CONSTANTS (UI only) =====
@@ -711,7 +719,7 @@ async function verifyWithRegistrar() {
         gameSeed: currentGameSeed,
         inputLog: gameState.inputLog,
         eventLog: gameState.eventLog,
-        clientTotalWin: gameState.totalWin,
+        clientTotalWin: document.getElementById('errUvs')?.checked ? gameState.totalWin + 1 : gameState.totalWin,
         numBalls: gameState.numBalls,
         betPerBall: gameState.betPerBall
       })
@@ -741,10 +749,11 @@ async function verifyLocal() {
     const wasmMod = await WebAssembly.compile(bytes.buffer);
     const wasmInst = await WebAssembly.instantiate(wasmMod);
     const localResult = wasmInst.exports.compute(vd.gameSeed) >>> 0;
-    if (localResult === vd.wasmResult) {
+    const reportedResult = document.getElementById('errWasm')?.checked ? localResult + 1 : localResult;
+    if (reportedResult === vd.wasmResult) {
       document.getElementById('verifyLocal').innerHTML = '<span style="color:#00cc55">✓ LOCAL VERIFIED! WASM rebuilt independently.</span>';
     } else {
-      document.getElementById('verifyLocal').innerHTML = `<span style="color:#ff4444">❌ Mismatch! Local: 0x${localResult.toString(16)} vs Recorded: 0x${vd.wasmResult.toString(16)}</span>`;
+      document.getElementById('verifyLocal').innerHTML = `<span style="color:#ff4444">❌ Mismatch! Local: 0x${reportedResult.toString(16)} vs Recorded: 0x${vd.wasmResult.toString(16)}</span>`;
     }
   } catch (err) {
     document.getElementById('verifyLocal').innerHTML = `<span style="color:#ff4444">❌ Error: ${err.message}</span>`;
@@ -755,7 +764,7 @@ document.getElementById('verifyBtn').addEventListener('click', verifyLocal);
 
 // Controls disable/enable
 function setControlsDisabled(disabled) {
-  ['ballCount','betSelect','modeSelect','playBtn'].forEach(id => {
+  ['ballCount','betSelect','modeSelect','playBtn','errWasm','errUvs'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.disabled = disabled; el.style.opacity = disabled ? '0.4' : '1'; }
   });
