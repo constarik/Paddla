@@ -248,10 +248,10 @@ async function checkRegistrar() {
     registrarOnline = true;
     const regVersion = d.version || '?';
     const uvsVersion = d.uvsVersion || 1;
-    document.getElementById('pfBadge').textContent = `🔒 UVS v${uvsVersion} | v${VERSION} | reg v${regVersion}`;
+    document.getElementById('pfBadge').textContent = `🔒 UVS v${uvsVersion} | v${VERSION} | m${MOBILE_VERSION} | reg v${regVersion}`;
   } catch {
     registrarOnline = false;
-    document.getElementById('pfBadge').textContent = `🔒 UVS v1 | v${VERSION} | reg offline`;
+    document.getElementById('pfBadge').textContent = `🔒 UVS v1 | v${VERSION} | m${MOBILE_VERSION} | reg offline`;
   }
 }
 checkRegistrar();
