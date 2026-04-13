@@ -203,8 +203,7 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
 function resizeCanvas() {
-  const wrap = document.getElementById('canvasWrap');
-  const size = Math.min(wrap.clientWidth, wrap.clientHeight, window.innerWidth, 500);
+  const size = Math.min(window.innerWidth - 8, window.innerHeight - 180, 500);
   canvas.width = size;
   canvas.height = size;
 }
