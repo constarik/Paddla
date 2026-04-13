@@ -402,7 +402,6 @@ function gameLoop() {
   if (gameRunning && gameState && !gameState.finished) {
     const target = { x: clamp(mouseX, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(mouseY, BUMPER.MIN_Y, BUMPER.MAX_Y) };
     const events = tick(gameState, target);
-    if (gameState.inputLog.length <= 200000) gameState.inputLog.push({ target });
     processEvents(events);
     updateUI();
   }
