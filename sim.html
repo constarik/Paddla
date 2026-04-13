@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PADDLA SIM</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-TRP1QX4878"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date()); gtag('config', 'G-TRP1QX4878');
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 50%, #0d1b2a 100%);
+      min-height: 100vh; font-family: 'Orbitron', sans-serif; color: white;
+      padding: 20px;
+    }
+    h1 { color: #00d4ff; font-size: 1.8rem; letter-spacing: 4px; margin-bottom: 4px; }
+    .subtitle { font-size: 10px; color: #aaa; letter-spacing: 2px; margin-bottom: 24px; }
+    .panel {
+      background: rgba(0,0,0,0.4); border: 1px solid rgba(0,212,255,0.2);
+      border-radius: 12px; padding: 20px; margin-bottom: 20px;
+    }
+    .panel h2 { color: #00d4ff; font-size: 12px; letter-spacing: 2px; margin-bottom: 14px; }
+    .params { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px; }
+    .param { display: flex; flex-direction: column; gap: 4px; }
+    .param label { font-size: 9px; color: #aaa; letter-spacing: 1px; }
+    .param input {
+      padding: 8px 12px; border-radius: 8px; border: 2px solid #00d4ff;
+      background: rgba(0,0,0,0.5); color: #00d4ff; font-size: 14px;
+      font-weight: bold; font-family: 'Orbitron', sans-serif; width: 100px;
+      text-align: center;
+    }
+    .strategies { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+    .strat-check {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(0,0,0,0.3); border: 1px solid #333;
+      border-radius: 8px; padding: 8px 12px; cursor: pointer;
+      font-size: 11px; letter-spacing: 1px; transition: all 0.2s;
+    }
+    .strat-check:hover { border-color: #00d4ff; }
+    .strat-check input[type=checkbox] { accent-color: #00d4ff; width: 14px; height: 14px; }
+    .strat-check.active { border-color: #00d4ff; background: rgba(0,212,255,0.1); color: #00d4ff; }
+    #runBtn {
+      padding: 12px 32px; font-size: 14px; font-weight: bold;
+      background: linear-gradient(180deg, #00d4ff 0%, #0099cc 100%);
+      color: #000; border: none; border-radius: 10px; cursor: pointer;
+      font-family: 'Orbitron', sans-serif; letter-spacing: 2px;
+      box-shadow: 0 0 20px rgba(0,212,255,0.5); transition: all 0.2s;
+    }
+    #runBtn:hover { transform: scale(1.05); }
+    #runBtn:disabled { background: #444; cursor: not-allowed; box-shadow: none; transform: none; color: #888; }
+    #progress { font-size: 11px; color: #aaa; margin-top: 10px; min-height: 16px; }
+    #results table { width: 100%; border-collapse: collapse; }
+    #results th {
+      font-size: 9px; color: #aaa; letter-spacing: 1px; padding: 8px 12px;
+      border-bottom: 1px solid #333; text-align: left;
+    }
+    #results td { padding: 10px 12px; border-bottom: 1px solid #222; font-size: 12px; }
+    #results tr:hover td { background: rgba(0,212,255,0.05); }
+    .rtp-val { font-weight: bold; color: #00d4ff; font-size: 16px; }
+    .rtp-good { color: #00cc55; }
+    .rtp-bad  { color: #ff4444; }
+    .rank-1 { color: #ffd700; }
+    .rank-2 { color: #c0c0c0; }
+    .rank-3 { color: #cd7f32; }
+    .bar-wrap { background: #111; border-radius: 4px; height: 8px; width: 120px; display: inline-block; }
+    .bar { height: 8px; border-radius: 4px; background: linear-gradient(90deg, #00d4ff, #0066aa); }
+    .back-link { font-size: 10px; color: #aaa; letter-spacing: 1px; margin-bottom: 20px; display: block; }
+    .back-link a { color: #00d4ff; text-decoration: none; }
+    .back-link a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+<span class="back-link">← <a href="index.html">Back to PADDLA</a></span>
+<h1>📊 PADDLA SIM</h1>
+<div class="subtitle">RTP SIMULATION BY STRATEGY</div>
+
+<div class="panel">
+  <h2>PARAMETERS</h2>
+  <div class="params">
+    <div class="param">
+      <label>GAMES PER STRATEGY</label>
+      <input type="number" id="numGames" value="200" min="10" max="10000" step="100">
+    </div>
+    <div class="param">
+      <label>BALLS PER GAME</label>
+      <input type="number" id="ballsPerGame" value="100" min="10" max="1000" step="10">
+    </div>
+    <div class="param">
+      <label>BET PER BALL ($)</label>
+      <input type="number" id="betPerBall" value="5" min="1" max="100">
+    </div>
+  </div>
+  <h2>STRATEGIES</h2>
+  <div class="strategies" id="strategyList">
+    <label class="strat-check active"><input type="checkbox" value="stationary" checked> 🎲 STATIONARY</label>
+    <label class="strat-check active"><input type="checkbox" value="hunter" checked> 🎯 HUNTER</label>
+    <label class="strat-check active"><input type="checkbox" value="humanSim" checked> 🧠 HUMAN-SIM</label>
+    <label class="strat-check active"><input type="checkbox" value="sniper" checked> 🔫 SNIPER ×2</label>
+    <label class="strat-check active"><input type="checkbox" value="defender" checked> 🛡️ DEFENDER</label>
+  </div>
+  <button id="runBtn">▶ RUN SIMULATION</button>
+  <div id="progress"></div>
+</div>
+
+<div class="panel" id="results" style="display:none">
+  <h2>RESULTS</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>STRATEGY</th><th>AVG RTP</th><th>STD DEV</th><th>MIN</th><th>MAX</th><th>BET MULT</th>
+      </tr>
+    </thead>
+    <tbody id="resultsBody"></tbody>
+  </table>
+</div>
+
+<script src="engine/core.js"></script>
+<script>
+
+const BET_MULTIPLIER = { human:1, hunter:1, defender:1, humanSim:1, sniper:2, stationary:1 };
+
+// Strategy state
+let hunterTargetId = null, defenderTargetId = null, sniperTargetId = null;
+let hsTargetBall = null, hsTargetX = 4.5, hsTargetY = 4.5;
+let hsReactionDelay = 0, hsDistracted = false, hsLastSwitch = 0;
+let stationaryX = 4.5, stationaryY = 4.5;
+
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+function resetStrategyState() {
+  hunterTargetId = defenderTargetId = sniperTargetId = null;
+  hsTargetBall = null; hsTargetX = BUMPER.START_X; hsTargetY = BUMPER.START_Y;
+  hsReactionDelay = 0; hsDistracted = false; hsLastSwitch = 0;
+  stationaryX = BUMPER.MIN_X + Math.random() * (BUMPER.MAX_X - BUMPER.MIN_X);
+  stationaryY = BUMPER.MIN_Y + Math.random() * (BUMPER.MAX_Y - BUMPER.MIN_Y);
+}
+
+const STRATEGIES = {
+  stationary: () => ({ x: stationaryX, y: stationaryY }),
+  hunter: (state) => {
+    let target = null, best = -Infinity;
+    for (const b of state.balls) {
+      if (!b.alive) continue;
+      const score = (b.dy < 0 ? 100 : 0) + b.value * 10 - b.y;
+      if (score > best) { best = score; target = b; }
+    }
+    return target ? { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.8, BUMPER.MIN_Y, BUMPER.MAX_Y) } : { x: BUMPER.START_X, y: BUMPER.MAX_Y - 0.5 };
+  },
+  defender: (state) => {
+    let target = null, best = -Infinity;
+    for (const b of state.balls) {
+      if (!b.alive) continue;
+      const score = (b.dy > 0 ? 100 : 0) + b.value * b.multiplier * 10 + (CONFIG.FIELD / 2 - b.y);
+      if (score > best) { best = score; target = b; }
+    }
+    return target ? { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.5, BUMPER.MIN_Y, BUMPER.MAX_Y) } : { x: 4.5, y: 2.5 };
+  },
+  sniper: (state) => {
+    let target = null, best = -Infinity;
+    for (const b of state.balls) {
+      if (!b.alive) continue;
+      const score = b.value * b.multiplier * 10 - b.y;
+      if (score > best) { best = score; target = b; }
+    }
+    if (target) { const ox = target.x < 4.5 ? 0.5 : -0.5; return { x: clamp(target.x + ox, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.3, BUMPER.MIN_Y, BUMPER.MAX_Y) }; }
+    return { x: 4.5, y: 2.0 };
+  },
+  humanSim: (state) => {
+    const now = state.tickCount;
+    if (hsReactionDelay > 0) { hsReactionDelay--; return { x: hsTargetX, y: hsTargetY }; }
+    if (hsDistracted && now - hsLastSwitch < 30) return { x: hsTargetX, y: hsTargetY };
+    if (Math.random() < 0.02) { hsDistracted = true; hsLastSwitch = now; hsReactionDelay = 5 + Math.floor(Math.random() * 10); return { x: hsTargetX, y: hsTargetY }; }
+    let best = null, bestScore = -Infinity;
+    for (const b of state.balls) {
+      if (!b.alive) continue;
+      const score = b.value * b.multiplier * 10 + (b.dy < 0 ? 50 : 0) - b.y * 2;
+      if (score > bestScore) { bestScore = score; best = b; }
+    }
+    if (best && (!hsTargetBall || hsTargetBall.id !== best.id)) { hsTargetBall = best; hsLastSwitch = now; hsReactionDelay = 3 + Math.floor(Math.random() * 8); }
+    if (hsTargetBall && hsTargetBall.alive) { hsTargetX = clamp(hsTargetBall.x, BUMPER.MIN_X, BUMPER.MAX_X); hsTargetY = clamp(hsTargetBall.y + 0.5, BUMPER.MIN_Y, BUMPER.MAX_Y); }
+    return { x: hsTargetX, y: hsTargetY };
+  }
+};
+
+// Update strat-check active class
+document.querySelectorAll('.strat-check input').forEach(cb => {
+  cb.addEventListener('change', () => {
+    cb.closest('.strat-check').classList.toggle('active', cb.checked);
+  });
+});
+
+function randomSeed() {
+  return Math.random().toString(16).slice(2).padEnd(64, '0');
+}
+
+document.getElementById('runBtn').addEventListener('click', async () => {
+  const numGames = parseInt(document.getElementById('numGames').value) || 200;
+  const ballsPerGame = parseInt(document.getElementById('ballsPerGame').value) || 100;
+  const betPerBall = parseInt(document.getElementById('betPerBall').value) || 5;
+
+  const selected = [...document.querySelectorAll('.strat-check input:checked')].map(c => c.value);
+  if (!selected.length) { alert('Select at least one strategy'); return; }
+
+  const btn = document.getElementById('runBtn');
+  const prog = document.getElementById('progress');
+  btn.disabled = true;
+  document.getElementById('results').style.display = 'none';
+
+  const results = [];
+
+  for (const mode of selected) {
+    prog.textContent = `⏳ Running ${mode} (${numGames} games)...`;
+    await new Promise(r => setTimeout(r, 10)); // yield to UI
+
+    const mult = BET_MULTIPLIER[mode] || 1;
+    const actualBet = ballsPerGame * betPerBall * mult;
+    let totalWin = 0;
+    const rtps = [];
+
+    for (let g = 0; g < numGames; g++) {
+      resetStrategyState();
+      const seed = randomSeed();
+      const state = createInitialState(seed, ballsPerGame, betPerBall);
+      const strat = STRATEGIES[mode];
+      let ticks = 0;
+      while (!state.finished && ticks < 200000) {
+        const target = strat ? strat(state) : null;
+        tick(state, target);
+        ticks++;
+      }
+      totalWin += state.totalWin;
+      rtps.push(state.totalWin / actualBet * 100);
+
+      // yield every 50 games to keep UI responsive
+      if (g % 50 === 49) {
+        prog.textContent = `⏳ ${mode}: ${g + 1}/${numGames} games...`;
+        await new Promise(r => setTimeout(r, 0));
+      }
+    }
+
+    const avgRtp = totalWin / (numGames * actualBet) * 100;
+    const stdDev = Math.sqrt(rtps.reduce((s, r) => s + (r - avgRtp) ** 2, 0) / rtps.length);
+    results.push({ mode, avgRtp, stdDev, min: Math.min(...rtps), max: Math.max(...rtps), mult });
+  }
+
+  results.sort((a, b) => b.avgRtp - a.avgRtp);
+
+  // Render results table
+  const rankClass = ['rank-1', 'rank-2', 'rank-3'];
+  const maxRtp = results[0].avgRtp;
+  const tbody = document.getElementById('resultsBody');
+  tbody.innerHTML = results.map((r, i) => {
+    const rtpClass = r.avgRtp >= 95 ? 'rtp-good' : r.avgRtp < 80 ? 'rtp-bad' : '';
+    const barW = Math.round((r.avgRtp / maxRtp) * 120);
+    const rank = rankClass[i] || '';
+    return `<tr>
+      <td class="${rank}">${['🥇','🥈','🥉'][i] || (i+1)}</td>
+      <td>${r.mode}${r.mult > 1 ? ' <span style="color:#ffd700;font-size:10px">×'+r.mult+' bet</span>' : ''}</td>
+      <td><span class="rtp-val ${rtpClass}">${r.avgRtp.toFixed(2)}%</span><br>
+        <span class="bar-wrap"><span class="bar" style="width:${barW}px"></span></span></td>
+      <td style="color:#aaa">±${r.stdDev.toFixed(1)}%</td>
+      <td style="color:#ff4444">${r.min.toFixed(1)}%</td>
+      <td style="color:#00cc55">${r.max.toFixed(1)}%</td>
+      <td style="color:#aaa">${r.mult}×</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('results').style.display = 'block';
+  prog.textContent = `✓ Done — ${numGames} games × ${selected.length} strategies`;
+  btn.disabled = false;
+});
+</script>
+</body>
+</html>
