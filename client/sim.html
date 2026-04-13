@@ -88,7 +88,7 @@
 <div class="subtitle">RTP SIMULATION BY STRATEGY</div>
 
 <div id="authOverlay">
-  <p>🔒 Please <a href="index.html">sign in</a> to use the simulator</p>
+  <p id="authMsg">⏳ Loading...</p>
 </div>
 
 <div id="simContent">
@@ -162,6 +162,7 @@ auth.onAuthStateChanged(async (user) => {
   } else {
     document.getElementById('authOverlay').style.display = 'block';
     document.getElementById('simContent').style.display = 'none';
+    document.getElementById('authMsg').innerHTML = '🔒 Please <a href="index.html">sign in</a> to use the simulator';
   }
 });
 
