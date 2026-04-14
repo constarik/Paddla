@@ -228,7 +228,7 @@ const STRATEGIES = {
       const score = b.value * b.multiplier * 10 - b.y;
       if (score > best) { best = score; target = b; }
     }
-    return target ? { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y - 0.5, BUMPER.MIN_Y, 2.5) } : { x: 4.5, y: 2.0 };
+    return target ? { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.5, BUMPER.MIN_Y, BUMPER.MAX_Y) } : { x: 4.5, y: 2.0 };
   },
   sniper: (state) => {
     let target = null, best = -Infinity;
