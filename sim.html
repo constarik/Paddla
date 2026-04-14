@@ -108,11 +108,12 @@
   </div>
   <h2>STRATEGIES</h2>
   <div class="strategies" id="strategyList">
-    <label class="strat-check active"><input type="radio" name="strategy" value="stationary" checked> 🎲 STATIONARY</label>
-    <label class="strat-check"><input type="radio" name="strategy" value="hunter"> 🎯 HUNTER</label>
-    <label class="strat-check"><input type="radio" name="strategy" value="humanSim"> 🧠 HUMAN-SIM</label>
-    <label class="strat-check"><input type="radio" name="strategy" value="sniper"> 🔫 SNIPER ×2</label>
-    <label class="strat-check"><input type="radio" name="strategy" value="defender"> 🛡️ DEFENDER</label>
+    <label class="strat-check active"><input type="checkbox" value="stationary" checked> 🎲 STATIONARY</label>
+    <label class="strat-check"><input type="checkbox" value="hunter"> 🎯 HUNTER</label>
+    <label class="strat-check"><input type="checkbox" value="humanSim"> 🧠 HUMAN-SIM</label>
+    <label class="strat-check"><input type="checkbox" value="sniper"> 🔫 SNIPER ×2</label>
+    <label class="strat-check"><input type="checkbox" value="defender"> 🛡️ DEFENDER</label>
+    <button type="button" id="selectAllBtn" style="background:transparent;border:1px solid #333;color:#aaa;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:11px;font-family:'Orbitron',sans-serif;letter-spacing:1px;">SELECT ALL</button>
   </div>
   <button id="runBtn">▶ RUN SIMULATION</button>
   <div style="margin-top:10px;font-size:10px;color:rgba(255,255,255,0.4);">
@@ -259,9 +260,13 @@ const STRATEGIES = {
 // Update strat-check active class
 document.querySelectorAll('.strat-check input').forEach(cb => {
   cb.addEventListener('change', () => {
-    document.querySelectorAll('.strat-check').forEach(l => l.classList.remove('active'));
-    cb.closest('.strat-check').classList.add('active');
+    cb.closest('.strat-check').classList.toggle('active', cb.checked);
   });
+});
+document.getElementById('selectAllBtn').addEventListener('click', () => {
+  const boxes = document.querySelectorAll('.strat-check input');
+  const allChecked = [...boxes].every(b => b.checked);
+  boxes.forEach(b => { b.checked = !allChecked; b.closest('.strat-check').classList.toggle('active', !allChecked); });
 });
 
 function randomSeed() {
@@ -289,7 +294,7 @@ document.getElementById('runBtn').addEventListener('click', async () => {
     }
   }
 
-  const selected = [document.querySelector('.strat-check input:checked')?.value].filter(Boolean);
+  const selected = [...document.querySelectorAll('.strat-check input:checked')].map(cb => cb.value);
   if (!selected.length) { alert('Select a strategy'); return; }
 
   const btn = document.getElementById('runBtn');
@@ -302,30 +307,44 @@ document.getElementById('runBtn').addEventListener('click', async () => {
     // Server simulation — validate limits
     if (numGames > 500) { alert('Server limit: max 500 games'); btn.disabled = false; return; }
     if (ballsPerGame > 200) { alert('Server limit: max 200 balls per game'); btn.disabled = false; return; }
-    prog.textContent = `⏳ Sending to server: ${mode} ${numGames} games × ${ballsPerGame} balls...`;
-    try {
-      const res = await fetch('https://registrar-server.onrender.com/simulate/paddla', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ strategy: mode, numGames, ballsPerGame })
-      });
-      const data = await res.json();
-      if (!data.ok) throw new Error(data.error || 'Server error');
-      const tbody = document.getElementById('resultsBody');
-      const mult = BET_MULTIPLIER[mode] || 1;
-      tbody.innerHTML = `<tr>
-        <td>🥇</td>
-        <td>${data.strategy}${mult > 1 ? ' <span style="color:#ffd700;font-size:10px">×'+mult+' bet</span>' : ''} <span style="color:#00cc55;font-size:9px">⚡ server</span></td>
-        <td><span class="rtp-val">${data.avgRtp.toFixed(2)}%</span></td>
-        <td style="color:#aaa">±${data.stdDev.toFixed(1)}%</td>
-        <td style="color:#ff4444">${data.min.toFixed(1)}%</td>
-        <td style="color:#00cc55">${data.max.toFixed(1)}%</td>
-        <td style="color:#aaa">${mult}×</td>
-      </tr>`;
-      document.getElementById('results').style.display = 'block';
-      prog.textContent = `✓ Server done — ${data.numGames} games in ${data.elapsed}s`;
-    } catch(err) {
-      prog.textContent = `❌ Server error: ${err.message}`;
+    const serverResults = [];
+    for (const mode of selected) {
+      prog.textContent = `⏳ Server: ${mode} ${numGames} games × ${ballsPerGame} balls...`;
+      try {
+        const res = await fetch('https://registrar-server.onrender.com/simulate/paddla', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ strategy: mode, numGames, ballsPerGame })
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'Server error');
+        const mult = BET_MULTIPLIER[mode] || 1;
+        serverResults.push({ mode, avgRtp: data.avgRtp, stdDev: data.stdDev, min: data.min, max: data.max, mult, elapsed: data.elapsed });
+      } catch(err) {
+        prog.textContent = `❌ Server error (${mode}): ${err.message}`;
+        btn.disabled = false; return;
+      }
     }
+    serverResults.sort((a, b) => b.avgRtp - a.avgRtp);
+    const rankClass = ['rank-1', 'rank-2', 'rank-3'];
+    const maxRtp = serverResults[0].avgRtp;
+    const tbody = document.getElementById('resultsBody');
+    tbody.innerHTML = serverResults.map((r, i) => {
+      const rtpClass = r.avgRtp >= 95 ? 'rtp-good' : r.avgRtp < 80 ? 'rtp-bad' : '';
+      const barW = Math.round((r.avgRtp / maxRtp) * 120);
+      return `<tr>
+        <td class="${rankClass[i]||''}">${['🥇','🥈','🥉'][i] || (i+1)}</td>
+        <td>${r.mode}${r.mult > 1 ? ' <span style="color:#ffd700;font-size:10px">×'+r.mult+' bet</span>' : ''} <span style="color:#00cc55;font-size:9px">⚡ server</span></td>
+        <td><span class="rtp-val ${rtpClass}">${r.avgRtp.toFixed(2)}%</span><br>
+          <span class="bar-wrap"><span class="bar" style="width:${barW}px"></span></span></td>
+        <td style="color:#aaa">±${r.stdDev.toFixed(1)}%</td>
+        <td style="color:#ff4444">${r.min.toFixed(1)}%</td>
+        <td style="color:#00cc55">${r.max.toFixed(1)}%</td>
+        <td style="color:#aaa">${r.mult}×</td>
+      </tr>`;
+    }).join('');
+    document.getElementById('results').style.display = 'block';
+    const totalElapsed = serverResults.reduce((s, r) => s + r.elapsed, 0);
+    prog.textContent = `✓ Server done — ${selected.length} strategies in ${totalElapsed.toFixed(1)}s`;
     btn.disabled = false;
     return;
   }
