@@ -225,7 +225,7 @@ const STRATEGIES = {
     let target = null, best = -Infinity;
     for (const b of state.balls) {
       if (!b.alive || b.y < 1) continue;
-      const score = b.value * b.multiplier * 10 - b.y;
+      const score = b.value * b.multiplier * 10 + b.y;
       if (score > best) { best = score; target = b; }
     }
     return target ? { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.5, BUMPER.MIN_Y, BUMPER.MAX_Y) } : { x: 4.5, y: 2.0 };
