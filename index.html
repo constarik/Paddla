@@ -477,14 +477,14 @@ async function checkRegistrar() {
     document.getElementById('serverStatus').textContent = '🟢 Registrar';
     document.getElementById('currentCommitment').textContent = `Sessions: ${d.activeSessions}`;
     document.querySelector('.pf-badge').textContent =
-      `🔒 UVS v${uvsVersion}  |  v${VERSION}  |  registrar v${regVersion}`;
+      `🔒 UVS v${uvsVersion}  |  v${VERSION}  |  u${UI_VERSION}  |  registrar v${regVersion}`;
     return d;
   } catch {
     registrarOnline = false;
     document.getElementById('serverStatus').className = 'server-status offline';
     document.getElementById('serverStatus').textContent = '⚫ Offline';
     document.getElementById('currentCommitment').textContent = 'Offline';
-    document.querySelector('.pf-badge').textContent = `🔒 UVS 1.0  |  v${VERSION}  |  registrar offline`;
+    document.querySelector('.pf-badge').textContent = `🔒 UVS 1.0  |  v${VERSION}  |  u${UI_VERSION}  |  registrar offline`;
     return null;
   }
 }
