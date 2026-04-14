@@ -222,13 +222,12 @@ const STRATEGIES = {
     return target ? { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.8, BUMPER.MIN_Y, BUMPER.MAX_Y) } : { x: BUMPER.START_X, y: BUMPER.MAX_Y - 0.5 };
   },
   defender: (state) => {
-    let target = null, best = -Infinity;
+    let nearest = null, lowestY = Infinity;
     for (const b of state.balls) {
       if (!b.alive) continue;
-      const score = (b.dy < 0 ? 100 : 0) + b.value * b.multiplier * 10 - b.y;
-      if (score > best) { best = score; target = b; }
+      if (b.y < lowestY) { lowestY = b.y; nearest = b; }
     }
-    return target ? { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y - 0.5, BUMPER.MIN_Y, BUMPER.MAX_Y) } : { x: 4.5, y: BUMPER.MIN_Y };
+    return { x: nearest ? clamp(nearest.x, BUMPER.MIN_X, BUMPER.MAX_X) : 4.5, y: BUMPER.MIN_Y };
   },
   sniper: (state) => {
     let target = null, best = -Infinity;
