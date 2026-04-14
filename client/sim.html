@@ -112,7 +112,6 @@
     <label class="strat-check"><input type="checkbox" value="hunter"> 🎯 HUNTER</label>
     <label class="strat-check"><input type="checkbox" value="humanSim"> 🧠 HUMAN-SIM</label>
     <label class="strat-check"><input type="checkbox" value="sniper"> 🔫 SNIPER</label>
-    <label class="strat-check"><input type="checkbox" value="defender"> 🛡️ DEFENDER</label>
     <button type="button" id="selectAllBtn" style="background:transparent;border:1px solid #333;color:#aaa;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:11px;font-family:'Orbitron',sans-serif;letter-spacing:1px;">SELECT ALL</button>
   </div>
   <button id="runBtn">▶ RUN SIMULATION</button>
@@ -193,7 +192,7 @@ function updateQuota() {
   }
 }
 
-const BET_MULTIPLIER = { human:1, hunter:1, defender:1, humanSim:1, sniper:1, stationary:1 };
+const BET_MULTIPLIER = { human:1, hunter:1, humanSim:1, sniper:1, stationary:1 };
 // Strategy state
 let hunterTargetId = null, defenderTargetId = null, sniperTargetId = null;
 let hsTargetBall = null, hsTargetX = 4.5, hsTargetY = 4.5;
@@ -220,15 +219,6 @@ const STRATEGIES = {
       if (score > best) { best = score; target = b; }
     }
     return target ? { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.8, BUMPER.MIN_Y, BUMPER.MAX_Y) } : { x: BUMPER.START_X, y: BUMPER.MAX_Y - 0.5 };
-  },
-  defender: (state) => {
-    let target = null, best = -Infinity;
-    for (const b of state.balls) {
-      if (!b.alive || b.y < 1) continue;
-      const score = b.value * b.multiplier * 10 + b.y;
-      if (score > best) { best = score; target = b; }
-    }
-    return target ? { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.5, BUMPER.MIN_Y, BUMPER.MAX_Y) } : { x: 4.5, y: 2.0 };
   },
   sniper: (state) => {
     let target = null, best = -Infinity;
