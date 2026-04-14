@@ -224,7 +224,7 @@ const STRATEGIES = {
   defender: (state) => {
     let target = null, best = -Infinity;
     for (const b of state.balls) {
-      if (!b.alive || b.y > 2.5) continue;
+      if (!b.alive || b.y < state.bumper.y) continue;
       const score = b.value * b.multiplier * 10 - b.y;
       if (score > best) { best = score; target = b; }
     }
