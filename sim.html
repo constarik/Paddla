@@ -151,7 +151,10 @@ const SIM_BALLS_LIMIT = 5000;
 let currentUser = null;
 let currentSimBalls = 0;
 
+let authResolved = false;
+
 auth.onAuthStateChanged(async (user) => {
+  authResolved = true;
   currentUser = user;
   if (user) {
     document.getElementById('authOverlay').style.display = 'none';
@@ -165,6 +168,13 @@ auth.onAuthStateChanged(async (user) => {
     document.getElementById('authMsg').innerHTML = '🔒 Please <a href="index.html">sign in</a> to use the simulator';
   }
 });
+
+// Show sign-in message only after auth has had time to resolve
+setTimeout(() => {
+  if (!authResolved) {
+    document.getElementById('authMsg').innerHTML = '🔒 Please <a href="index.html">sign in</a> to use the simulator';
+  }
+}, 3000);
 
 function updateQuota() {
   const remaining = SIM_BALLS_LIMIT - currentSimBalls;
