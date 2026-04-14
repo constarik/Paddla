@@ -294,11 +294,44 @@ document.getElementById('runBtn').addEventListener('click', async () => {
   const startTime = Date.now();
   document.getElementById('results').style.display = 'none';
 
+  const isServerSim = document.getElementById('serverSim')?.checked;
+
+  if (isServerSim) {
+    // Server simulation — validate limits
+    if (numGames > 500) { alert('Server limit: max 500 games'); btn.disabled = false; return; }
+    if (ballsPerGame > 200) { alert('Server limit: max 200 balls per game'); btn.disabled = false; return; }
+    prog.textContent = `⏳ Sending to server: ${mode} ${numGames} games × ${ballsPerGame} balls...`;
+    try {
+      const res = await fetch('https://registrar-server.onrender.com/simulate/paddla', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ strategy: mode, numGames, ballsPerGame })
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Server error');
+      const tbody = document.getElementById('resultsBody');
+      const mult = BET_MULTIPLIER[mode] || 1;
+      tbody.innerHTML = `<tr>
+        <td>🥇</td>
+        <td>${data.strategy}${mult > 1 ? ' <span style="color:#ffd700;font-size:10px">×'+mult+' bet</span>' : ''} <span style="color:#00cc55;font-size:9px">⚡ server</span></td>
+        <td><span class="rtp-val">${data.avgRtp.toFixed(2)}%</span></td>
+        <td style="color:#aaa">±${data.stdDev.toFixed(1)}%</td>
+        <td style="color:#ff4444">${data.min.toFixed(1)}%</td>
+        <td style="color:#00cc55">${data.max.toFixed(1)}%</td>
+        <td style="color:#aaa">${mult}×</td>
+      </tr>`;
+      document.getElementById('results').style.display = 'block';
+      prog.textContent = `✓ Server done — ${data.numGames} games in ${data.elapsed}s`;
+    } catch(err) {
+      prog.textContent = `❌ Server error: ${err.message}`;
+    }
+    btn.disabled = false;
+    return;
+  }
+
   const results = [];
 
   for (const mode of selected) {
     prog.textContent = `⏳ Running ${mode} (${numGames} games)...`;
-    await new Promise(r => setTimeout(r, 10)); // yield to UI
 
     const mult = BET_MULTIPLIER[mode] || 1;
     const actualBet = ballsPerGame * betPerBall * mult;
