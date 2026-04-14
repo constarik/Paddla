@@ -275,16 +275,20 @@ document.getElementById('runBtn').addEventListener('click', async () => {
 
   if (!currentUser) { alert('Please sign in first'); return; }
 
-  // MANDATORY server-side quota check before run
-  const freshDoc = await db.collection('paddla_users').doc(currentUser.uid).get();
-  currentSimBalls = freshDoc.exists ? (freshDoc.data().simBalls || 0) : 0;
-  updateQuota();
-
+  const isServerSim = document.getElementById('serverSim')?.checked;
   const totalBalls = numGames * ballsPerGame;
-  const remaining = SIM_BALLS_LIMIT - currentSimBalls;
-  if (totalBalls > remaining) {
-    alert(`Not enough quota! Requesting ${totalBalls} balls, only ${remaining} remaining.`); return;
+
+  // Quota check ONLY for server simulation
+  if (isServerSim) {
+    const freshDoc = await db.collection('paddla_users').doc(currentUser.uid).get();
+    currentSimBalls = freshDoc.exists ? (freshDoc.data().simBalls || 0) : 0;
+    updateQuota();
+    const remaining = SIM_BALLS_LIMIT - currentSimBalls;
+    if (totalBalls > remaining) {
+      alert(`Not enough quota! Requesting ${totalBalls} balls, only ${remaining} remaining.`); return;
+    }
   }
+
   const selected = [document.querySelector('.strat-check input:checked')?.value].filter(Boolean);
   if (!selected.length) { alert('Select a strategy'); return; }
 
@@ -293,8 +297,6 @@ document.getElementById('runBtn').addEventListener('click', async () => {
   btn.disabled = true;
   const startTime = Date.now();
   document.getElementById('results').style.display = 'none';
-
-  const isServerSim = document.getElementById('serverSim')?.checked;
 
   if (isServerSim) {
     // Server simulation — validate limits
