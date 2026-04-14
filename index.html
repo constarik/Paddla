@@ -292,7 +292,7 @@
     </label>
   </div>
   
-  <div class="info">Move bumper to direct balls into goals (top corners) &nbsp;|&nbsp; <a href="sim.html" target="_blank" style="color:#00d4ff;text-decoration:none;letter-spacing:1px">📊 SIM</a></div>
+  <div class="info">Move bumper to direct balls into goals (top corners) &nbsp;|&nbsp; <a href="sim.html" target="_blank" id="simLink" style="color:#00d4ff;text-decoration:none;letter-spacing:1px;display:none">📊 SIM</a></div>
   
   <div class="commitment-display" id="commitmentDisplay">
     <div class="label">🔒 Registrar Status</div>
@@ -400,10 +400,13 @@ async function saveNickname() {
 
 function updateAuthUI() {
   const panel = document.getElementById('authPanel');
+  const simLink = document.getElementById('simLink');
   if (currentUser && userData) {
     panel.innerHTML = `<div class="user-info">${userData.photoURL ? `<img class="user-avatar" src="${userData.photoURL}">` : ''}<span class="user-name">${userData.nickname}</span><span style="color:#00d4ff;">$${balance}</span></div><button class="auth-btn" onclick="resetBalance()" style="border-color:#ff6600;color:#ff6600;">Reset</button><button class="auth-btn" onclick="signOut()">Logout</button>`;
+    if (simLink) simLink.style.display = 'inline';
   } else {
     panel.innerHTML = `<button class="auth-btn google" onclick="signInWithGoogle()">🔑 Sign In</button>`;
+    if (simLink) simLink.style.display = 'none';
   }
 }
 
