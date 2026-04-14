@@ -393,12 +393,14 @@ document.getElementById('runBtn').addEventListener('click', async () => {
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
   prog.textContent = `✓ Done — ${numGames} games in ${elapsed}s`;
 
-  // Update quota in Firestore
-  currentSimBalls += totalBalls;
-  await db.collection('paddla_users').doc(currentUser.uid).update({
-    simBalls: firebase.firestore.FieldValue.increment(totalBalls)
-  });
-  updateQuota();
+  // Update quota in Firestore (server sim only)
+  if (isServerSim) {
+    currentSimBalls += totalBalls;
+    await db.collection('paddla_users').doc(currentUser.uid).update({
+      simBalls: firebase.firestore.FieldValue.increment(totalBalls)
+    });
+    updateQuota();
+  }
 
   btn.disabled = false;
 });
