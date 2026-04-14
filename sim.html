@@ -224,11 +224,11 @@ const STRATEGIES = {
   defender: (state) => {
     let target = null, best = -Infinity;
     for (const b of state.balls) {
-      if (!b.alive) continue;
-      const score = (b.dy > 0 ? 100 : 0) + b.value * b.multiplier * 10 + (CONFIG.FIELD / 2 - b.y);
+      if (!b.alive || b.y > CONFIG.FIELD / 2) continue;
+      const score = b.value * b.multiplier;
       if (score > best) { best = score; target = b; }
     }
-    return target ? { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.5, BUMPER.MIN_Y, CONFIG.FIELD / 2) } : { x: 4.5, y: 2.5 };
+    return { x: target ? clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X) : 4.5, y: 1.0 };
   },
   sniper: (state) => {
     let target = null, best = -Infinity;
