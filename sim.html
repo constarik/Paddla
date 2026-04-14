@@ -225,10 +225,10 @@ const STRATEGIES = {
     let target = null, best = -Infinity;
     for (const b of state.balls) {
       if (!b.alive || b.y > CONFIG.FIELD / 2) continue;
-      const score = b.value * b.multiplier;
+      const score = b.value * b.multiplier * 10 - b.y;
       if (score > best) { best = score; target = b; }
     }
-    return { x: target ? clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X) : 4.5, y: 1.0 };
+    return target ? { x: clamp(target.x, BUMPER.MIN_X, BUMPER.MAX_X), y: clamp(target.y + 0.5, BUMPER.MIN_Y, BUMPER.MAX_Y) } : { x: 4.5, y: 2.0 };
   },
   sniper: (state) => {
     let target = null, best = -Infinity;
