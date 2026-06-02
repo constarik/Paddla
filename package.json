@@ -1,7 +1,7 @@
 {
   "name": "paddla",
-  "version": "9.0.1",
-  "description": "Provably Fair интерактивная аркадная игра — UVS 1.0",
+  "version": "9.0.2",
+  "description": "Provably Fair интерактивная аркадная игра — UVS 2.0 (Move Batch, G=ALL)",
   "main": "server/index.js",
   "scripts": {
     "lint": "eslint engine/core.js client/index.html",
@@ -19,11 +19,11 @@
   "license": "MIT",
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "firebase-admin": "^13.7.0"
   },
   "devDependencies": {
     "eslint": "^10.2.0",
-    "eslint-plugin-html": "^8.1.4",
-    "firebase-admin": "^13.7.0"
+    "eslint-plugin-html": "^8.1.4"
   }
 }

@@ -1,14 +1,57 @@
-// PADDLA Server v0.7 - Clean Provably Fair Protocol
+// PADDLA Server v0.8 - UVS 2.0 (Move Batch, G=ALL) with persistent public audit trail
 // 1. GET /commitment → client records BEFORE sending clientSeed
-// 2. POST /game/start {clientSeed} → gameId (NO seed revealed!)
+// 2. POST /game/start {clientSeed} → gameId
 // 3. Client plays locally, randomness = f(seed, bumper position)
-// 4. POST /game/finish {inputLog, totalWin} → server replays → reveals seed
+// 4. POST /game/finish {inputLog, totalWin} → server replays → verifies → reveals seed → persists to Firestore
+// 5. GET /trail, /trail/:id → anyone can fetch & replay verified games (post-factum integrity)
 
 const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
 const path = require('path');
 const { createInitialState, tick, replay, finishGame, CONFIG } = require('./engine');
+
+// ===== AUDIT TRAIL (Firestore) — UVS 2.0 persistence layer =====
+// Fault-tolerant init: env var on Render, local file in dev, disabled if neither.
+// If Firebase is unavailable, server keeps running in RAM-only mode (no crash).
+let trailDb = null;
+let trailEnabled = false;
+(function initTrail() {
+  try {
+    const admin = require('firebase-admin');
+    let sa = null;
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+      sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    } else {
+      // Local dev fallback (path not used on Render)
+      try { sa = require('C:\\Users\\const\\Downloads\\Code\\holepuncher-constr-firebase-adminsdk-fbsvc-a5c94b33ee.json'); } catch (e) { sa = null; }
+    }
+    if (!sa) {
+      console.warn('[TRAIL] Disabled: no Firebase credentials (set FIREBASE_SERVICE_ACCOUNT). Server runs in RAM-only mode.');
+      return;
+    }
+    if (!admin.apps.length) {
+      admin.initializeApp({ credential: admin.credential.cert(sa) });
+    }
+    trailDb = admin.firestore();
+    trailEnabled = true;
+    console.log('[TRAIL] Enabled: writing verified games to Firestore collection paddla_games.');
+  } catch (e) {
+    console.warn('[TRAIL] Disabled: init failed (' + e.message + '). Server runs in RAM-only mode.');
+  }
+})();
+
+// Delta-encode inputLog: keep only ticks where bumper target changed.
+// Replay re-applies last target on skipped ticks, so result is identical (verified).
+function compressInputLog(inputLog) {
+  const out = [];
+  let last = null;
+  for (const e of inputLog) {
+    const k = e.target.x + ',' + e.target.y;
+    if (k !== last) { out.push(e); last = k; }
+  }
+  return out;
+}
 
 const app = express();
 app.use(cors());
@@ -155,6 +198,32 @@ app.post('/game/:id/finish', (req, res) => {
     `Client: ${clientTotalWin}, Server: ${serverTotalWin}, Verified: ${verified}`);
   
   if (verified) {
+    // ===== UVS 2.0: persist verified game to public audit trail (Firestore) =====
+    // serverSeed is already revealed at this point — storing it is safe and required
+    // for post-factum replay. Each record is self-contained (survives seed rotation).
+    const compactInputLog = compressInputLog(inputLog);
+    const trailRecord = {
+      gameId: id,
+      protocol: 'UVS-2.0',
+      G: 'ALL',                       // Move Batch granularity
+      gameMode: 'Move',
+      commitment: game.commitment,    // SHA-256(serverSeed), published before play
+      clientSeed: game.clientSeed,
+      serverSeed: game.serverSeed,    // revealed — verifier checks SHA-256(serverSeed)===commitment
+      engineVersion: '0.6',
+      numBalls: game.numBalls,
+      betPerBall: game.betPerBall || 5,
+      totalWin: serverTotalWin,
+      inputLog: compactInputLog,      // delta-encoded; replay reproduces full session
+      inputLogEncoding: 'delta',
+      ts: Date.now()
+    };
+    if (trailEnabled && trailDb) {
+      trailDb.collection('paddla_games').doc(id).set(trailRecord)
+        .then(() => console.log(`[TRAIL] Saved game ${id.substring(0,8)}... (${compactInputLog.length} input pts)`))
+        .catch(e => console.error(`[TRAIL] Save failed for ${id}: ${e.message}`));
+    }
+
     // Reveal server seed for client verification
     res.json({
       verified: true,
@@ -163,6 +232,7 @@ app.post('/game/:id/finish', (req, res) => {
         serverSeed: game.serverSeed,
         gameSeedHex: game.gameSeedHex,
         clientSeed: game.clientSeed,
+        commitment: game.commitment,
         gameId: id
       }
     });
@@ -177,7 +247,7 @@ app.post('/game/:id/finish', (req, res) => {
     });
   }
   
-  // Keep game for debugging, then delete
+  // Keep game in RAM briefly for debugging, then delete (audit trail persists in Firestore)
   setTimeout(() => delete games[id], 5 * 60 * 1000);
 });
 
@@ -196,12 +266,51 @@ app.get('/game/:id/status', (req, res) => {
   });
 });
 
+// ===== UVS 2.0: public audit trail read endpoints =====
+// Anyone can fetch verified game records and replay them locally.
+// GET /trail        -> latest N records (metadata, no heavy inputLog)
+// GET /trail/:id    -> full record incl. delta-encoded inputLog for replay
+app.get('/trail', async (req, res) => {
+  if (!trailEnabled || !trailDb) {
+    return res.status(503).json({ error: 'Audit trail not available' });
+  }
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+    const snap = await trailDb.collection('paddla_games').orderBy('ts', 'desc').limit(limit).get();
+    const items = snap.docs.map(d => {
+      const r = d.data();
+      return {
+        gameId: r.gameId, protocol: r.protocol, G: r.G,
+        commitment: r.commitment, numBalls: r.numBalls,
+        betPerBall: r.betPerBall, totalWin: r.totalWin, ts: r.ts
+      };
+    });
+    res.json({ count: items.length, items });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/trail/:id', async (req, res) => {
+  if (!trailEnabled || !trailDb) {
+    return res.status(503).json({ error: 'Audit trail not available' });
+  }
+  try {
+    const doc = await trailDb.collection('paddla_games').doc(req.params.id).get();
+    if (!doc.exists) return res.status(404).json({ error: 'Record not found' });
+    res.json(doc.data());
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok',
-    version: '0.7',
-    protocol: 'Clean Provably Fair',
+    version: '0.8',
+    protocol: 'UVS 2.0 (Move Batch, G=ALL)',
+    trailEnabled,
     activeGames: Object.keys(games).length,
     commitment: commitment.substring(0, 16) + '...'
   });
@@ -210,16 +319,16 @@ app.get('/health', (req, res) => {
 // Version info
 app.get('/version', (req, res) => {
   res.json({
-    server: '0.7',
+    server: '0.8',
     engine: '0.6',
-    protocol: 'Input-Seeded Randomness',
-    description: 'Randomness depends on gameSeed + bumper position. Client cannot predict future random events.'
+    protocol: 'UVS 2.0 (Move Batch, G=ALL)',
+    description: 'Provably fair with persistent public audit trail. Verified games stored in Firestore; anyone can replay via /trail/:id.'
   });
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`PADDLA Server v0.7 (Clean Provably Fair) running on port ${PORT}`);
+  console.log(`PADDLA Server v0.8 (UVS 2.0 — Move Batch, G=ALL) running on port ${PORT}`);
   console.log(`Initial commitment: ${commitment.substring(0, 16)}...`);
-  console.log(`Protocol: Input-Seeded Randomness - client cannot predict future events`);
+  console.log(`Audit trail: ${trailEnabled ? 'ENABLED (Firestore paddla_games)' : 'DISABLED (RAM-only)'}`);
 });
