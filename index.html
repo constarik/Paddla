@@ -328,8 +328,8 @@
 <script src="engine/core.js"></script>
 <script>
 // ===== VERSION =====
-const VERSION = '9.0.12';
-const UI_VERSION = 28;
+const VERSION = '9.0.13';
+const UI_VERSION = 29;
 document.title = `PADDLA v${VERSION} - UVS 2.0`;
 
 // ===== CLIENT CONSTANTS (UI only) =====
@@ -998,6 +998,8 @@ async function maybeReplayFromTrail() {
     replayRunning = true;
     document.getElementById('playBtn').disabled = true;
     document.getElementById('ballCount').value = rec.numBalls;
+    if (rec.betPerBall != null) document.getElementById('betSelect').value = String(rec.betPerBall);
+    if (rec.mode) { document.getElementById('modeSelect').value = rec.mode; currentMode = rec.mode; }
     const mLabels = { human:'👆 HUMAN', hunter:'🎯 HUNTER', defender:'🛡️ DEFENDER', humanSim:'🧠 HUMAN-SIM', sniper:'🔫 SNIPER ×2', stationary:'🎲 STATIONARY' };
     const mi = document.getElementById('modeIndicator');
     mi.textContent = '▶ ' + (mLabels[rec.mode] || 'REPLAY'); mi.className = 'mode-indicator';
