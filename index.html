@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <script>
     // eslint-disable-next-line no-undef
-    if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) {
+    if (!/[?&]replay=/.test(location.search) && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) {
       window.location.replace('mobile.html');
     }
   </script>
@@ -329,7 +329,7 @@
 <script>
 // ===== VERSION =====
 const VERSION = '9.0.9';
-const UI_VERSION = 24;
+const UI_VERSION = 25;
 document.title = `PADDLA v${VERSION} - UVS 2.0`;
 
 // ===== CLIENT CONSTANTS (UI only) =====
@@ -969,6 +969,34 @@ if (new URLSearchParams(window.location.search).get('debug') === '17') {
 }
 
 updateModeIndicator(); updateProgressiveLamps(1); render(); gameLoop(); loadLeaderboard();
+
+// Replay a recorded game from the public trail: paddla.uncloned.work/?replay=<gameId>
+async function maybeReplayFromTrail() {
+  const id = new URLSearchParams(location.search).get('replay');
+  if (!id) return;
+  try {
+    const rec = await (await fetch(REGISTRAR_URL + '/trail/' + encodeURIComponent(id))).json();
+    if (!rec || rec.error || !rec.serverSeed) { alert('Trail record not found'); return; }
+    // re-expand delta-compressed inputLog into a dense per-tick target array
+    const comp = Array.isArray(rec.inputLog) ? rec.inputLog : [];
+    const n = rec.inputLen || comp.length;
+    const dense = []; let cur = null, ci = 0;
+    for (let i = 0; i < n; i++) {
+      while (ci < comp.length && comp[ci].t === i) { cur = comp[ci].target; ci++; }
+      dense.push({ tick: i, target: cur });
+    }
+    document.getElementById('result').classList.remove('show');
+    gameState = createInitialState(rec.serverSeed, rec.numBalls, rec.betPerBall, rec.numBalls * rec.betPerBall);
+    gameRunning = false;
+    replayLog_data = dense;
+    replayLog_idx = 0;
+    replayRunning = true;
+    document.getElementById('playBtn').disabled = true;
+    showFloatingText(4.5, 2, '▶ REPLAYING TRAIL SPIN', '#00d4ff', 18);
+    updateUI();
+  } catch (e) { console.error('replay error', e); }
+}
+maybeReplayFromTrail();
 </script>
 </body>
 </html>
