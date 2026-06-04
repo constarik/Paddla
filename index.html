@@ -328,8 +328,8 @@
 <script src="engine/core.js"></script>
 <script>
 // ===== VERSION =====
-const VERSION = '9.0.10';
-const UI_VERSION = 26;
+const VERSION = '9.0.11';
+const UI_VERSION = 27;
 document.title = `PADDLA v${VERSION} - UVS 2.0`;
 
 // ===== CLIENT CONSTANTS (UI only) =====
@@ -996,6 +996,9 @@ async function maybeReplayFromTrail() {
     replayLog_idx = 0;
     replayRunning = true;
     document.getElementById('playBtn').disabled = true;
+    document.getElementById('ballCount').value = rec.numBalls;
+    const mi = document.getElementById('modeIndicator');
+    mi.textContent = '▶ REPLAY'; mi.className = 'mode-indicator';
     showFloatingText(4.5, 2, '▶ REPLAYING TRAIL SPIN', '#00d4ff', 18);
     updateUI();
   } catch (e) { console.error('replay error', e); }
