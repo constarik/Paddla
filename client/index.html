@@ -328,8 +328,8 @@
 <script src="engine/core.js"></script>
 <script>
 // ===== VERSION =====
-const VERSION = '9.0.9';
-const UI_VERSION = 25;
+const VERSION = '9.0.10';
+const UI_VERSION = 26;
 document.title = `PADDLA v${VERSION} - UVS 2.0`;
 
 // ===== CLIENT CONSTANTS (UI only) =====
@@ -652,6 +652,10 @@ function gameLoop() {
         replayRunning = false;
         document.getElementById('playBtn').disabled = false;
         showFloatingText(4.5, 2, '✓ REPLAY COMPLETE', '#00d4ff', 20);
+        const rbet = gameState.numBalls * gameState.betPerBall;
+        const rrtp = rbet ? gameState.totalWin / rbet : 0;
+        document.getElementById('finalWin').textContent = gameState.totalWin;
+        document.getElementById('finalRtp').textContent = `REPLAY · Bet: $${rbet} | Win: $${gameState.totalWin} | RTP: ${(rrtp * 100).toFixed(1)}%`;
         setTimeout(() => { document.getElementById('result').classList.add('show'); setControlsDisabled(true); }, 1500);
       }
     }
