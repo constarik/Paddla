@@ -328,8 +328,8 @@
 <script src="engine/core.js"></script>
 <script>
 // ===== VERSION =====
-const VERSION = '9.0.11';
-const UI_VERSION = 27;
+const VERSION = '9.0.12';
+const UI_VERSION = 28;
 document.title = `PADDLA v${VERSION} - UVS 2.0`;
 
 // ===== CLIENT CONSTANTS (UI only) =====
@@ -734,7 +734,8 @@ async function verifyWithRegistrar() {
         eventLog: gameState.eventLog,
         clientTotalWin: document.getElementById('errUvs')?.checked ? gameState.totalWin + 1 : gameState.totalWin,
         numBalls: gameState.numBalls,
-        betPerBall: gameState.betPerBall
+        betPerBall: gameState.betPerBall,
+        mode: currentMode
       })
     });
     const data = await res.json();
@@ -997,8 +998,9 @@ async function maybeReplayFromTrail() {
     replayRunning = true;
     document.getElementById('playBtn').disabled = true;
     document.getElementById('ballCount').value = rec.numBalls;
+    const mLabels = { human:'👆 HUMAN', hunter:'🎯 HUNTER', defender:'🛡️ DEFENDER', humanSim:'🧠 HUMAN-SIM', sniper:'🔫 SNIPER ×2', stationary:'🎲 STATIONARY' };
     const mi = document.getElementById('modeIndicator');
-    mi.textContent = '▶ REPLAY'; mi.className = 'mode-indicator';
+    mi.textContent = '▶ ' + (mLabels[rec.mode] || 'REPLAY'); mi.className = 'mode-indicator';
     showFloatingText(4.5, 2, '▶ REPLAYING TRAIL SPIN', '#00d4ff', 18);
     updateUI();
   } catch (e) { console.error('replay error', e); }
