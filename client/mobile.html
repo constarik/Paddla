@@ -126,7 +126,7 @@
 <div id="app">
   <div id="header">
     <div id="title">🏓 PADDLA</div>
-    <div id="pfBadge">🔒 UVS v1</div>
+    <div id="pfBadge">🔒 UVS 2.0</div>
   </div>
 
   <div id="stats">
@@ -194,7 +194,7 @@
 <script>
 // ── Constants ──────────────────────────────────────────────────────────────
 const VERSION = '9.0.9';
-const MOBILE_VERSION = 1;
+const MOBILE_VERSION = 2;
 const REGISTRAR_URL = 'https://registrar-server.onrender.com';
 const BET_MULTIPLIER = { human:1, hunter:1, defender:1, humanSim:1, sniper:2, stationary:1 };
 const VALUE_COLORS = { 9:'#00ff00',8:'#33ff00',7:'#66ff00',6:'#99ff00',5:'#ccff00',4:'#ffff00',3:'#ffcc00',2:'#ff9900',1:'#ff6600',0:'#ff0000' };
@@ -247,11 +247,10 @@ async function checkRegistrar() {
     const d = await r.json();
     registrarOnline = true;
     const regVersion = d.version || '?';
-    const uvsVersion = d.uvsVersion || 1;
-    document.getElementById('pfBadge').textContent = `🔒 UVS v${uvsVersion} | v${VERSION} | m${MOBILE_VERSION} | reg v${regVersion}`;
+    document.getElementById('pfBadge').textContent = `🔒 UVS 2.0 | v${VERSION} | m${MOBILE_VERSION} | reg v${regVersion}`;
   } catch {
     registrarOnline = false;
-    document.getElementById('pfBadge').textContent = `🔒 UVS v1 | v${VERSION} | m${MOBILE_VERSION} | reg offline`;
+    document.getElementById('pfBadge').textContent = `🔒 UVS 2.0 | v${VERSION} | m${MOBILE_VERSION} | reg offline`;
   }
 }
 checkRegistrar();
@@ -455,7 +454,12 @@ async function verifyWithRegistrar() {
     });
     const data = await res.json();
     if (data.ok) {
-      document.getElementById('verifyServer').innerHTML = `<span style="color:#00cc55">✓ SERVER VERIFIED $${data.serverTotalWin}</span>`;
+      let html = `<span style="color:#00cc55">✓ SERVER VERIFIED $${data.serverTotalWin}</span>`;
+      if (data.gameId) {
+        const trailHref = REGISTRAR_URL + (data.trailUrl || ('/trail/' + data.gameId));
+        html += ` <a href="${trailHref}" target="_blank" rel="noopener" style="color:#00d4ff;font-size:11px;">🔍 trail</a>`;
+      }
+      document.getElementById('verifyServer').innerHTML = html;
     } else {
       document.getElementById('verifyServer').innerHTML = `<span style="color:#ff4444">❌ MISMATCH server:$${data.serverTotalWin} client:$${data.clientTotalWin}</span>`;
     }

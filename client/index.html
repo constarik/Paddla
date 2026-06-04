@@ -232,7 +232,7 @@
     </div>
   </div>
   
-  <h1>🏓 PADDLA <span class="pf-badge">🔒 UVS 1.0</span></h1>
+  <h1>🏓 PADDLA <span class="pf-badge">🔒 UVS 2.0</span></h1>
   
   <div class="stats">
     <div class="stat">
@@ -329,7 +329,7 @@
 <script>
 // ===== VERSION =====
 const VERSION = '9.0.9';
-const UI_VERSION = 21;
+const UI_VERSION = 22;
 document.title = `PADDLA v${VERSION} - UVS 1.0`;
 
 // ===== CLIENT CONSTANTS (UI only) =====
@@ -472,19 +472,18 @@ async function checkRegistrar() {
     const d = await r.json();
     registrarOnline = true;
     const regVersion = d.version || '?';
-    const uvsVersion = d.uvsVersion || 1;
     document.getElementById('serverStatus').className = 'server-status online';
     document.getElementById('serverStatus').textContent = '🟢 Registrar';
     document.getElementById('currentCommitment').textContent = `Sessions: ${d.activeSessions}`;
     document.querySelector('.pf-badge').textContent =
-      `🔒 UVS v${uvsVersion}  |  v${VERSION}  |  u${UI_VERSION}  |  registrar v${regVersion}`;
+      `🔒 UVS 2.0  |  v${VERSION}  |  u${UI_VERSION}  |  registrar v${regVersion}`;
     return d;
   } catch {
     registrarOnline = false;
     document.getElementById('serverStatus').className = 'server-status offline';
     document.getElementById('serverStatus').textContent = '⚫ Offline';
     document.getElementById('currentCommitment').textContent = 'Offline';
-    document.querySelector('.pf-badge').textContent = `🔒 UVS 1.0  |  v${VERSION}  |  u${UI_VERSION}  |  registrar offline`;
+    document.querySelector('.pf-badge').textContent = `🔒 UVS 2.0  |  v${VERSION}  |  u${UI_VERSION}  |  registrar offline`;
     return null;
   }
 }
@@ -736,7 +735,12 @@ async function verifyWithRegistrar() {
     });
     const data = await res.json();
     if (data.ok) {
-      document.getElementById('verifyServer').innerHTML = `<span style="color:#00cc55">✓ SERVER VERIFIED! Win: $${data.serverTotalWin}</span>`;
+      let html = `<span style="color:#00cc55">✓ SERVER VERIFIED! Win: $${data.serverTotalWin}</span>`;
+      if (data.gameId) {
+        const trailHref = REGISTRAR_URL + (data.trailUrl || ('/trail/' + data.gameId));
+        html += ` &nbsp;<a href="${trailHref}" target="_blank" rel="noopener" style="color:#00d4ff;font-size:12px;">🔍 View on public trail</a>`;
+      }
+      document.getElementById('verifyServer').innerHTML = html;
     } else {
       let msg = `❌ MISMATCH! Server: $${data.serverTotalWin} vs Client: $${data.clientTotalWin}`;
       if (data.firstMismatch) {
