@@ -329,8 +329,8 @@
 <script>
 // ===== VERSION =====
 const VERSION = '9.0.9';
-const UI_VERSION = 22;
-document.title = `PADDLA v${VERSION} - UVS 1.0`;
+const UI_VERSION = 24;
+document.title = `PADDLA v${VERSION} - UVS 2.0`;
 
 // ===== CLIENT CONSTANTS (UI only) =====
 const BET_MULTIPLIER = { human:1, hunter:1, defender:1, humanSim:1, sniper:2 };
@@ -737,7 +737,7 @@ async function verifyWithRegistrar() {
     if (data.ok) {
       let html = `<span style="color:#00cc55">✓ SERVER VERIFIED! Win: $${data.serverTotalWin}</span>`;
       if (data.gameId) {
-        const trailHref = REGISTRAR_URL + (data.trailUrl || ('/trail/' + data.gameId));
+        const trailHref = REGISTRAR_URL + '/verify.html?id=' + data.gameId;
         html += ` &nbsp;<a href="${trailHref}" target="_blank" rel="noopener" style="color:#00d4ff;font-size:12px;">🔍 View on public trail</a>`;
       }
       document.getElementById('verifyServer').innerHTML = html;
