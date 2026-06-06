@@ -321,6 +321,7 @@
         <button class="verify-btn-result" id="closeResultBtn" style="background:#444;">✕ CLOSE</button>
       </div>
       <div id="verifyLocal" style="margin-top:10px;"></div>
+      <div id="verifyResult" style="margin-top:4px;"></div>
       <div id="verifyServer" style="margin-top:4px;"></div>
     </div>
   </div>
@@ -328,8 +329,8 @@
 <script src="engine/core.js"></script>
 <script>
 // ===== VERSION =====
-const VERSION = '9.0.13';
-const UI_VERSION = 29;
+const VERSION = '9.1.0';
+const UI_VERSION = 30;
 document.title = `PADDLA v${VERSION} - UVS 2.0`;
 
 // ===== CLIENT CONSTANTS (UI only) =====
@@ -706,10 +707,12 @@ function gameLoop() {
             inputLog: gameState.inputLog.slice(),
             numBalls: gameState.numBalls,
             betPerBall: gameState.betPerBall,
-            serverSeed: gameState.serverSeed
+            serverSeed: gameState.serverSeed,
+            finalWin: gameState.totalWin
           };
           verifyWithRegistrar();
           verifyLocal();
+          verifyResultLocally();
         } else {
           document.getElementById('verifySection').style.display = 'none';
         }
@@ -779,7 +782,26 @@ async function verifyLocal() {
   }
 }
 
-document.getElementById('verifyBtn').addEventListener('click', verifyLocal);
+// A4: registrar-free RESULT check — replay the recorded recipe through the same
+// engine and assert the win equals what was recorded (mirrors /verify/paddla).
+function verifyResultLocally() {
+  const vd = lastVerificationData;
+  if (!vd?.serverSeed || !vd?.inputLog) return;
+  try {
+    const st = createInitialState(vd.serverSeed, vd.numBalls, vd.betPerBall, vd.numBalls * vd.betPerBall);
+    let i = 0;
+    while (!st.finished && i < 200000) { const e = vd.inputLog[i]; tick(st, e ? e.target : null); i++; }
+    const replayed = st.totalWin;
+    const ok = Math.abs(replayed - vd.finalWin) < 0.01;
+    document.getElementById('verifyResult').innerHTML = ok
+      ? `<span style="color:#00cc55">✓ LOCAL RESULT VERIFIED! Recipe replayed → $${replayed}, matches recorded.</span>`
+      : `<span style="color:#ff4444">❌ Result mismatch! Replay $${replayed} vs recorded $${vd.finalWin}</span>`;
+  } catch (err) {
+    document.getElementById('verifyResult').innerHTML = `<span style="color:#ff4444">❌ Replay error: ${err.message}</span>`;
+  }
+}
+
+document.getElementById('verifyBtn').addEventListener('click', () => { verifyLocal(); verifyResultLocally(); });
 
 // Controls disable/enable
 function setControlsDisabled(disabled) {
@@ -977,7 +999,7 @@ updateModeIndicator(); updateProgressiveLamps(1); render(); gameLoop(); loadLead
 
 // Replay a recorded game from the public trail: paddla.uncloned.work/?replay=<gameId>
 async function maybeReplayFromTrail() {
-  const id = new URLSearchParams(location.search).get('replay');
+  const id = new URLSearchParams(window.location.search).get('replay');
   if (!id) return;
   try {
     const rec = await (await fetch(REGISTRAR_URL + '/trail/' + encodeURIComponent(id))).json();
