@@ -657,6 +657,16 @@ function gameLoop() {
         const rrtp = rbet ? gameState.totalWin / rbet : 0;
         document.getElementById('finalWin').textContent = gameState.totalWin;
         document.getElementById('finalRtp').textContent = `REPLAY · Bet: $${rbet} | Win: $${gameState.totalWin} | RTP: ${(rrtp * 100).toFixed(1)}%`;
+        if (isTrailReplay) {
+          document.getElementById('vGameId').textContent = lastVerificationData.trailId || '';
+          document.getElementById('vClientSeed').textContent = lastVerificationData.gameSeed;
+          document.getElementById('vCommitment').textContent = '0x' + (lastVerificationData.regSeed >>> 0).toString(16).toUpperCase();
+          document.getElementById('vServerSeed').textContent = '0x' + lastVerificationData.wasmResult.toString(16).toUpperCase().padStart(8, '0');
+          document.getElementById('verifySection').style.display = 'block';
+          verifyLocal();
+          verifyResultLocally();
+          isTrailReplay = false;
+        }
         setTimeout(() => { document.getElementById('result').classList.add('show'); setControlsDisabled(true); }, 1500);
       }
     }
@@ -833,7 +843,7 @@ document.getElementById('replayBtn').addEventListener('click', () => {
   updateUI();
 });
 
-let replayRunning = false, replayLog_data = [], replayLog_idx = 0;
+let replayRunning = false, replayLog_data = [], replayLog_idx = 0, isTrailReplay = false;
 
 // Play button
 document.getElementById('playBtn').addEventListener('click', async () => {
@@ -1018,6 +1028,16 @@ async function maybeReplayFromTrail() {
     replayLog_data = dense;
     replayLog_idx = 0;
     replayRunning = true;
+    // A4 bonus: arm local verification of this PUBLIC trail record (seed + result),
+    // so a stranger opening ?replay=<id> can re-check it locally — not just watch it.
+    lastVerificationData = {
+      regSeed: rec.regSeed, gameSeed: rec.gameSeed,
+      wasmResult: parseInt(String(rec.serverSeed).slice(-8), 16) >>> 0,
+      serverSeed: rec.serverSeed, inputLog: dense,
+      numBalls: rec.numBalls, betPerBall: rec.betPerBall,
+      finalWin: rec.totalWin, trailId: id
+    };
+    isTrailReplay = true;
     document.getElementById('playBtn').disabled = true;
     document.getElementById('ballCount').value = rec.numBalls;
     if (rec.betPerBall != null) document.getElementById('betSelect').value = String(rec.betPerBall);
