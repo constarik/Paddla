@@ -194,7 +194,7 @@
 <script src="engine/core.js"></script>
 <script>
 // ── Constants ──────────────────────────────────────────────────────────────
-const VERSION = '9.2.0';
+const VERSION = '9.3.0';
 const MOBILE_VERSION = 5;
 const REGISTRAR_URL = 'https://registrar-server.onrender.com';
 const BET_MULTIPLIER = { human:1, hunter:1, defender:1, humanSim:1, sniper:2, stationary:1 };
@@ -510,7 +510,7 @@ document.getElementById('playBtn').addEventListener('click', async () => {
       currentGameSeed = gameSeed;
       const res = await fetch(REGISTRAR_URL + '/session/new', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ gameSeed, versions:[1, 2] })
+        body: JSON.stringify({ gameSeed, versions:[1, 2, 3] })
       });
       const data = await res.json();
       if (!data.accepted) { alert('UVS version mismatch'); setDisabled(false); return; }

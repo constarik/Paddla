@@ -329,7 +329,7 @@
 <script src="engine/core.js"></script>
 <script>
 // ===== VERSION =====
-const VERSION = '9.2.0';
+const VERSION = '9.3.0';
 const UI_VERSION = 31;
 document.title = `PADDLA v${VERSION} - UVS 2.0`;
 
@@ -864,7 +864,7 @@ document.getElementById('playBtn').addEventListener('click', async () => {
       const res = await fetch(REGISTRAR_URL + '/session/new', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameSeed: currentGameSeed, versions: [1, 2] })
+        body: JSON.stringify({ gameSeed: currentGameSeed, versions: [1, 2, 3] })
       });
       const data = await res.json();
 
