@@ -126,7 +126,7 @@
 <div id="app">
   <div id="header">
     <div id="title">🏓 PADDLA</div>
-    <div id="pfBadge">🔒 UVS 2.0</div>
+    <div id="pfBadge">🔒 UVS 3.0</div>
   </div>
 
   <div id="stats">
@@ -248,10 +248,10 @@ async function checkRegistrar() {
     const d = await r.json();
     registrarOnline = true;
     const regVersion = d.version || '?';
-    document.getElementById('pfBadge').textContent = `🔒 UVS 2.0 | v${VERSION} | m${MOBILE_VERSION} | reg v${regVersion}`;
+    document.getElementById('pfBadge').textContent = `🔒 UVS 3.0 | v${VERSION} | m${MOBILE_VERSION} | reg v${regVersion}`;
   } catch {
     registrarOnline = false;
-    document.getElementById('pfBadge').textContent = `🔒 UVS 2.0 | v${VERSION} | m${MOBILE_VERSION} | reg offline`;
+    document.getElementById('pfBadge').textContent = `🔒 UVS 3.0 | v${VERSION} | m${MOBILE_VERSION} | reg offline`;
   }
 }
 checkRegistrar();

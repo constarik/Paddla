@@ -232,7 +232,7 @@
     </div>
   </div>
   
-  <h1>🏓 PADDLA <span class="pf-badge">🔒 UVS 2.0</span></h1>
+  <h1>🏓 PADDLA <span class="pf-badge">🔒 UVS 3.0</span></h1>
   
   <div class="stats">
     <div class="stat">
@@ -331,7 +331,7 @@
 // ===== VERSION =====
 const VERSION = '9.3.0';
 const UI_VERSION = 31;
-document.title = `PADDLA v${VERSION} - UVS 2.0`;
+document.title = `PADDLA v${VERSION} - UVS 3.0`;
 
 // ===== CLIENT CONSTANTS (UI only) =====
 const BET_MULTIPLIER = { human:1, hunter:1, defender:1, humanSim:1, sniper:2 };
@@ -477,14 +477,14 @@ async function checkRegistrar() {
     document.getElementById('serverStatus').textContent = '🟢 Registrar';
     document.getElementById('currentCommitment').textContent = `Sessions: ${d.activeSessions}`;
     document.querySelector('.pf-badge').textContent =
-      `🔒 UVS 2.0  |  v${VERSION}  |  u${UI_VERSION}  |  registrar v${regVersion}`;
+      `🔒 UVS 3.0  |  v${VERSION}  |  u${UI_VERSION}  |  registrar v${regVersion}`;
     return d;
   } catch {
     registrarOnline = false;
     document.getElementById('serverStatus').className = 'server-status offline';
     document.getElementById('serverStatus').textContent = '⚫ Offline';
     document.getElementById('currentCommitment').textContent = 'Offline';
-    document.querySelector('.pf-badge').textContent = `🔒 UVS 2.0  |  v${VERSION}  |  u${UI_VERSION}  |  registrar offline`;
+    document.querySelector('.pf-badge').textContent = `🔒 UVS 3.0  |  v${VERSION}  |  u${UI_VERSION}  |  registrar offline`;
     return null;
   }
 }
