@@ -884,7 +884,7 @@ document.getElementById('playBtn').addEventListener('click', async () => {
       const wasmInst = await WebAssembly.instantiate(wasmMod);
       wasmResult = wasmInst.exports.compute(currentGameSeed) >>> 0;
       
-      // Use WASM result as serverSeed (UVS 1.0)
+      // Use WASM result as serverSeed (UVS v3 — wire-identical since v1)
       serverSeed = wasmResult.toString(16).padStart(64, '0');
     } catch (err) {
       console.error('Registrar error:', err);

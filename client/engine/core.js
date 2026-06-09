@@ -1,4 +1,4 @@
-// PADDLA Engine v9 - UVS 1.0 Compatible
+// PADDLA Engine v9 - UVS v3 (wire format unchanged since v1)
 // Provably fair via UVS protocol: github.com/constarik/uvs
 // combinedSeed = SHA-512(serverSeed + ":" + clientSeed + ":" + nonce)
 // PRNG: ChaCha20 (RFC 8439), key=combinedSeed[0..31], nonce=combinedSeed[32..43]
@@ -197,7 +197,7 @@ function _chacha20Keystream(key32buf, nonce12buf, numBytes) {
   return _chacha20KeystreamPure(key32buf, nonce12buf, numBytes);
 }
 
-// ===== UVS_PRNG (UVS 1.0 compliant) =====
+// ===== UVS_PRNG (UVS v3 — wire-identical since v1) =====
 
 class UVS_PRNG {
   constructor(combinedSeedHex) {

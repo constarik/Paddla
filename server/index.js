@@ -156,11 +156,11 @@ app.post('/game/start', (req, res) => {
   
   console.log(`[${new Date().toISOString()}] Game started: ${gameId.substring(0, 8)}... (${numBalls} balls)`);
   
-  // UVS 1.0: server reveals serverSeed — client uses SHA-512(serverSeed:bumperX:bumperY:tick) per tick
+  // UVS v1-v3 (wire-identical): server reveals serverSeed — client uses SHA-512(serverSeed:bumperX:bumperY:tick) per tick
   res.json({
     gameId,
     commitment: useCommitment,
-    serverSeed: useSeed   // UVS 1.0: client derives combinedSeed per tick via SHA-512
+    serverSeed: useSeed   // UVS v1-v3 (wire-identical): client derives combinedSeed per tick via SHA-512
   });
 });
 
@@ -182,7 +182,7 @@ app.post('/game/:id/finish', (req, res) => {
     return res.status(400).json({ error: 'Invalid input log' });
   }
   
-  // Replay game with server's serverSeed + client's inputLog (UVS 1.0)
+  // Replay game with server's serverSeed + client's inputLog (UVS v3 — wire-identical since v1)
   const replayState = replay(game.serverSeed, game.numBalls, inputLog, game.betPerBall || 5);
   const serverTotalWin = replayState.totalWin;
   
