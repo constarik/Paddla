@@ -323,6 +323,8 @@
       <div id="verifyLocal" style="margin-top:10px;"></div>
       <div id="verifyResult" style="margin-top:4px;"></div>
       <div id="verifyServer" style="margin-top:4px;"></div>
+      <button class="verify-btn-result" id="anchorBtn" style="background:#f2c14e;color:#111;margin-top:10px;" onclick="anchorGame()">⚓ ANCHOR (notary + OTS)</button>
+      <div id="anchorOut" style="margin-top:8px;font-size:12px;line-height:1.5;text-align:left"></div>
     </div>
   </div>
 
@@ -733,6 +735,33 @@ function gameLoop() {
     updateUI();
   }
   updateEffects(); render(); requestAnimationFrame(gameLoop);
+}
+
+// ⚓ UVS §5.4 anchor for the SETTLED game record (additive — touches no game logic).
+// A game outcome is input-seeded (no future drand round), so a timestamp is a neutral NOTARY today
+// (honest 🟡); the OpenTimestamps proof matures to genuine 🟢 trail-immutability after Bitcoin confirms.
+const ANCHOR_BACKEND = 'https://uvs-3a.onrender.com';
+async function anchorGame() {
+  const out = document.getElementById('anchorOut'), btn = document.getElementById('anchorBtn');
+  if (!lastVerificationData) { out.innerHTML = '<span style="color:#ff5d6c">Play a registrar-verified game first.</span>'; return; }
+  try {
+    btn.disabled = true; out.innerHTML = 'Stamping the settled record at ×2 RFC-3161 TSAs + OpenTimestamps…';
+    const v = lastVerificationData;
+    const record = { uvs:'uvGame-record/v1', sessionId:v.sessionId, regSeed:(v.regSeed>>>0), gameSeed:v.gameSeed,
+      serverSeed:v.serverSeed, wasmResult:v.wasmResult, numBalls:v.numBalls, betPerBall:v.betPerBall,
+      finalWin:v.finalWin, inputLog:v.inputLog };
+    const r = await fetch(ANCHOR_BACKEND + '/anchor-record', { method:'POST',
+      headers:{'Content-Type':'application/json'}, body: JSON.stringify({ record }) }).then(x=>x.json());
+    if (!r || r.error) throw new Error((r && r.error) || 'no response');
+    const toks = (r.notary && r.notary.tokens) || [];
+    const iso = t => new Date(t*1000).toISOString().replace('T',' ').replace('.000Z',' UTC');
+    let html = '<div style="color:#8b95a5">commitmentHash <code>'+ (r.commitmentHash||'').slice(0,16) +'…</code></div>';
+    html += '<div><strong style="color:#f2c14e">🟡 Notary (now):</strong> '+ (toks.length ? toks.map(t=>t.tsa+' '+(t.genTime?iso(t.genTime):'—')).join(', ') : '—') +'</div>';
+    html += '<div><strong style="color:#34d17e">🟢 Trail-immutability (later):</strong> '+ ((r.ots&&r.ots.proof) ? 'OpenTimestamps submitted — matures after a Bitcoin block confirms (~hours)' : '<span style="color:#8b95a5">OTS not available right now</span>') +'</div>';
+    html += '<div style="color:#6b7686;margin-top:4px">Input-seeded outcomes have no future drand round, so a stamp is a neutral notary today; the OTS proof upgrades it to genuine 🟢 once Bitcoin confirms.</div>';
+    out.innerHTML = html;
+  } catch (e) { out.innerHTML = '<span style="color:#ff5d6c">anchor failed: '+ (e && e.message || e) +'</span>'; }
+  finally { if (btn) btn.disabled = false; }
 }
 
 async function verifyWithRegistrar() {
