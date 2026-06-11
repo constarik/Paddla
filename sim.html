@@ -301,7 +301,7 @@ document.getElementById('runBtn').addEventListener('click', async () => {
     for (const mode of selected) {
       prog.textContent = `⏳ Server: ${mode} ${numGames} games × ${ballsPerGame} balls...`;
       try {
-        const res = await fetch('https://registrar-server.onrender.com/simulate/paddla', {
+        const res = await fetch('https://registrar.uncloned.work/simulate/paddla', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ strategy: mode, numGames, ballsPerGame })
         });

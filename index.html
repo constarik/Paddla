@@ -428,7 +428,7 @@ async function saveGameResult(bet, win) {
 }
 
 // ===== REGISTRAR (Provably Fair WASM) =====
-const REGISTRAR_URL = 'https://registrar-server.onrender.com';
+const REGISTRAR_URL = 'https://registrar.uncloned.work';
 let registrarOnline = false;
 let currentRegSeed = null, currentSessionId = null, currentGameSeed = null, wasmResult = null;
 
@@ -740,7 +740,7 @@ function gameLoop() {
 // ⚓ UVS §5.4 anchor for the SETTLED game record (additive — touches no game logic).
 // A game outcome is input-seeded (no future drand round), so a timestamp is a neutral NOTARY today
 // (honest 🟡); the OpenTimestamps proof matures to genuine 🟢 trail-immutability after Bitcoin confirms.
-const ANCHOR_BACKEND = 'https://uvs-3a.onrender.com';
+const ANCHOR_BACKEND = 'https://registrar.uncloned.work'; // 3Б: /anchor-record now lives on the merged registrar host
 async function anchorGame() {
   const out = document.getElementById('anchorOut'), btn = document.getElementById('anchorBtn');
   if (!lastVerificationData) { out.innerHTML = '<span style="color:#ff5d6c">Play a registrar-verified game first.</span>'; return; }
