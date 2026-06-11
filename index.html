@@ -756,9 +756,13 @@ async function anchorGame() {
     const toks = (r.notary && r.notary.tokens) || [];
     const iso = t => new Date(t*1000).toISOString().replace('T',' ').replace('.000Z',' UTC');
     let html = '<div style="color:#8b95a5">commitmentHash <code>'+ (r.commitmentHash||'').slice(0,16) +'…</code></div>';
-    html += '<div><strong style="color:#f2c14e">🟡 Notary (now):</strong> '+ (toks.length ? toks.map(t=>t.tsa+' '+(t.genTime?iso(t.genTime):'—')).join(', ') : '—') +'</div>';
-    html += '<div><strong style="color:#34d17e">🟢 Trail-immutability (later):</strong> '+ ((r.ots&&r.ots.proof) ? 'OpenTimestamps submitted — matures after a Bitcoin block confirms (~hours)' : '<span style="color:#8b95a5">OTS not available right now</span>') +'</div>';
-    html += '<div style="color:#6b7686;margin-top:4px">Input-seeded outcomes have no future drand round, so a stamp is a neutral notary today; the OTS proof upgrades it to genuine 🟢 once Bitcoin confirms.</div>';
+    html += '<div><strong style="color:#f2c14e">🟡 Notary:</strong> '+ (toks.length ? toks.map(t=>t.tsa+' '+(t.genTime?iso(t.genTime):'—')).join(', ') : '—') +'</div>';
+    if (r.ots && r.ots.proof) {
+      html += '<div><strong style="color:#34d17e">🟢 Trail-immutability (later):</strong> OpenTimestamps submitted — matures after a Bitcoin block confirms (~hours)</div>';
+      html += '<div style="color:#6b7686;margin-top:4px">Input-seeded outcomes have no future drand round, so a stamp is a neutral notary today; the OTS proof upgrades it to genuine 🟢 once Bitcoin confirms.</div>';
+    } else {
+      html += '<div style="color:#6b7686;margin-top:4px">Neutral notary (existence-at-time) of the settled record. Input-seeded outcomes have no future drand round, so this is honest 🟡 — no 🟢 trail-immutability anchor is configured right now.</div>';
+    }
     out.innerHTML = html;
   } catch (e) { out.innerHTML = '<span style="color:#ff5d6c">anchor failed: '+ (e && e.message || e) +'</span>'; }
   finally { if (btn) btn.disabled = false; }
